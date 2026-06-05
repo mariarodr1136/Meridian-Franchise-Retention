@@ -6,8 +6,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { TrendChart } from "@/components/TrendChart";
 import { StaffRoster } from "@/components/StaffRoster";
 import { AnomalyFeed } from "@/components/AnomalyFeed";
+import { ScheduleGrid } from "@/components/ScheduleGrid";
+import { fetchStudioSchedule, extractInstructors, scheduleUrl } from "@/lib/schedule";
 import { formatPercent, formatNumber, formatCurrency, trendDirection, trendLabel, cn } from "@/lib/utils";
-import type { StudioStatus, StudioMetric, Instructor, Anomaly } from "@/types";
+import type { StudioStatus, StudioMetric, Instructor, Anomaly, Review, ClassMetric } from "@/types";
+import { MetricsComparison } from "@/components/MetricsComparison";
 
 async function getStudio(id: string) {
   return db.studio.findUnique({
@@ -16,6 +19,8 @@ async function getStudio(id: string) {
       metrics:     { orderBy: { weekOf: "desc" } },
       instructors: { orderBy: { name: "asc" } },
       anomalies:   { where: { resolved: false }, orderBy: { generatedAt: "desc" } },
+      reviews:     { orderBy: { reviewDate: "desc" }, take: 6 },
+      classMetrics: true,
     },
   });
 }
@@ -51,6 +56,10 @@ export default async function StudioPage({
   const studio = await getStudio(id);
   if (!studio) notFound();
 
+  const schedule = studio.status !== "pre-launch"
+    ? await fetchStudioSchedule(studio.name, studio.state)
+    : [];
+
   const metrics: StudioMetric[] = studio.metrics.map((m) => ({
     id: m.id,
     studioId: m.studioId,
@@ -60,9 +69,12 @@ export default async function StudioPage({
     weeklyChurn: m.weeklyChurn,
     weeklyRevenue: m.weeklyRevenue,
     presalesPipelineCount: m.presalesPipelineCount,
+    memberBookings: m.memberBookings,
+    classPackBookings: m.classPackBookings,
+    classPassBookings: m.classPassBookings,
   }));
 
-  const instructors: Instructor[] = studio.instructors.map((i) => ({
+  const seededStaff: Instructor[] = studio.instructors.map((i) => ({
     id: i.id,
     studioId: i.studioId,
     name: i.name,
@@ -70,6 +82,45 @@ export default async function StudioPage({
     certificationStatus: i.certificationStatus as "certified" | "pending" | "expired",
     lastEvalDate: i.lastEvalDate?.toISOString() ?? null,
     performanceScore: i.performanceScore,
+  }));
+
+  const realInstructorNames = extractInstructors(schedule);
+  const realInstructors: Instructor[] = realInstructorNames.map((name, idx) => ({
+    id: `sched-${idx}`,
+    studioId: studio.id,
+    name,
+    role: "instructor",
+    certificationStatus: "certified",
+    lastEvalDate: null,
+    performanceScore: null,
+  }));
+
+  const instructors: Instructor[] = [
+    ...seededStaff.filter((i) => i.role !== "instructor"),
+    ...(realInstructors.length > 0 ? realInstructors : seededStaff.filter((i) => i.role === "instructor")),
+  ];
+
+  const reviews: Review[] = studio.reviews.map((r) => ({
+    id: r.id,
+    studioId: r.studioId,
+    source: r.source as "google" | "classpass",
+    author: r.author,
+    rating: r.rating,
+    body: r.body,
+    reviewDate: r.reviewDate.toISOString(),
+  }));
+
+  const classMetrics: ClassMetric[] = studio.classMetrics.map((m) => ({
+    id: m.id,
+    studioId: m.studioId,
+    dayOfWeek: m.dayOfWeek,
+    timeSlot: m.timeSlot,
+    weekOf: m.weekOf.toISOString(),
+    capacity: m.capacity,
+    spotsFilled: m.spotsFilled,
+    memberBookings: m.memberBookings,
+    classPackBookings: m.classPackBookings,
+    classPassBookings: m.classPassBookings,
   }));
 
   const anomalies: Anomaly[] = studio.anomalies.map((a) => ({
@@ -253,32 +304,114 @@ export default async function StudioPage({
           </>
         ) : null}
 
+        {/* Period Comparison */}
+        {metrics.length >= 2 && <MetricsComparison metrics={metrics} />}
+
+        {/* Booking Method Breakdown */}
+        {!isPreLaunch && current && (current.memberBookings + current.classPackBookings + current.classPassBookings) > 0 && (() => {
+          const total = current.memberBookings + current.classPackBookings + current.classPassBookings;
+          const segments = [
+            { label: "Members",     value: current.memberBookings,    color: "#4A638D", pct: current.memberBookings / total },
+            { label: "Class Packs", value: current.classPackBookings, color: "#C9A84C", pct: current.classPackBookings / total },
+            { label: "ClassPass",   value: current.classPassBookings, color: "#9CA3AF", pct: current.classPassBookings / total },
+          ];
+          return (
+            <div className="rounded-xl border p-5 mb-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+              <h3 className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "#4A638D" }}>
+                How Clients Book
+              </h3>
+              {/* Stacked bar */}
+              <div className="flex h-6 rounded-full overflow-hidden mb-4 gap-0.5">
+                {segments.map((s) => (
+                  <div
+                    key={s.label}
+                    style={{ width: `${s.pct * 100}%`, background: s.color }}
+                    title={`${s.label}: ${s.value}`}
+                  />
+                ))}
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-3 gap-4">
+                {segments.map((s) => (
+                  <div key={s.label} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                      <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{s.label}</span>
+                    </div>
+                    <p className="text-xl font-bold pl-4">{s.value.toLocaleString()}</p>
+                    <p className="text-xs pl-4" style={{ color: "#4A638D" }}>{Math.round(s.pct * 100)}% of bookings</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Weekly Schedule */}
+        {schedule.length > 0 && (
+          <ScheduleGrid
+            days={schedule}
+            classMetrics={classMetrics}
+            scheduleHref={scheduleUrl(studio.name, studio.state)}
+          />
+        )}
+
         {/* Recent Reviews */}
-        <div className="rounded-xl border p-5 mb-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>
-              Recent Reviews
-            </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "#EEF3FB", color: "#4A638D" }}>
-              Google · Yelp · ClassPass
-            </span>
-          </div>
-          <div className="flex flex-col items-center justify-center py-10 gap-3">
-            <svg className="w-8 h-8" style={{ color: "#C8D8EE" }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
-            </svg>
-            <p className="text-sm font-medium" style={{ color: "#6B7280" }}>No reviews connected yet</p>
-            <p className="text-xs text-center max-w-xs" style={{ color: "#9CA3AF" }}>
-              Connect your Google Business, Yelp, and ClassPass accounts to pull member reviews directly into this dashboard.
-            </p>
-            <button
-              className="mt-1 text-xs px-4 py-1.5 rounded-full font-medium transition-opacity hover:opacity-75"
-              style={{ background: "#4A638D", color: "#FFFFFF" }}
-            >
-              Connect accounts
-            </button>
-          </div>
-        </div>
+        {reviews.length > 0 && (() => {
+          const SOURCE_LABEL: Record<string, string> = { google: "Google", classpass: "ClassPass" };
+          const sources = ["google", "classpass"].filter(s => reviews.some(r => r.source === s));
+          const sourceStats = Object.fromEntries(sources.map(s => {
+            const bucket = reviews.filter(r => r.source === s);
+            const avg = bucket.reduce((sum, r) => sum + r.rating, 0) / bucket.length;
+            return [s, { avg, count: bucket.length }];
+          }));
+          return (
+            <div className="rounded-xl border p-5 mb-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Recent Reviews</h3>
+                <div className="flex items-center gap-4">
+                  {sources.map(s => {
+                    const { avg, count } = sourceStats[s];
+                    const full = Math.round(avg);
+                    return (
+                      <div key={s} className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: "#4A638D" }}>
+                          {SOURCE_LABEL[s]}
+                        </span>
+                        <span className="text-sm font-bold" style={{ color: "#1F2937" }}>{avg.toFixed(1)}</span>
+                        <span style={{ color: "#C9A84C", fontSize: "13px" }}>{"★".repeat(full)}{"☆".repeat(5 - full)}</span>
+                        <span className="text-xs" style={{ color: "#9CA3AF" }}>({count})</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Review grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {reviews.map((r) => (
+                  <div key={r.id} className="rounded-lg p-4" style={{ background: "#F8FAFD", border: "1px solid #EEF3FB" }}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: "#1F2937" }}>{r.author}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "#C9A84C" }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-xs px-1.5 py-0.5 rounded font-medium text-white" style={{ background: "#4A638D" }}>
+                          {SOURCE_LABEL[r.source]}
+                        </span>
+                        <span className="text-xs" style={{ color: "#9CA3AF" }}>
+                          {new Date(r.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs leading-relaxed" style={{ color: "#4B5563" }}>{r.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Bottom row: staff + anomalies */}
         <div className="grid grid-cols-[1fr_320px] gap-6">

@@ -68,6 +68,9 @@ export default async function DashboardPage() {
           weeklyChurn: s.metrics[0].weeklyChurn,
           weeklyRevenue: s.metrics[0].weeklyRevenue,
           presalesPipelineCount: s.metrics[0].presalesPipelineCount,
+          memberBookings: s.metrics[0].memberBookings,
+          classPackBookings: s.metrics[0].classPackBookings,
+          classPassBookings: s.metrics[0].classPassBookings,
         }
       : null,
   }));

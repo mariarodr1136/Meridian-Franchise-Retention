@@ -17,12 +17,25 @@ const categoryLabel: Record<string, string> = {
 interface Props { anomalies: Anomaly[] }
 
 export function AnomalyFeed({ anomalies }: Props) {
+  const [items, setItems] = useState<Anomaly[]>(anomalies);
   const [selected, setSelected] = useState<Anomaly | null>(null);
+  const [resolving, setResolving] = useState(false);
 
-  const sorted = [...anomalies].sort((a, b) => {
+  const sorted = [...items].sort((a, b) => {
     const o = { high: 0, medium: 1, low: 2 };
     return o[a.severity as keyof typeof o] - o[b.severity as keyof typeof o];
   });
+
+  async function handleResolve(anomaly: Anomaly) {
+    setResolving(true);
+    try {
+      await fetch(`/api/anomalies/${anomaly.id}`, { method: "PATCH" });
+      setItems((prev) => prev.filter((a) => a.id !== anomaly.id));
+      setSelected(null);
+    } finally {
+      setResolving(false);
+    }
+  }
 
   if (sorted.length === 0) {
     return (
@@ -111,6 +124,17 @@ export function AnomalyFeed({ anomalies }: Props) {
                 )}
                 <p className="text-xs font-medium mb-4" style={{ color: "#9CA3AF" }}>{date}</p>
                 <p className="text-sm leading-relaxed" style={{ color: "#374151" }}>{selected.summary}</p>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => handleResolve(selected)}
+                    disabled={resolving}
+                    className="text-xs font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 cursor-pointer"
+                    style={{ background: "#4A638D", color: "#fff" }}
+                  >
+                    {resolving ? "Resolving…" : "Mark Resolved"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
