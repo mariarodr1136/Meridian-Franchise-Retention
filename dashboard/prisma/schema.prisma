@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Studio {
+  id             String         @id @default(cuid())
+  name           String
+  city           String
+  state          String?
+  country        String         @default("US")
+  region         String
+  status         String         @default("healthy")
+  openedAt       DateTime?
+  franchiseeName String
+  metrics        StudioMetric[]
+  instructors    Instructor[]
+  anomalies      Anomaly[]
+  createdAt      DateTime       @default(now())
+}
+
+model StudioMetric {
+  id                    String   @id @default(cuid())
+  studioId              String
+  studio                Studio   @relation(fields: [studioId], references: [id])
+  weekOf                DateTime
+  classFillRate         Float
+  activeMemberships     Int
+  weeklyChurn           Float
+  weeklyRevenue         Float
+  presalesPipelineCount Int      @default(0)
+  createdAt             DateTime @default(now())
+}
+
+model Instructor {
+  id                  String    @id @default(cuid())
+  studioId            String
+  studio              Studio    @relation(fields: [studioId], references: [id])
+  name                String
+  role                String    @default("instructor")
+  certificationStatus String    @default("certified")
+  lastEvalDate        DateTime?
+  performanceScore    Float?
+  createdAt           DateTime  @default(now())
+}
+
+model Anomaly {
+  id          String   @id @default(cuid())
+  studioId    String?
+  studio      Studio?  @relation(fields: [studioId], references: [id])
+  generatedAt DateTime @default(now())
+  summary     String
+  severity    String   @default("medium")
+  category    String
+  resolved    Boolean  @default(false)
+}
