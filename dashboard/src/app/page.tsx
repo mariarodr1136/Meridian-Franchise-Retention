@@ -178,9 +178,9 @@ export default async function DashboardPage() {
               </div>
 
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>
-                  Network Alerts
-                </h2>
+                <Link href="/alerts" className="text-xs font-bold tracking-widest uppercase transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>
+                  Network Alerts →
+                </Link>
                 {anomalies.length > 0 && (
                   <span className="text-xs px-2 py-0.5 rounded-full"
                     style={{ background: "#C8D8EE", color: "#4A638D" }}>

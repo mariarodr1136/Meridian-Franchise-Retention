@@ -2,9 +2,8 @@ import type { Instructor } from "@/types";
 import { cn } from "@/lib/utils";
 
 const certConfig = {
-  certified: { label: "Certified",   className: "text-green-400  bg-green-500/10" },
-  pending:   { label: "Pending",     className: "text-blue-400   bg-blue-500/10" },
-  expired:   { label: "Expired",     className: "text-red-400    bg-red-500/10" },
+  certified: { label: "Certified", className: "text-green-400 bg-green-500/10" },
+  pending:   { label: "Pending",   className: "text-blue-400  bg-blue-500/10"  },
 };
 
 interface Props {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Anomaly } from "@/types";
+import { cn } from "@/lib/utils";
 
 const severityConfig = {
   high:   { dot: "#DC2626", label: "Critical", labelBg: "#FEE2E2", labelColor: "#B91C1C" },
@@ -16,37 +17,23 @@ const categoryLabel: Record<string, string> = {
 
 interface Props { anomalies: Anomaly[] }
 
-export function AnomalyFeed({ anomalies }: Props) {
+export function AlertsGrid({ anomalies }: Props) {
   const [selected, setSelected] = useState<Anomaly | null>(null);
-
-  const sorted = [...anomalies].sort((a, b) => {
-    const o = { high: 0, medium: 1, low: 2 };
-    return o[a.severity as keyof typeof o] - o[b.severity as keyof typeof o];
-  });
-
-  if (sorted.length === 0) {
-    return (
-      <div className="rounded-xl border px-4 py-10 text-center"
-        style={{ borderColor: "#C8D8EE", background: "#F0F5FB" }}>
-        <p className="text-xs" style={{ color: "#9CA3AF" }}>No active alerts</p>
-      </div>
-    );
-  }
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        {sorted.map((a) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {anomalies.map((a) => {
           const sc = severityConfig[a.severity as keyof typeof severityConfig];
-          const date = new Date(a.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          const date = new Date(a.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
           return (
             <button
               key={a.id}
               onClick={() => setSelected(a)}
-              className="rounded-xl border bg-white text-left transition-all hover:shadow-sm hover:border-gray-300 cursor-pointer w-full"
+              className="rounded-xl border bg-white text-left transition-all hover:shadow-sm hover:border-gray-300 cursor-pointer"
               style={{ borderColor: "#E5E7EB" }}
             >
-              <div className="p-3.5">
+              <div className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
@@ -54,9 +41,7 @@ export function AnomalyFeed({ anomalies }: Props) {
                       style={{ background: sc.labelBg, color: sc.labelColor }}>
                       {sc.label}
                     </span>
-                    <span className="text-[10px] uppercase tracking-wide" style={{ color: "#9CA3AF" }}>
-                      {categoryLabel[a.category] ?? a.category}
-                    </span>
+                    <span className="text-[10px] uppercase tracking-wide" style={{ color: "#9CA3AF" }}>{categoryLabel[a.category] ?? a.category}</span>
                   </div>
                   <span className="text-[10px]" style={{ color: "#9CA3AF" }}>{date}</span>
                 </div>
@@ -70,6 +55,7 @@ export function AnomalyFeed({ anomalies }: Props) {
         })}
       </div>
 
+      {/* Modal */}
       {selected && (() => {
         const sc = severityConfig[selected.severity as keyof typeof severityConfig];
         const date = new Date(selected.generatedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
@@ -97,8 +83,15 @@ export function AnomalyFeed({ anomalies }: Props) {
                       {categoryLabel[selected.category] ?? selected.category}
                     </span>
                   </div>
-                  <button onClick={() => setSelected(null)} className="text-sm font-medium transition-opacity hover:opacity-60" style={{ color: "#6B7280" }}>✕</button>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="text-sm font-medium transition-opacity hover:opacity-60"
+                    style={{ color: "#6B7280" }}
+                  >
+                    ✕
+                  </button>
                 </div>
+
                 {selected.studioName && (
                   <p className="text-base font-bold mb-1" style={{ color: "#4A638D" }}>{selected.studioName}</p>
                 )}

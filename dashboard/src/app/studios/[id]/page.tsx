@@ -93,7 +93,6 @@ export default async function StudioPage({
 
   const doo          = instructors.find((i) => i.role === "director_of_operations");
   const gm           = instructors.find((i) => i.role === "general_manager");
-  const expiredCount = instructors.filter((i) => i.certificationStatus === "expired").length;
   const avgScore     = instructors
     .filter((i) => i.performanceScore != null)
     .reduce((sum, i, _, arr) => sum + (i.performanceScore! / arr.length), 0);
@@ -145,13 +144,7 @@ export default async function StudioPage({
 
           {/* Quick stats */}
           <div className="flex items-center gap-4 text-right mr-16">
-            {expiredCount > 0 && (
-              <div className="text-right">
-                <p className="text-lg font-bold text-red-600">{expiredCount}</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>expired cert{expiredCount !== 1 ? "s" : ""}</p>
-              </div>
-            )}
-            {avgScore > 0 && (
+{avgScore > 0 && (
               <div className="flex flex-col items-center gap-1">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "#4A638D" }}>
                   <p className="text-lg font-bold text-white">{avgScore.toFixed(0)}</p>
