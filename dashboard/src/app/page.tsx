@@ -56,6 +56,8 @@ export default async function DashboardPage() {
     status: s.status as StudioStatus,
     openedAt: s.openedAt?.toISOString() ?? null,
     franchiseeName: s.franchiseeName,
+    address: s.address ?? null,
+    phone: s.phone ?? null,
     latestMetric: s.metrics[0]
       ? {
           id: s.metrics[0].id,
@@ -159,21 +161,8 @@ export default async function DashboardPage() {
           {/* Anomaly feed sidebar */}
           <div className="w-80 flex-shrink-0">
             <div className="sticky top-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>
-                  Network Alerts
-                </h2>
-                {anomalies.length > 0 && (
-                  <span className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: "#C8D8EE", color: "#4A638D" }}>
-                    {anomalies.length} active
-                  </span>
-                )}
-              </div>
-              <AnomalyFeed anomalies={anomalyList} />
-
               {/* Status legend */}
-              <div className="mt-6 rounded-xl border p-4"
+              <div className="mb-4 rounded-xl border p-4"
                 style={{ borderColor: "#C8D8EE", background: "#FFFFFF" }}>
                 <p className="text-xs font-medium mb-3" style={{ color: "#4A638D" }}>Studio Status</p>
                 <div className="flex flex-col gap-2">
@@ -186,6 +175,21 @@ export default async function DashboardPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>
+                  Network Alerts
+                </h2>
+                {anomalies.length > 0 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full"
+                    style={{ background: "#C8D8EE", color: "#4A638D" }}>
+                    {anomalies.length} active
+                  </span>
+                )}
+              </div>
+              <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 220px)" }}>
+                <AnomalyFeed anomalies={anomalyList} />
               </div>
             </div>
           </div>

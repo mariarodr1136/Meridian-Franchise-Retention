@@ -13,6 +13,8 @@ export interface Studio {
   status: StudioStatus;
   openedAt: string | null;
   franchiseeName: string;
+  address: string | null;
+  phone: string | null;
 }
 
 export interface StudioMetric {

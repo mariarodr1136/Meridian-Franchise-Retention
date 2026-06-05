@@ -95,9 +95,163 @@ const FRANCHISEES = [
 let fIdx = 0;
 const f = () => FRANCHISEES[fIdx++ % FRANCHISEES.length];
 
+const STUDIO_CONTACT: Record<string, { address: string | null; phone: string | null }> = {
+  // Florida – open
+  "Aventura":                          { address: "2958 Aventura Blvd., Unit B4",           phone: "(786) 904-9338" },
+  "Brickell":                          { address: "40 Southwest 13th St., Suite 504",        phone: "(307) 228-0084" },
+  "Carrollwood":                       { address: "10019 N Dale Mabry Hwy.",                 phone: "(813) 532-3017" },
+  "Coconut Grove":                     { address: "2680 Tigertail Ave.",                      phone: "(786) 981-9434" },
+  "Coral Springs":                     { address: "2920 N University Dr.",                    phone: "(954) 539-9206" },
+  "Delray":                            { address: "269 Northeast 2nd Ave.",                   phone: "(561) 455-1563" },
+  "Downtown Miami":                    { address: "151 SE 1st St., Suite 10",                 phone: "(305) 565-3349" },
+  "Downtown Tampa":                    { address: "511 W Cass St.",                            phone: "(813) 921-1605" },
+  "Dr. Phillips":                      { address: "7940 Via Dellagio Way, Suite 112",          phone: "(407) 934-0582" },
+  "Edgewater":                         { address: "2063 Biscayne Blvd., Suite 301",            phone: "(305) 400-4280" },
+  "Estero – Coconut Point":            { address: "23050 Via Villagio, Suite 121",             phone: "(239) 895-9238" },
+  "Fort Lauderdale – Flagler Village": { address: "421 Northeast 6th St., Suite 110",          phone: "(954) 296-7307" },
+  "Jacksonville – Gate Parkway":       { address: "7540 Gate Pkwy. North",                     phone: "(904) 605-1360" },
+  "Jax Beach":                         { address: "1515 3rd St. North",                        phone: "(904) 694-5359" },
+  "JETSET Miami":                      { address: "110 Washington Ave., Suite CU8",            phone: "(305) 424-2227" },
+  "Merrick Park":                      { address: "4102-A Ponce de Leon Blvd.",                phone: "(305) 882-9727" },
+  "Midtown Doral":                     { address: "8175 NW 107th Ave., Suite #106",            phone: "(305) 539-0678" },
+  "North Miami":                       { address: "12000 Biscayne Blvd., Suite 108",           phone: "(786) 998-4438" },
+  "Oviedo":                            { address: "45 W Mitchell Hammock Rd., Suite #1361",    phone: "(321) 415-0468" },
+  "Palm Beach Gardens":                { address: "11320 Legacy Ave. Plaza, Suite 110",         phone: "(561) 680-3921" },
+  "South Tampa":                       { address: "1413 S Howard Ave., Suite B150",             phone: "(813) 587-2313" },
+  "Sunset Harbour":                    { address: "1860 West Ave., 2nd Floor",                  phone: "(786) 542-5009" },
+  "Wellington":                        { address: "2535 S State Rd. 7, Unit 110",               phone: "(561) 783-4288" },
+  "West Boca":                         { address: "8236 Glades Rd.",                            phone: "(561) 609-0883" },
+  "West Palm Beach":                   { address: "393 Banyan Blvd.",                           phone: "(561) 489-4684" },
+  "Weston":                            { address: "1675 Market St.",                            phone: "(954) 852-0995" },
+  "Winter Park":                       { address: "1967 Aloma Ave., Unit 0022",                 phone: "(407) 499-8118" },
+  // Georgia – open
+  "Alpharetta":                        { address: "4101 Lake St.",                              phone: "(770) 847-0108" },
+  "Buckhead":                          { address: "3330 Piedmont Rd.",                          phone: "(678) 539-8426" },
+  // North Carolina – open
+  "Charlotte – South End":             { address: "2161 Hawkins St., Suite 150",                phone: "(980) 890-7020" },
+  "Downtown Raleigh":                  { address: "500 N West St., Suite 145",                  phone: "(984) 833-2787" },
+  "Holly Springs":                     { address: "3141 McChesney Hill Loop",                   phone: "(919) 899-2368" },
+  "Lake Norman":                       { address: "8908 Lindholm Dr.",                          phone: "(704) 946-5568" },
+  "Raleigh – North Hills":             { address: "200 Park at North Hills St.",                phone: "(984) 205-4684" },
+  "Research Triangle Park":            { address: "3150 Elion Dr.",                             phone: "(984) 250-0725" },
+  // South Carolina – open
+  "West End Greenville":               { address: "250 Riverplace",                             phone: "(864) 263-1966" },
+  // Tennessee – open
+  "Midtown Nashville":                 { address: "827 19th Ave. S",                            phone: "(615) 866-5431" },
+  // New York – open
+  "Boerum Hill":                       { address: "476 Atlantic Ave.",                          phone: "(917) 651-0611" },
+  "Chelsea":                           { address: "129 West 20th St.",                          phone: "(646) 906-8077" },
+  "Gramercy":                          { address: "257 3rd Ave.",                               phone: "(646) 793-9479" },
+  "NoHo":                              { address: "303 Bowery",                                 phone: "(646) 687-9108" },
+  "Park Avenue":                       { address: "2 Park Avenue",                              phone: "(646) 687-7271" },
+  "SoHo":                              { address: "355 W. Broadway",                            phone: "(646) 679-6389" },
+  // New Jersey – open
+  "Florham Park":                      { address: "187 Columbia Turnpike",                      phone: "(973) 791-5981" },
+  "Montclair":                         { address: "307 Pompton Ave.",                           phone: "(973) 566-3596" },
+  "Somerville":                        { address: "183 West Main St.",                          phone: "(908) 530-3378" },
+  "Wayne":                             { address: "582 Valley Rd., Unit #17",                   phone: "(973) 832-1545" },
+  "Woodcliff Lake":                    { address: "453 Chestnut Ridge Rd.",                     phone: "(201) 730-5566" },
+  // Connecticut – open
+  "Darien":                            { address: "25 Old Kings Hwy. N",                        phone: "(203) 875-0045" },
+  // Massachusetts – open
+  "Wellesley":                         { address: "98 Central St.",                             phone: "(781) 455-2925" },
+  // Pennsylvania – open
+  "Graduate Hospital":                 { address: "600 South 24th St.",                         phone: "(215) 709-9061" },
+  "Main Line Haverford":               { address: "354 West Lancaster Ave.",                    phone: "(610) 980-8182" },
+  // Washington DC – open
+  "Union Market":                      { address: "1280 Union St. NE, Suite #2",                phone: "(202) 400-3066" },
+  // Texas – open
+  "Austin – Downtown":                 { address: "1011 West 5th St.",                          phone: "(737) 273-9364" },
+  "Austin – South":                    { address: "5601 Brodie Ln.",                            phone: "(737) 303-5843" },
+  "Bridgeland":                        { address: "20115 Bridgeland Creek Parkway",              phone: "(832) 402-8319" },
+  "Heath":                             { address: "453 Laurence Dr.",                           phone: "(972) 853-9630" },
+  "Houston – River Oaks":              { address: "3515 West Dallas St.",                       phone: "(832) 924-0413" },
+  "League City":                       { address: "1340 East League City Pkwy.",                phone: "(281) 724-5444" },
+  "Preston Hollow":                    { address: "4029 E. Northwest Pkwy.",                    phone: "(214) 466-8315" },
+  "West McKinney":                     { address: "3241 S Custer Rd., Suite #103",              phone: "(945) 203-4583" },
+  // California – open
+  "Irvine Crossroads":                 { address: "3800 Barranca Pkwy., Suite J",               phone: "(949) 979-5609" },
+  "Torrey Hills":                      { address: "4639 Carmel Mountain Rd., Suite 102",        phone: "(858) 289-5499" },
+  // Mountain West – open
+  "Denver – RiNo":                     { address: "3191 Walnut St.",                            phone: "(720) 734-4167" },
+  "Sugar House":                       { address: "1142 Wilmington Avenue",                     phone: "(385) 707-0595" },
+  "Albuquerque Uptown":                { address: "2200 Louisiana Blvd. NE, Suite 08E",          phone: "(505) 589-3146" },
+  // Midwest – open
+  "Edwardsville":                      { address: "2421 Troy Road",                             phone: "(618) 391-9938" },
+  "Northbrook":                        { address: "984 Willow Rd., Unit F",                     phone: "(224) 479-0323" },
+  "Creve Coeur":                       { address: "11625 Olive Blvd.",                          phone: "(314) 648-3802" },
+  // Pre-launch – California
+  "Folsom Ranch":                      { address: "SWC Alder Creek Blvd. & E Bidwell St.",      phone: null },
+  "Liberty Station":                   { address: "2850 Womble Rd.",                            phone: null },
+  "Los Gatos":                         { address: "15525 Union Ave., Suite A-8",                phone: null },
+  "Marina District":                   { address: "1868 Lombard Street",                        phone: null },
+  "San Marcos":                        { address: "336 S Twin Oaks Village Rd.",                phone: null },
+  "Santa Clara Rivermark":             { address: "3914 Rivermark Plaza",                       phone: "(408) 549-2532" },
+  // Pre-launch – Mountain West
+  "Boulder Crossroads":                { address: "3000 Pearl Pkwy., Unit 1800",                phone: null },
+  "Holladay":                          { address: "4736 S Highland Drive",                      phone: null },
+  "South Lake Union":                  { address: "1120 Denny Way, Suite 5",                    phone: null },
+  // Pre-launch – Northeast
+  "Westport":                          { address: "520 Post Road East",                         phone: null },
+  "Belmont":                           { address: "60 Leonard Street",                          phone: null },
+  "Marlton":                           { address: "500 Route 73 South, Suite C16",              phone: null },
+  "Oakhurst":                          { address: "1609 NJ-35, Suite C3",                       phone: null },
+  "Parsippany":                        { address: "1501 NJ-10, Suite #C-05",                    phone: null },
+  "Latham":                            { address: "664 Loudon Rd.",                             phone: "(518) 608-2153" },
+  "Main Line Wayne":                   { address: "605 W Lancaster Ave.",                       phone: null },
+  "Northern Liberties":                { address: "130 West Girard Ave.",                       phone: "(215) 995-3294" },
+  "Warrington":                        { address: "1587 Main Street, Unit 202",                 phone: null },
+  "Tysons":                            { address: "1640 Boro Pl, Suite 206",                    phone: null },
+  "14th Street":                       { address: "1934 14th Street NW",                        phone: null },
+  // Pre-launch – Southeast Florida
+  "Boynton Beach":                     { address: "398 N Congress Ave #102",                    phone: null },
+  "Jacksonville – Pearl Square":       { address: "515 N Pearl Street",                         phone: null },
+  "Kendall":                           { address: "8525 Mills Drive, Suite 304",                phone: null },
+  "Lake Nona":                         { address: "5959 Lake Nona Blvd., Suite 160",            phone: null },
+  "Lakewood Ranch":                    { address: "8330 Market Street",                         phone: null },
+  "Naples":                            { address: "5926 Premier Way, Unit 106",                 phone: null },
+  "Oakland Park":                      { address: "3411 N Federal Hwy.",                        phone: null },
+  "Pembroke Pines":                    { address: "14554 SW 5th St.",                           phone: "(954) 852-4389" },
+  "Pinecrest":                         { address: "9600 South Dixie Hwy.",                      phone: "(305) 754-7352" },
+  "Port St. Lucie":                    { address: "10300 SW Discovery Way",                     phone: null },
+  "Tallahassee":                       { address: "440 North Monroe St.",                       phone: "(850) 583-9887" },
+  "Viera":                             { address: "2903 Sadore Way",                            phone: null },
+  "Westchase":                         { address: "10109 Montague St.",                         phone: null },
+  "Winter Garden":                     { address: "16 East Plant Street",                       phone: null },
+  "World Golf Village":                { address: "150 Village Commons Drive, A-104",           phone: null },
+  // Pre-launch – Southeast Georgia
+  "Buford":                            { address: "2925 Buford Drive, Suite 530",               phone: null },
+  "Dunwoody":                          { address: "5482 Chamblee Dunwoody Rd., Suite 29A",      phone: null },
+  "East Cobb":                         { address: "1255 Johnson Ferry Road",                    phone: null },
+  // Pre-launch – Southeast Carolinas / TN
+  "Durham":                            { address: "440 South Roxboro St., Suite 130",           phone: "(984) 250-0134" },
+  "Forest Acres":                      { address: "2710 Gervais Street, Suite 200",             phone: null },
+  "Brentwood":                         { address: "205 Franklin Rd.",                           phone: "(615) 880-9386" },
+  // Pre-launch – Texas
+  "Austin – Arboretum":                { address: "10000 Research Boulevard, Suite #124",       phone: null },
+  "District West":                     { address: "22125 FM 1093 Rd.",                          phone: null },
+  "Flower Mound":                      { address: "6101 Long Prairie Rd., Suite 736",           phone: "(972) 573-4628" },
+  "Friendswood":                       { address: "106 Whispering Pines Ave., Suite 107",       phone: null },
+  "GTX":                               { address: "1314 W University Ave.",                     phone: null },
+  "Sienna":                            { address: "10040 Highway 6",                            phone: "(832) 532-9266" },
+  "Sugar Land":                        { address: "2635 Town Center Blvd N.",                   phone: null },
+  "Uptown Dallas":                     { address: "3220 McKinney Ave., Suite 110",              phone: null },
+  "Vintage Park":                      { address: "122 Vintage Park Blvd., Suite G",            phone: null },
+  // Pre-launch – Midwest
+  "Gold Coast":                        { address: "12-14 W. Maple Street",                      phone: null },
+  "Lakeview":                          { address: "3101 N. Clark Street, 1-B",                  phone: null },
+  "Naperville":                        { address: "2555 W 75th Street",                         phone: null },
+  "Carmel":                            { address: "1017 W. Main Street, Suite 10",              phone: null },
+  "Fishers":                           { address: "11433 East Union St., Suite 140",            phone: null },
+  "West Des Moines":                   { address: "950 Jordan Creek Parkway, Suite C",          phone: null },
+  "Overland Park":                     { address: "7840 W 161st St., Suite H-110",              phone: null },
+  "Des Peres":                         { address: "1066 North Ballas Rd.",                      phone: "(314) 627-1543" },
+};
+
 type SD = {
   name: string; city: string; state: string | null; country: string;
   region: string; status: string; openedAt: Date | null;
+  address?: string | null; phone?: string | null;
 };
 
 async function main() {
@@ -261,9 +415,12 @@ async function main() {
   ];
 
   const created = await Promise.all(
-    studioDefs.map(sd => db.studio.create({
-      data: { name: sd.name, city: sd.city, state: sd.state, country: sd.country, region: sd.region, status: sd.status, openedAt: sd.openedAt, franchiseeName: f() },
-    }))
+    studioDefs.map(sd => {
+      const contact = STUDIO_CONTACT[sd.name] ?? { address: null, phone: null };
+      return db.studio.create({
+        data: { name: sd.name, city: sd.city, state: sd.state, country: sd.country, region: sd.region, status: sd.status, openedAt: sd.openedAt, franchiseeName: f(), address: contact.address, phone: contact.phone },
+      });
+    })
   );
 
   const byName: Record<string, string> = {};

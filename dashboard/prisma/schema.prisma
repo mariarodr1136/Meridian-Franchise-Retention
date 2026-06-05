@@ -22,6 +22,8 @@ model Studio {
   status         String         @default("healthy")
   openedAt       DateTime?
   franchiseeName String
+  address        String?
+  phone          String?
   metrics        StudioMetric[]
   instructors    Instructor[]
   anomalies      Anomaly[]

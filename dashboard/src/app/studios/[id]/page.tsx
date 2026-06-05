@@ -119,9 +119,9 @@ export default async function StudioPage({
 
       <div className="max-w-[1200px] mx-auto px-6 py-8">
         {/* Studio title */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">{studio.name}</h1>
               <StatusBadge status={studio.status as StudioStatus} />
             </div>
@@ -131,14 +131,20 @@ export default async function StudioPage({
               {" · "}
               <span style={{ color: "#4A638D" }}>{studio.region}</span>
             </p>
-            <p className="text-xs mt-1" style={{ color: "#4A638D" }}>
+            <p className="text-xs" style={{ color: "#4A638D" }}>
               Franchisee: {studio.franchiseeName}
               {openedLabel && <> · Opened {openedLabel}</>}
             </p>
+            {studio.address && (
+              <p className="text-xs" style={{ color: "#6B7280" }}>{studio.address}</p>
+            )}
+            {studio.phone && (
+              <p className="text-xs" style={{ color: "#6B7280" }}>{studio.phone}</p>
+            )}
           </div>
 
           {/* Quick stats */}
-          <div className="flex items-center gap-4 text-right">
+          <div className="flex items-center gap-4 text-right mr-16">
             {expiredCount > 0 && (
               <div className="text-right">
                 <p className="text-lg font-bold text-red-600">{expiredCount}</p>
@@ -153,12 +159,6 @@ export default async function StudioPage({
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>Performance Index</p>
               </div>
             )}
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "#4A638D" }}>
-                <p className="text-lg font-bold text-white">{instructors.length}</p>
-              </div>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Staff</p>
-            </div>
           </div>
         </div>
 
