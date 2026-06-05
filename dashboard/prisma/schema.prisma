@@ -27,6 +27,8 @@ model Studio {
   metrics        StudioMetric[]
   instructors    Instructor[]
   anomalies      Anomaly[]
+  reviews        Review[]
+  classMetrics   ClassMetric[]
   createdAt      DateTime       @default(now())
 }
 
@@ -40,6 +42,9 @@ model StudioMetric {
   weeklyChurn           Float
   weeklyRevenue         Float
   presalesPipelineCount Int      @default(0)
+  memberBookings        Int      @default(0)
+  classPackBookings     Int      @default(0)
+  classPassBookings     Int      @default(0)
   createdAt             DateTime @default(now())
 }
 
@@ -53,6 +58,33 @@ model Instructor {
   lastEvalDate        DateTime?
   performanceScore    Float?
   createdAt           DateTime  @default(now())
+}
+
+model ClassMetric {
+  id                String   @id @default(cuid())
+  studioId          String
+  studio            Studio   @relation(fields: [studioId], references: [id])
+  dayOfWeek         Int
+  timeSlot          String
+  weekOf            DateTime
+  capacity          Int      @default(12)
+  spotsFilled       Int
+  memberBookings    Int
+  classPackBookings Int
+  classPassBookings Int
+  createdAt         DateTime @default(now())
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  studioId   String
+  studio     Studio   @relation(fields: [studioId], references: [id])
+  source     String
+  author     String
+  rating     Int
+  body       String
+  reviewDate DateTime
+  createdAt  DateTime @default(now())
 }
 
 model Anomaly {

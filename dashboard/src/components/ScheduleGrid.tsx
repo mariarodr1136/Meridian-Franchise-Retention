@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import type { ClassMetric } from "@/types";
 import type { ScheduleDay, ScheduleClass } from "@/lib/schedule";
@@ -65,9 +66,10 @@ interface Props {
   days: ScheduleDay[];
   classMetrics: ClassMetric[];
   scheduleHref: string;
+  analyticsHref?: string;
 }
 
-export function ScheduleGrid({ days, classMetrics, scheduleHref }: Props) {
+export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref }: Props) {
   const [selected, setSelected] = useState<{ cls: ScheduleClass; stats: ClassStats | null } | null>(null);
 
   // Pre-compute stats for all unique day+slot combos visible in schedule
@@ -102,11 +104,18 @@ export function ScheduleGrid({ days, classMetrics, scheduleHref }: Props) {
     <div className="rounded-xl border p-5 mb-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Weekly Schedule</h3>
-        <a href={scheduleHref} target="_blank" rel="noopener noreferrer"
-          className="text-xs font-medium transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>
-          Open full schedule →
-        </a>
+        {analyticsHref ? (
+          <Link href={analyticsHref} className="text-xs font-bold tracking-widest uppercase transition-opacity hover:opacity-70 cursor-pointer" style={{ color: "#4A638D" }}>
+            Weekly Schedule →
+          </Link>
+        ) : (
+          <h3 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Weekly Schedule</h3>
+        )}
+        {analyticsHref && (
+          <Link href={analyticsHref} className="text-xs font-semibold transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>
+            View full schedule & analytics
+          </Link>
+        )}
       </div>
 
       {/* 7-day grid */}

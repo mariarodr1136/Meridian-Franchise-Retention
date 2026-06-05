@@ -6,7 +6,7 @@ export interface ChurnMember {
   studioName: string;
   studioCity: string;
   studioStatus: string;
-  membershipTier: "basic" | "premium" | "unlimited";
+  membershipTier: "unlimited" | "12-class monthly" | "8-class monthly" | "4-class monthly";
   membershipAgeDays: number;
   daysSinceLastVisit: number;
   visitsLast30d: number;

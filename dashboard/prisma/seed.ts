@@ -15,51 +15,79 @@ function weeksAgo(n: number): Date {
   return d;
 }
 
+function bookingMix(members: number, type: "healthy" | "at-risk" | "new") {
+  const ratios = {
+    "healthy":  { member: 0.62, pack: 0.22, pass: 0.11 },
+    "at-risk":  { member: 0.42, pack: 0.20, pass: 0.32 },
+    "new":      { member: 0.52, pack: 0.26, pass: 0.16 },
+  }[type];
+  const jitter = () => Math.round((Math.random() - 0.5) * 8);
+  return {
+    memberBookings:    Math.max(1, Math.round(members * ratios.member) + jitter()),
+    classPackBookings: Math.max(1, Math.round(members * ratios.pack)   + jitter()),
+    classPassBookings: Math.max(1, Math.round(members * ratios.pass)   + jitter()),
+  };
+}
+
 function healthyMetrics(studioId: string, base: { fill: number; members: number; revenue: number }) {
-  return Array.from({ length: 8 }, (_, i) => ({
-    studioId,
-    weekOf: weeksAgo(i),
-    classFillRate:     Math.max(0.55, base.fill    + (Math.random() - 0.45) * 0.08),
-    activeMemberships: Math.max(80,   Math.round(base.members + (7 - i) * 4 + (Math.random() - 0.5) * 10)),
-    weeklyChurn:       Math.max(0.005, 0.018 + (Math.random() - 0.5) * 0.008),
-    weeklyRevenue:     Math.max(8000,  base.revenue + (7 - i) * 300 + (Math.random() - 0.5) * 800),
-    presalesPipelineCount: 0,
-  }));
+  return Array.from({ length: 26 }, (_, i) => {
+    const activeMemberships = Math.max(80, Math.round(base.members + (25 - i) * 2 + (Math.random() - 0.5) * 10));
+    return {
+      studioId,
+      weekOf: weeksAgo(i),
+      classFillRate:     Math.max(0.55, base.fill    + (Math.random() - 0.45) * 0.08),
+      activeMemberships,
+      weeklyChurn:       Math.max(0.005, 0.018 + (Math.random() - 0.5) * 0.008),
+      weeklyRevenue:     Math.max(8000,  base.revenue + (25 - i) * 120 + (Math.random() - 0.5) * 800),
+      presalesPipelineCount: 0,
+      ...bookingMix(activeMemberships, "healthy"),
+    };
+  });
 }
 
 function atRiskMetrics(studioId: string, base: { fill: number; members: number; revenue: number }) {
-  return Array.from({ length: 8 }, (_, i) => ({
-    studioId,
-    weekOf: weeksAgo(i),
-    classFillRate:     Math.max(0.30, base.fill    - i * 0.025 + (Math.random() - 0.5) * 0.04),
-    activeMemberships: Math.max(60,   Math.round(base.members - i * 8 + (Math.random() - 0.5) * 6)),
-    weeklyChurn:       Math.min(0.12,  0.065 + i * 0.004 + (Math.random() - 0.5) * 0.01),
-    weeklyRevenue:     Math.max(5000,  base.revenue - i * 500 + (Math.random() - 0.5) * 600),
-    presalesPipelineCount: 0,
-  }));
+  return Array.from({ length: 26 }, (_, i) => {
+    const decline = Math.min(i, 14); // plateau after 14 weeks so members don't go negative
+    const activeMemberships = Math.max(60, Math.round(base.members - decline * 4 + (Math.random() - 0.5) * 5));
+    return {
+      studioId,
+      weekOf: weeksAgo(i),
+      classFillRate:     Math.max(0.30, base.fill    - Math.min(i, 10) * 0.015 + (Math.random() - 0.5) * 0.03),
+      activeMemberships,
+      weeklyChurn:       Math.min(0.12,  0.065 + Math.min(i, 10) * 0.002 + (Math.random() - 0.5) * 0.01),
+      weeklyRevenue:     Math.max(5000,  base.revenue - Math.min(i, 14) * 250 + (Math.random() - 0.5) * 500),
+      presalesPipelineCount: 0,
+      ...bookingMix(activeMemberships, "at-risk"),
+    };
+  });
 }
 
 function newStudioMetrics(studioId: string, base: { fill: number; members: number; revenue: number }) {
-  return Array.from({ length: 8 }, (_, i) => ({
-    studioId,
-    weekOf: weeksAgo(i),
-    classFillRate:     Math.max(0.20, base.fill - (7 - i) * 0.04 + (Math.random() - 0.5) * 0.05),
-    activeMemberships: Math.max(20,   Math.round(base.members - (7 - i) * 12 + (Math.random() - 0.5) * 5)),
-    weeklyChurn:       Math.max(0.01,  0.032 - (7 - i) * 0.003 + (Math.random() - 0.5) * 0.006),
-    weeklyRevenue:     Math.max(2000,  base.revenue - (7 - i) * 700 + (Math.random() - 0.5) * 400),
-    presalesPipelineCount: 0,
-  }));
+  return Array.from({ length: 26 }, (_, i) => {
+    const ramp = (25 - i) / 25; // 1.0 at most recent, 0.0 at oldest
+    const activeMemberships = Math.max(20, Math.round(base.members * (0.25 + 0.75 * ramp) + (Math.random() - 0.5) * 5));
+    return {
+      studioId,
+      weekOf: weeksAgo(i),
+      classFillRate:     Math.max(0.15, base.fill * (0.25 + 0.75 * ramp) + (Math.random() - 0.5) * 0.04),
+      activeMemberships,
+      weeklyChurn:       Math.max(0.01,  0.038 - ramp * 0.012 + (Math.random() - 0.5) * 0.006),
+      weeklyRevenue:     Math.max(1500,  base.revenue * (0.25 + 0.75 * ramp) + (Math.random() - 0.5) * 400),
+      presalesPipelineCount: 0,
+      ...bookingMix(activeMemberships, "new"),
+    };
+  });
 }
 
 function preLaunchMetrics(studioId: string, presalesBase: number) {
-  return Array.from({ length: 8 }, (_, i) => ({
+  return Array.from({ length: 26 }, (_, i) => ({
     studioId,
     weekOf: weeksAgo(i),
     classFillRate: 0,
     activeMemberships: 0,
     weeklyChurn: 0,
     weeklyRevenue: 0,
-    presalesPipelineCount: Math.max(0, presalesBase - i * 8 + Math.round((Math.random() - 0.3) * 6)),
+    presalesPipelineCount: Math.max(0, Math.round(presalesBase * Math.max(0, 1 - i / 30) + Math.round((Math.random() - 0.3) * 6))),
   }));
 }
 
@@ -256,6 +284,8 @@ type SD = {
 
 async function main() {
   await db.anomaly.deleteMany();
+  await db.review.deleteMany();
+  await db.classMetric.deleteMany();
   await db.instructor.deleteMany();
   await db.studioMetric.deleteMany();
   await db.studio.deleteMany();
@@ -670,9 +700,203 @@ async function main() {
     ],
   });
 
+  // ── REVIEWS ───────────────────────────────────────────────────────────────
+
+  const FIVE_STAR: { author: string; body: string; source: string }[] = [
+    { author: "Sarah M.",    source: "google",    body: "Best Pilates studio I've been to. The instructors are world-class and genuinely invest in your progress. My posture, strength, and flexibility have all improved dramatically. Completely obsessed." },
+    { author: "Jessica L.",  source: "classpass", body: "I drive 30 minutes just to come here. The reformer classes are unlike anything else — intense, fun, and the community is incredible. Worth every single penny." },
+    { author: "Natalie R.",  source: "google",    body: "Completely transformed my fitness routine. Instructors know your name, remember your goals, and push you just enough. Six months in and I'm the strongest I've ever been." },
+    { author: "Amanda T.",   source: "classpass", body: "The energy in this studio is unmatched. Amazing instructors, great music, truly boutique experience. I've recommended JETSET to everyone I know — nobody has been disappointed." },
+    { author: "Lauren K.",   source: "google",    body: "If you're on the fence, just try one class. You'll be hooked. The workout is challenging in all the right ways and the instructors make everyone feel welcome regardless of fitness level." },
+    { author: "Priya N.",    source: "google",    body: "I was a skeptic — I thought Pilates was too slow-paced for me. After one class I was proven completely wrong. This is full-body strength training on a different level. I come 4x a week now." },
+    { author: "Diana C.",    source: "classpass", body: "Professional, welcoming, and seriously effective. My back pain is completely gone and my core has never been stronger. The instructors really know their craft." },
+    { author: "Michelle Y.", source: "google",    body: "Hands down the best group fitness experience I've had. Small class sizes mean actual attention to form, which has made a huge difference for me. Can't imagine going anywhere else." },
+    { author: "Taylor E.",   source: "classpass", body: "JETSET has ruined all other workouts for me. Nothing compares. The combination of Pilates fundamentals with real strength training is brilliant. Every instructor brings something different to the class." },
+    { author: "Camille B.",  source: "google",    body: "I've tried SoulCycle, Orangetheory, CrossFit — nothing has transformed my body like JETSET. The reformer is no joke. Within two months I had visible results I hadn't achieved in years." },
+    { author: "Rachel P.",   source: "classpass", body: "The studio itself is beautiful — clean, modern, and well-maintained. But it's really the instructors that make this place special. They remember your name from day one and genuinely care." },
+    { author: "Stephanie W.", source: "google",  body: "Incredible studio. The classes are always perfectly structured — tough enough to feel like you worked hard, but you leave feeling energized not destroyed. This is my happy place." },
+  ];
+
+  const FOUR_STAR: { author: string; body: string; source: string }[] = [
+    { author: "Olivia S.",   source: "google",    body: "Really great studio with knowledgeable instructors. My only wish is that there were more class times available in the evenings — they fill up so fast! Still absolutely worth booking in advance." },
+    { author: "Kate H.",     source: "classpass", body: "Fantastic workout and amazing instructors. Parking can be tricky depending on the time of day but once you're inside the studio is beautiful and the class is totally worth the hassle." },
+    { author: "Brooke M.",   source: "google",    body: "Love this studio. The classes are challenging in all the right ways. Gave 4 stars only because the booking app is clunky sometimes, but the actual in-studio experience is top notch." },
+    { author: "Lexi F.",     source: "classpass", body: "Great experience overall. Instructors are attentive and the reformers are high quality. A few instructor changes lately but the core team is still excellent. Will definitely keep coming." },
+    { author: "Morgan D.",   source: "google",    body: "Really solid studio. The reformer Pilates format works so well — challenging but low impact so my joints feel great. I come about 3x a week and have noticed a huge improvement in my overall fitness." },
+    { author: "Haley J.",    source: "classpass", body: "Super clean, professional, and the instructors clearly know their stuff. I'd give it 5 stars but the waitlist situation is real — you have to book days in advance for popular time slots." },
+  ];
+
+  const THREE_STAR: { author: string; body: string; source: string }[] = [
+    { author: "Christina B.", source: "google",   body: "Used to be my favorite studio but quality has slipped over the past few months. A lot of instructor turnover and some of the newer instructors aren't quite at the same level yet. Hoping it gets back to where it was." },
+    { author: "Allison T.",   source: "classpass", body: "Hit or miss depending on the instructor. When you get a great one it's a 5-star experience, but lately the consistency just isn't there. The concept is great — execution needs some work." },
+    { author: "Dana R.",      source: "google",   body: "The reformers are high quality and the workout is solid, but I've noticed the studio feels less personal lately. Classes seem more rushed and there's less attention to individual form corrections." },
+    { author: "Kira W.",      source: "classpass", body: "Average experience for the price point. Some instructors are excellent, others are just okay. The studio is clean and well-equipped but I expect more personalization at this price." },
+  ];
+
+  const TWO_STAR: { author: string; body: string; source: string }[] = [
+    { author: "Monica V.",   source: "google",    body: "Really disappointed in how things have gone recently. Loved this place when it first opened but there have been a lot of changes and it just doesn't feel the same. Instructor departures, half-full classes — something's off." },
+    { author: "Tara S.",     source: "classpass", body: "The late cancel policy is extremely punitive — $35 for canceling 10 hours before class due to an emergency. Workout is fine but the policies and the way customer service handled my complaint left a lot to be desired." },
+    { author: "Brittany L.", source: "google",    body: "I really wanted to love this place. The equipment is great and the concept is solid, but the management feel has really declined. Class sizes feel too big now and instructors are stretched thin." },
+  ];
+
+  const NEW_STUDIO: { author: string; body: string; source: string }[] = [
+    { author: "Grace A.",    source: "google",    body: "Just opened and already feels like a special place. The instructors are clearly passionate and so attentive. The studio is beautiful and the community is already forming. Can't wait to watch this place grow!" },
+    { author: "Isabella H.", source: "classpass", body: "So happy this studio opened nearby. Modern equipment, excellent instruction, and a genuinely welcoming vibe. The instructors take extra time with newer clients which I really appreciate." },
+    { author: "Sophie N.",   source: "google",    body: "Early adopter here and loving every single class. The instructors correct your form throughout and make sure you're getting the most out of the workout. Impressed with the quality for such a new studio." },
+    { author: "Zoe K.",      source: "classpass", body: "Tried it on a whim and now I'm fully committed. Great energy for a brand new studio — already feels like a real community. Instructors are top tier. So glad they came to this area." },
+    { author: "Ava R.",      source: "google",    body: "Brand new but already running like a well-oiled machine. Punctual classes, beautiful space, and instructors who genuinely care. Already booked my next two weeks of classes." },
+  ];
+
+  function daysAgo(n: number): Date {
+    const d = new Date("2026-06-01");
+    d.setDate(d.getDate() - n);
+    return d;
+  }
+
+  const reviewData: object[] = [];
+
+  studioDefs.filter(s => s.status !== "pre-launch").forEach((sd, studioIdx) => {
+    const id = byName[sd.name];
+    if (!id) return;
+
+    const o = studioIdx; // offset for picking different templates per studio
+    const isAtRisk = sd.status === "at-risk";
+    const isNew    = sd.status === "new";
+
+    if (isNew) {
+      const picks = [0, 1, 2, 3, (o % 2 === 0 ? 4 : 1)].slice(0, 4 + (o % 2));
+      picks.forEach((pi, i) => {
+        const t = NEW_STUDIO[pi % NEW_STUDIO.length];
+        reviewData.push({ studioId: id, source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(10 + i * 14 + (o % 7)) });
+      });
+      const four = FOUR_STAR[(o + 2) % FOUR_STAR.length];
+      // Always ensure ClassPass is present
+      reviewData.push({ studioId: id, source: "classpass", author: four.author, rating: 4, body: four.body, reviewDate: daysAgo(5 + (o % 8)) });
+
+    } else if (isAtRisk) {
+      const fivePick = FIVE_STAR[(o + 3) % FIVE_STAR.length];
+      reviewData.push({ studioId: id, source: "google", author: fivePick.author, rating: 5, body: fivePick.body, reviewDate: daysAgo(90 + (o % 30)) });
+      const fourPick = FOUR_STAR[(o + 1) % FOUR_STAR.length];
+      // Always ensure ClassPass is present
+      reviewData.push({ studioId: id, source: "classpass", author: fourPick.author, rating: 4, body: fourPick.body, reviewDate: daysAgo(60 + (o % 20)) });
+      const threeA = THREE_STAR[o % THREE_STAR.length];
+      reviewData.push({ studioId: id, source: threeA.source, author: threeA.author, rating: 3, body: threeA.body, reviewDate: daysAgo(30 + (o % 15)) });
+      const threeB = THREE_STAR[(o + 2) % THREE_STAR.length];
+      reviewData.push({ studioId: id, source: threeB.source, author: threeB.author, rating: 3, body: threeB.body, reviewDate: daysAgo(18 + (o % 10)) });
+      const twoA = TWO_STAR[o % TWO_STAR.length];
+      reviewData.push({ studioId: id, source: twoA.source, author: twoA.author, rating: 2, body: twoA.body, reviewDate: daysAgo(7 + (o % 6)) });
+      if (o % 2 === 0) {
+        const twoB = TWO_STAR[(o + 1) % TWO_STAR.length];
+        reviewData.push({ studioId: id, source: twoB.source, author: twoB.author, rating: 2, body: twoB.body, reviewDate: daysAgo(3 + (o % 4)) });
+      }
+
+    } else {
+      const fivePicks = [o % FIVE_STAR.length, (o + 2) % FIVE_STAR.length, (o + 5) % FIVE_STAR.length, (o + 8) % FIVE_STAR.length];
+      const dateBases = [45, 28, 16, 6];
+      fivePicks.forEach((pi, i) => {
+        const t = FIVE_STAR[pi];
+        reviewData.push({ studioId: id, source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(dateBases[i] + (o % 8)) });
+      });
+      const fourA = FOUR_STAR[(o + o) % FOUR_STAR.length];
+      reviewData.push({ studioId: id, source: "google", author: fourA.author, rating: 4, body: fourA.body, reviewDate: daysAgo(35 + (o % 12)) });
+      const fourB = FOUR_STAR[(o + 3) % FOUR_STAR.length];
+      // Always ensure ClassPass is present
+      reviewData.push({ studioId: id, source: "classpass", author: fourB.author, rating: 4, body: fourB.body, reviewDate: daysAgo(10 + (o % 9)) });
+      if (o % 3 === 0) {
+        const three = THREE_STAR[o % THREE_STAR.length];
+        reviewData.push({ studioId: id, source: three.source, author: three.author, rating: 3, body: three.body, reviewDate: daysAgo(55 + (o % 20)) });
+      }
+    }
+  });
+
+  await db.review.createMany({ data: reviewData as any });
+
+  // ── CLASS METRICS ─────────────────────────────────────────────────────────
+
+  // Representative time slots matching typical JetSet schedules
+  const SLOTS = [
+    { slot: "6:00am",  tf: 0.80, evening: false },
+    { slot: "7:00am",  tf: 0.92, evening: false },
+    { slot: "7:30am",  tf: 1.00, evening: false },
+    { slot: "8:00am",  tf: 0.98, evening: false },
+    { slot: "8:30am",  tf: 0.96, evening: false },
+    { slot: "9:00am",  tf: 0.93, evening: false },
+    { slot: "9:30am",  tf: 0.90, evening: false },
+    { slot: "10:00am", tf: 0.86, evening: false },
+    { slot: "10:30am", tf: 0.83, evening: false },
+    { slot: "11:00am", tf: 0.80, evening: false },
+    { slot: "11:30am", tf: 0.78, evening: false },
+    { slot: "12:00pm", tf: 0.75, evening: false },
+    { slot: "12:30pm", tf: 0.72, evening: false },
+    { slot: "4:00pm",  tf: 0.76, evening: true  },
+    { slot: "5:00pm",  tf: 0.90, evening: true  },
+    { slot: "5:30pm",  tf: 0.93, evening: true  },
+    { slot: "6:00pm",  tf: 0.97, evening: true  },
+    { slot: "6:30pm",  tf: 0.99, evening: true  },
+    { slot: "7:00pm",  tf: 0.91, evening: true  },
+    { slot: "8:00pm",  tf: 0.72, evening: true  },
+  ];
+
+  const classMetricData: object[] = [];
+
+  studioDefs.filter(s => s.status !== "pre-launch").forEach((sd, si) => {
+    const id = byName[sd.name];
+    if (!id) return;
+    const isAtRisk = sd.status === "at-risk";
+    const isNew    = sd.status === "new";
+    const baseFill = isAtRisk ? 0.50 : isNew ? 0.60 : 0.84;
+    const cap = 12;
+
+    for (let w = 0; w < 8; w++) {
+      // w=0 = most recent week; declining trend for at-risk, growing for new
+      const weekFactor =
+        isAtRisk ? 1.0 - (7 - w) * 0.04 :       // recent weeks lower
+        isNew    ? 0.65 + (7 - w) * 0.05 :        // recent weeks higher
+        1.0 + (si % 3 === 0 ? (w > 4 ? -0.05 : 0.02) : 0); // healthy: mild noise
+
+      for (let day = 0; day < 7; day++) {
+        for (const { slot, tf, evening } of SLOTS) {
+          // Skip some slots on weekends to make it realistic
+          if ((day === 0 || day === 6) && !["8:30am","9:30am","10:30am","11:30am","12:30pm","1:30pm","9:00am","10:00am"].includes(slot) && slot.includes("am") === false && slot.includes("6:00am")) continue;
+          if ((day === 0 || day === 6) && parseFloat(slot) < 8 && slot.includes("am")) continue;
+
+          const rawFill = Math.min(1, Math.max(0.05,
+            baseFill * tf * weekFactor * (0.88 + Math.random() * 0.24)
+          ));
+          // Inject interesting pattern: some studios have one dead slot
+          const deadSlot = ["8:00pm", "12:00pm", "4:00pm"][si % 3];
+          const fillRate = slot === deadSlot && (isAtRisk || si % 4 === 0)
+            ? rawFill * 0.40
+            : rawFill;
+
+          const spotsFilled = Math.max(0, Math.round(cap * fillRate));
+
+          // Booking mix: evening slots skew ClassPass; morning skew members
+          const memberRate  = evening ? 0.52 + (Math.random() - 0.5) * 0.10 : 0.68 + (Math.random() - 0.5) * 0.10;
+          const packRate    = 0.18 + (Math.random() - 0.5) * 0.06;
+          const passRate    = Math.max(0, 1 - memberRate - packRate);
+          const mB  = Math.round(spotsFilled * memberRate);
+          const pkB = Math.round(spotsFilled * packRate);
+          const cpB = Math.max(0, spotsFilled - mB - pkB);
+
+          classMetricData.push({
+            studioId: id, dayOfWeek: day, timeSlot: slot,
+            weekOf: weeksAgo(w), capacity: cap,
+            spotsFilled, memberBookings: mB, classPackBookings: pkB, classPassBookings: cpB,
+          });
+        }
+      }
+    }
+  });
+
+  // Batch insert to keep seed fast
+  for (let i = 0; i < classMetricData.length; i += 1000) {
+    await db.classMetric.createMany({ data: classMetricData.slice(i, i + 1000) as any });
+  }
+
   const open = studioDefs.filter(s => s.status !== "pre-launch").length;
   const pre  = studioDefs.filter(s => s.status === "pre-launch").length;
-  console.log(`✓ Seeded ${studioDefs.length} studios (${open} open · ${pre} pre-launch), ${allMetrics.length} weekly metrics, ${instrData.length} instructors, 11 anomalies`);
+  console.log(`✓ Seeded ${studioDefs.length} studios (${open} open · ${pre} pre-launch), ${allMetrics.length} weekly metrics, ${instrData.length} instructors, 11 anomalies, ${reviewData.length} reviews, ${classMetricData.length} class metrics`);
 }
 
 main()

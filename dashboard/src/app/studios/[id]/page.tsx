@@ -9,6 +9,10 @@ import { AnomalyFeed } from "@/components/AnomalyFeed";
 import { ScheduleGrid } from "@/components/ScheduleGrid";
 import { StudioNav } from "@/components/StudioNav";
 import { MetricsComparison } from "@/components/MetricsComparison";
+import { ReviewsScroll } from "@/components/ReviewsScroll";
+import { MetricCharts } from "@/components/MetricCharts";
+import { RetentionPreview } from "@/components/RetentionPreview";
+import { generateStudioChurn } from "@/lib/churn";
 import { fetchStudioSchedule, extractInstructors, scheduleUrl } from "@/lib/schedule";
 import { formatPercent, formatNumber, formatCurrency, trendDirection, trendLabel, cn } from "@/lib/utils";
 import type { StudioStatus, StudioMetric, Instructor, Anomaly, Review, ClassMetric, NavSection } from "@/types";
@@ -128,14 +132,27 @@ export default async function StudioPage({
     .filter((i) => i.performanceScore != null)
     .reduce((sum, i, _, arr) => sum + (i.performanceScore! / arr.length), 0);
 
+  // Generate retention data for open studios
+  const retentionData = !isPreLaunch && current
+    ? generateStudioChurn({
+        studioId:      studio.id,
+        studioName:    studio.name,
+        studioCity:    studio.city,
+        studioStatus:  studio.status,
+        memberCount:   current.activeMemberships,
+        weeklyChurnRate: current.weeklyChurn,
+      })
+    : null;
+
   const navSections: NavSection[] = [
-    { id: "overview",    label: "Overview" },
-    ...(metrics.length >= 2          ? [{ id: "period-comparison", label: "Period Comparison" }] : []),
-    ...(hasBooking                    ? [{ id: "booking",           label: "How Clients Book"  }] : []),
-    ...(schedule.length > 0           ? [{ id: "schedule",          label: "Weekly Schedule"   }] : []),
-    ...(reviews.length > 0            ? [{ id: "reviews",           label: "Recent Reviews"    }] : []),
-    { id: "staff",       label: "Staff Roster" },
-    ...(anomalies.length > 0          ? [{ id: "alerts",            label: "Active Alerts"     }] : []),
+    { id: "overview",        label: "Overview"          },
+    ...(hasBooking            ? [{ id: "booking",         label: "How Clients Book"  }] : []),
+    ...(metrics.length >= 2   ? [{ id: "period-comparison", label: "Period Comparison" }] : []),
+    ...(!isPreLaunch          ? [{ id: "retention",       label: "Retention AI"      }] : []),
+    ...(schedule.length > 0   ? [{ id: "schedule",        label: "Weekly Schedule"   }] : []),
+    ...(reviews.length > 0    ? [{ id: "reviews",         label: "Recent Reviews"    }] : []),
+    { id: "staff",            label: "Staff Roster"      },
+    ...(anomalies.length > 0  ? [{ id: "alerts",          label: "Active Alerts"     }] : []),
   ];
 
   return (
@@ -143,7 +160,7 @@ export default async function StudioPage({
       {/* Header */}
       <header className="sticky top-0 z-10 w-full" style={{ background: "#4A638D" }}>
         <div className="max-w-[1340px] mx-auto px-6 h-16 flex items-center justify-between">
-          <Image src="/jetset-logo-transparent.png" alt="JetSet Modern Pilates" width={150} height={80} priority className="object-contain" />
+          <Link href="/"><Image src="/jetset-logo-transparent.png" alt="JetSet Modern Pilates" width={150} height={80} priority className="object-contain transition-opacity hover:opacity-80" /></Link>
           <Link href="/" className="text-sm font-medium transition-opacity hover:opacity-70 text-white">← Network</Link>
         </div>
       </header>
@@ -181,7 +198,7 @@ export default async function StudioPage({
         </div>
 
         {/* Sidebar + content */}
-        <div className="flex gap-8 items-start">
+        <div className="flex gap-8">
           <StudioNav sections={navSections} />
 
           <div className="flex-1 min-w-0">
@@ -224,24 +241,10 @@ export default async function StudioPage({
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                      <TrendChart metrics={metrics} field="weeklyRevenue"      color="#C9A84C" label="Weekly Revenue (8 weeks)" />
-                    </div>
-                    <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                      <TrendChart metrics={metrics} field="activeMemberships"  color="#3b82f6" label="Active Memberships (8 weeks)" />
-                    </div>
-                  </div>
+                  <MetricCharts metrics={metrics} />
                 </>
               ) : null}
             </section>
-
-            {/* PERIOD COMPARISON */}
-            {metrics.length >= 2 && (
-              <section id="period-comparison" className="scroll-mt-24 mb-8">
-                <MetricsComparison metrics={metrics} />
-              </section>
-            )}
 
             {/* HOW CLIENTS BOOK */}
             {hasBooking && (() => {
@@ -277,65 +280,35 @@ export default async function StudioPage({
               );
             })()}
 
+            {/* PERIOD COMPARISON */}
+            {metrics.length >= 2 && (
+              <section id="period-comparison" className="scroll-mt-24 mb-8">
+                <MetricsComparison metrics={metrics} />
+              </section>
+            )}
+
+            {/* RETENTION AI */}
+            {retentionData && (
+              <section id="retention" className="scroll-mt-24 mb-8">
+                <RetentionPreview studioId={studio.id} summary={retentionData.summary} />
+              </section>
+            )}
+
             {/* WEEKLY SCHEDULE */}
             {schedule.length > 0 && (
               <section id="schedule" className="scroll-mt-24 mb-8">
-                <ScheduleGrid days={schedule} classMetrics={classMetrics} scheduleHref={scheduleUrl(studio.name, studio.state)} />
+                <ScheduleGrid days={schedule} classMetrics={classMetrics} scheduleHref={scheduleUrl(studio.name, studio.state)} analyticsHref={`/studios/${studio.id}/schedule`} />
               </section>
             )}
 
             {/* RECENT REVIEWS */}
-            {reviews.length > 0 && (() => {
-              const SOURCE_LABEL: Record<string, string> = { google: "Google", classpass: "ClassPass" };
-              const sources = ["google", "classpass"].filter((s) => reviews.some((r) => r.source === s));
-              const sourceStats = Object.fromEntries(sources.map((s) => {
-                const bucket = reviews.filter((r) => r.source === s);
-                const avg = bucket.reduce((sum, r) => sum + r.rating, 0) / bucket.length;
-                return [s, { avg, count: bucket.length }];
-              }));
-              return (
-                <section id="reviews" className="scroll-mt-24 mb-8">
-                  <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Recent Reviews</h3>
-                      <div className="flex items-center gap-4">
-                        {sources.map((s) => {
-                          const { avg, count } = sourceStats[s];
-                          const full = Math.round(avg);
-                          return (
-                            <div key={s} className="flex items-center gap-2">
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: "#4A638D" }}>{SOURCE_LABEL[s]}</span>
-                              <span className="text-sm font-bold" style={{ color: "#1F2937" }}>{avg.toFixed(1)}</span>
-                              <span style={{ color: "#C9A84C", fontSize: "13px" }}>{"★".repeat(full)}{"☆".repeat(5 - full)}</span>
-                              <span className="text-xs" style={{ color: "#9CA3AF" }}>({count})</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {reviews.map((r) => (
-                        <div key={r.id} className="rounded-lg p-4" style={{ background: "#F8FAFD", border: "1px solid #EEF3FB" }}>
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <p className="text-sm font-semibold" style={{ color: "#1F2937" }}>{r.author}</p>
-                              <p className="text-xs mt-0.5" style={{ color: "#C9A84C" }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</p>
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-xs px-1.5 py-0.5 rounded font-medium text-white" style={{ background: "#4A638D" }}>{SOURCE_LABEL[r.source]}</span>
-                              <span className="text-xs" style={{ color: "#9CA3AF" }}>
-                                {new Date(r.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-xs leading-relaxed" style={{ color: "#4B5563" }}>{r.body}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-              );
-            })()}
+            {reviews.length > 0 && (
+              <section id="reviews" className="scroll-mt-24 mb-8">
+                <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+                  <ReviewsScroll reviews={reviews} studioId={studio.id} studioName={studio.name} />
+                </div>
+              </section>
+            )}
 
             {/* STAFF ROSTER */}
             <section id="staff" className="scroll-mt-24 mb-8">

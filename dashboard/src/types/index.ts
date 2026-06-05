@@ -87,6 +87,22 @@ export interface StudioDetail extends Studio {
   reviews: Review[];
 }
 
+export interface SlotStat {
+  dayOfWeek: number;
+  timeSlot: string;
+  avgFillRate: number;
+  avgMemberPct: number;
+  avgPackPct: number;
+  avgPassPct: number;
+  weekCount: number;
+}
+
+export interface InstructorStat {
+  name: string;
+  classCount: number;
+  avgFillRate: number;
+}
+
 export interface NavSection {
   id: string;
   label: string;

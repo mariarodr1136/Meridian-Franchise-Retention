@@ -124,7 +124,7 @@ function MemberRow({ member, rank }: { member: ChurnMember; rank: number }) {
         style={{ borderColor: "var(--border)" }}
         onClick={() => setExpanded((e) => !e)}
       >
-        <td className="py-3 pr-4 text-xs" style={{ color: "var(--text-dim)" }}>{rank}</td>
+        <td className="py-3 px-4 text-xs text-center" style={{ color: "var(--text-dim)" }}>{rank}</td>
         <td className="py-3 pr-4">
           <p className="text-sm font-medium">{member.name}</p>
           <p className="text-xs mt-0.5 capitalize" style={{ color: "var(--text-muted)" }}>{member.membershipTier}</p>
@@ -378,7 +378,7 @@ export default function ChurnPage() {
                     <thead>
                       <tr className="border-b" style={{ borderColor: "var(--border)" }}>
                         {["#", "Member", "Risk", "Last Visit", "Visits (30d)", "Annual Value"].map((h) => (
-                          <th key={h} className="text-left px-4 py-3 text-xs font-medium" style={{ color: "var(--text-dim)" }}>
+                          <th key={h} className={`px-4 py-3 text-xs font-medium ${h === "#" ? "text-center" : "text-left"}`} style={{ color: "var(--text-dim)" }}>
                             {h}
                           </th>
                         ))}
