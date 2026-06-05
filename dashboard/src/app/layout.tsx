@@ -19,7 +19,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Franchise Intelligence | JETSET Pilates",
+  title: "JETSET Pilates | Franchise Intelligence",
   description: "Real-time franchise network monitoring for JETSET Pilates HQ",
 };
 
