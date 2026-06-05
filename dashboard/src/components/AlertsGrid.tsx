@@ -62,40 +62,40 @@ export function AlertsGrid({ anomalies }: Props) {
         return (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            style={{ background: "rgba(0,0,0,0.4)" }}
+            style={{ background: "rgba(0,0,0,0.35)" }}
             onClick={() => setSelected(null)}
           >
             <div
               className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl bg-white"
-              style={{ border: "1px solid #E5E7EB" }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="h-1 w-full" style={{ background: sc.dot }} />
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
-                    <span className="text-xs font-semibold tracking-wide uppercase px-2 py-0.5 rounded"
-                      style={{ background: sc.labelBg, color: sc.labelColor }}>
-                      {sc.label}
-                    </span>
-                    <span className="text-xs tracking-wide uppercase" style={{ color: "#9CA3AF" }}>
-                      {categoryLabel[selected.category] ?? selected.category}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="text-sm font-medium transition-opacity hover:opacity-60"
-                    style={{ color: "#6B7280" }}
-                  >
-                    ✕
-                  </button>
+              {/* Colored header */}
+              <div className="px-6 py-5 flex items-center justify-between" style={{ background: sc.labelBg, borderBottom: `1px solid ${sc.dot}22` }}>
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
+                  <span className="text-xs font-bold tracking-widest uppercase" style={{ color: sc.labelColor }}>
+                    {sc.label}
+                  </span>
+                  <span className="text-xs" style={{ color: sc.labelColor, opacity: 0.4 }}>·</span>
+                  <span className="text-xs tracking-wide uppercase font-medium" style={{ color: sc.labelColor, opacity: 0.65 }}>
+                    {categoryLabel[selected.category] ?? selected.category}
+                  </span>
                 </div>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 cursor-pointer"
+                  style={{ background: `${sc.dot}22`, color: sc.labelColor }}
+                >
+                  ✕
+                </button>
+              </div>
 
+              {/* Body */}
+              <div className="px-6 py-6">
                 {selected.studioName && (
-                  <p className="text-base font-bold mb-1" style={{ color: "#4A638D" }}>{selected.studioName}</p>
+                  <p className="text-base font-bold mb-1" style={{ color: "#1F2937" }}>{selected.studioName}</p>
                 )}
-                <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>{date}</p>
+                <p className="text-xs font-medium mb-4" style={{ color: "#9CA3AF" }}>{date}</p>
                 <p className="text-sm leading-relaxed" style={{ color: "#374151" }}>{selected.summary}</p>
               </div>
             </div>
