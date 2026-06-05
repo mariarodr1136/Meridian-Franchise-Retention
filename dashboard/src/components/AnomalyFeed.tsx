@@ -56,8 +56,16 @@ export function AnomalyFeed({ anomalies }: Props) {
             <button
               key={a.id}
               onClick={() => setSelected(a)}
-              className="rounded-xl border bg-white text-left transition-all hover:shadow-sm hover:border-gray-300 cursor-pointer w-full"
+              className="rounded-xl border bg-white text-left transition-all cursor-pointer w-full"
               style={{ borderColor: "#E5E7EB" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#4A638D";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,99,141,0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#E5E7EB";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
               <div className="p-3.5">
                 <div className="flex items-center justify-between mb-2">

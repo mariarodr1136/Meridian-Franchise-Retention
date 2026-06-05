@@ -106,10 +106,18 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
                 key={a.id}
                 onClick={() => setSelected(a)}
                 className={cn(
-                  "rounded-xl border text-left transition-all hover:shadow-sm hover:border-gray-300 cursor-pointer",
+                  "rounded-xl border text-left transition-all cursor-pointer",
                   tab === "resolved" && "opacity-60"
                 )}
                 style={{ background: "#fff", borderColor: "#E5E7EB" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "#4A638D";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 0 3px rgba(74,99,141,0.12)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "#E5E7EB";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                }}
               >
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">

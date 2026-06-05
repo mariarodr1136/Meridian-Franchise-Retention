@@ -49,7 +49,7 @@ export function StudioCard({ studio }: Props) {
           boxShadow: "0 1px 4px rgba(74,99,141,0.08)",
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(74,99,141,0.18)";
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(74,99,141,0.18), 0 0 0 3px rgba(74,99,141,0.18)";
           (e.currentTarget as HTMLDivElement).style.background = "#F0F5FB";
         }}
         onMouseLeave={(e) => {

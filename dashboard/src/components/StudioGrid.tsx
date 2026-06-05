@@ -87,6 +87,8 @@ export function StudioGrid({ studios }: Props) {
             onChange={(e) => setQuery(e.target.value)}
             className="w-full rounded-xl border pl-9 pr-4 py-2.5 text-sm outline-none transition-all"
             style={{ borderColor: "#C8D8EE", background: "#FFFFFF", color: "#1F2937" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#4A638D"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,99,141,0.10)"; }}
+            onMouseLeave={(e) => { if (document.activeElement !== e.currentTarget) { e.currentTarget.style.borderColor = "#C8D8EE"; e.currentTarget.style.boxShadow = "none"; } }}
             onFocus={(e) => { e.currentTarget.style.borderColor = "#4A638D"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,99,141,0.12)"; }}
             onBlur={(e)  => { e.currentTarget.style.borderColor = "#C8D8EE"; e.currentTarget.style.boxShadow = "none"; }}
           />
