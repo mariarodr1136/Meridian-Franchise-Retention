@@ -26,6 +26,9 @@ export interface StudioMetric {
   weeklyChurn: number;
   weeklyRevenue: number;
   presalesPipelineCount: number;
+  memberBookings: number;
+  classPackBookings: number;
+  classPassBookings: number;
 }
 
 export interface Instructor {
@@ -36,6 +39,29 @@ export interface Instructor {
   certificationStatus: CertificationStatus;
   lastEvalDate: string | null;
   performanceScore: number | null;
+}
+
+export interface ClassMetric {
+  id: string;
+  studioId: string;
+  dayOfWeek: number;
+  timeSlot: string;
+  weekOf: string;
+  capacity: number;
+  spotsFilled: number;
+  memberBookings: number;
+  classPackBookings: number;
+  classPassBookings: number;
+}
+
+export interface Review {
+  id: string;
+  studioId: string;
+  source: "google" | "classpass";
+  author: string;
+  rating: number;
+  body: string;
+  reviewDate: string;
 }
 
 export interface Anomaly {
@@ -58,6 +84,12 @@ export interface StudioDetail extends Studio {
   metrics: StudioMetric[];
   instructors: Instructor[];
   anomalies: Anomaly[];
+  reviews: Review[];
+}
+
+export interface NavSection {
+  id: string;
+  label: string;
 }
 
 export interface NetworkStats {
