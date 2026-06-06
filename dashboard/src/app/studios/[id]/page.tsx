@@ -4,28 +4,20 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TrendChart } from "@/components/TrendChart";
-import { StaffRoster } from "@/components/StaffRoster";
 import { AnomalyFeed } from "@/components/AnomalyFeed";
-import { ScheduleGrid } from "@/components/ScheduleGrid";
-import { StudioNav } from "@/components/StudioNav";
-import { MetricsComparison } from "@/components/MetricsComparison";
-import { ReviewsScroll } from "@/components/ReviewsScroll";
+import { StudioSidebar } from "@/components/StudioSidebar";
 import { MetricCharts } from "@/components/MetricCharts";
 import { RetentionPreview } from "@/components/RetentionPreview";
 import { generateStudioChurn } from "@/lib/churn";
-import { fetchStudioSchedule, extractInstructors, scheduleUrl } from "@/lib/schedule";
 import { formatPercent, formatNumber, formatCurrency, trendDirection, trendLabel, cn } from "@/lib/utils";
-import type { StudioStatus, StudioMetric, Instructor, Anomaly, Review, ClassMetric, NavSection } from "@/types";
+import type { StudioStatus, StudioMetric, Anomaly } from "@/types";
 
 async function getStudio(id: string) {
   return db.studio.findUnique({
     where: { id },
     include: {
-      metrics:      { orderBy: { weekOf: "desc" } },
-      instructors:  { orderBy: { name: "asc" } },
-      anomalies:    { where: { resolved: false }, orderBy: { generatedAt: "desc" } },
-      reviews:      { orderBy: { reviewDate: "desc" }, take: 6 },
-      classMetrics: true,
+      metrics:   { orderBy: { weekOf: "desc" } },
+      anomalies: { where: { resolved: false }, orderBy: { generatedAt: "desc" } },
     },
   });
 }
@@ -39,13 +31,8 @@ export default async function StudioPage({
   const studio = await getStudio(id);
   if (!studio) notFound();
 
-  const schedule = studio.status !== "pre-launch"
-    ? await fetchStudioSchedule(studio.name, studio.state)
-    : [];
-
   const metrics: StudioMetric[] = studio.metrics.map((m) => ({
-    id: m.id,
-    studioId: m.studioId,
+    id: m.id, studioId: m.studioId,
     weekOf: m.weekOf.toISOString(),
     classFillRate: m.classFillRate,
     activeMemberships: m.activeMemberships,
@@ -57,59 +44,8 @@ export default async function StudioPage({
     classPassBookings: m.classPassBookings,
   }));
 
-  const seededStaff: Instructor[] = studio.instructors.map((i) => ({
-    id: i.id,
-    studioId: i.studioId,
-    name: i.name,
-    role: (i.role ?? "instructor") as "director_of_operations" | "general_manager" | "studio_lead" | "instructor",
-    certificationStatus: i.certificationStatus as "certified" | "pending" | "expired",
-    lastEvalDate: i.lastEvalDate?.toISOString() ?? null,
-    performanceScore: i.performanceScore,
-  }));
-
-  const realInstructorNames = extractInstructors(schedule);
-  const realInstructors: Instructor[] = realInstructorNames.map((name, idx) => ({
-    id: `sched-${idx}`,
-    studioId: studio.id,
-    name,
-    role: "instructor",
-    certificationStatus: "certified",
-    lastEvalDate: null,
-    performanceScore: null,
-  }));
-
-  const instructors: Instructor[] = [
-    ...seededStaff.filter((i) => i.role !== "instructor"),
-    ...(realInstructors.length > 0 ? realInstructors : seededStaff.filter((i) => i.role === "instructor")),
-  ];
-
-  const reviews: Review[] = studio.reviews.map((r) => ({
-    id: r.id,
-    studioId: r.studioId,
-    source: r.source as "google" | "classpass",
-    author: r.author,
-    rating: r.rating,
-    body: r.body,
-    reviewDate: r.reviewDate.toISOString(),
-  }));
-
-  const classMetrics: ClassMetric[] = studio.classMetrics.map((m) => ({
-    id: m.id,
-    studioId: m.studioId,
-    dayOfWeek: m.dayOfWeek,
-    timeSlot: m.timeSlot,
-    weekOf: m.weekOf.toISOString(),
-    capacity: m.capacity,
-    spotsFilled: m.spotsFilled,
-    memberBookings: m.memberBookings,
-    classPackBookings: m.classPackBookings,
-    classPassBookings: m.classPassBookings,
-  }));
-
   const anomalies: Anomaly[] = studio.anomalies.map((a) => ({
-    id: a.id,
-    studioId: a.studioId,
-    studioName: null,
+    id: a.id, studioId: a.studioId, studioName: null,
     generatedAt: a.generatedAt.toISOString(),
     summary: a.summary,
     severity: a.severity as "high" | "medium" | "low",
@@ -117,43 +53,35 @@ export default async function StudioPage({
     resolved: a.resolved,
   }));
 
-  const current = metrics[0];
-  const prev    = metrics[1];
+  const current     = metrics[0];
+  const prev        = metrics[1];
   const isPreLaunch = studio.status === "pre-launch";
-
-  const hasBooking = !isPreLaunch && !!current &&
-    (current.memberBookings + current.classPackBookings + current.classPassBookings) > 0;
 
   const openedLabel = studio.openedAt
     ? new Date(studio.openedAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : null;
 
-  const avgScore = instructors
-    .filter((i) => i.performanceScore != null)
-    .reduce((sum, i, _, arr) => sum + (i.performanceScore! / arr.length), 0);
-
-  // Generate retention data for open studios
   const retentionData = !isPreLaunch && current
     ? generateStudioChurn({
-        studioId:      studio.id,
-        studioName:    studio.name,
-        studioCity:    studio.city,
-        studioStatus:  studio.status,
-        memberCount:   current.activeMemberships,
+        studioId:        studio.id,
+        studioName:      studio.name,
+        studioCity:      studio.city,
+        studioStatus:    studio.status,
+        memberCount:     current.activeMemberships,
         weeklyChurnRate: current.weeklyChurn,
       })
     : null;
 
-  const navSections: NavSection[] = [
-    { id: "overview",        label: "Overview"          },
-    ...(hasBooking            ? [{ id: "booking",         label: "How Clients Book"  }] : []),
-    ...(metrics.length >= 2   ? [{ id: "period-comparison", label: "Period Comparison" }] : []),
-    ...(!isPreLaunch          ? [{ id: "retention",       label: "Retention AI"      }] : []),
-    ...(schedule.length > 0   ? [{ id: "schedule",        label: "Weekly Schedule"   }] : []),
-    ...(reviews.length > 0    ? [{ id: "reviews",         label: "Recent Reviews"    }] : []),
-    { id: "staff",            label: "Staff Roster"      },
-    ...(anomalies.length > 0  ? [{ id: "alerts",          label: "Active Alerts"     }] : []),
-  ];
+  // Sub-page navigation cards
+  const subPages = isPreLaunch
+    ? []
+    : [
+        { href: `/studios/${studio.id}/classes`,    label: "Classes",    desc: "Schedule, booking mix, slot performance, reviews by instructor" },
+        { href: `/studios/${studio.id}/sales`,      label: "Sales",      desc: "Revenue by product, monthly & category trends"                 },
+        { href: `/studios/${studio.id}/operations`, label: "Operations", desc: "Lease, alarm, HVAC, technician, internet"                      },
+        { href: `/studios/${studio.id}/inventory`,  label: "Inventory",  desc: "End-of-month stock levels, reorder alerts"                     },
+        { href: `/studios/${studio.id}/settings`,   label: "Settings",   desc: "Edit studio info, staff roster, certification status"          },
+      ];
 
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
@@ -166,7 +94,7 @@ export default async function StudioPage({
       </header>
 
       <div className="max-w-[1340px] mx-auto px-6 py-8">
-        {/* Studio title — full width above the layout */}
+        {/* Studio title */}
         <div className="flex items-start justify-between mb-8 pb-6" style={{ borderBottom: "1px solid #C8D8EE" }}>
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-3">
@@ -176,8 +104,7 @@ export default async function StudioPage({
             <p className="text-sm" style={{ color: "#6B7280" }}>
               {studio.city}{studio.state ? `, ${studio.state}` : ""}
               {studio.country !== "US" ? ` · ${studio.country}` : ""}
-              {" · "}
-              <span style={{ color: "#4A638D" }}>{studio.region}</span>
+              {" · "}<span style={{ color: "#4A638D" }}>{studio.region}</span>
             </p>
             <p className="text-xs" style={{ color: "#4A638D" }}>
               Franchisee: {studio.franchiseeName}
@@ -186,144 +113,90 @@ export default async function StudioPage({
             {studio.address && <p className="text-xs" style={{ color: "#6B7280" }}>{studio.address}</p>}
             {studio.phone   && <p className="text-xs" style={{ color: "#6B7280" }}>{studio.phone}</p>}
           </div>
-
-          {avgScore > 0 && (
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "#4A638D" }}>
-                <p className="text-lg font-bold text-white">{avgScore.toFixed(0)}</p>
-              </div>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>Performance Index</p>
-            </div>
-          )}
         </div>
 
         {/* Sidebar + content */}
         <div className="flex gap-8">
-          <StudioNav sections={navSections} />
+          <StudioSidebar studioId={studio.id} />
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col gap-6">
 
-            {/* OVERVIEW */}
-            <section id="overview" className="scroll-mt-24 mb-8">
-              {isPreLaunch ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl border p-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                    <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>Presales Pipeline</p>
-                    <p className="text-4xl font-bold" style={{ color: "var(--gold)" }}>{current?.presalesPipelineCount ?? 0}</p>
-                    <p className="text-xs mt-1" style={{ color: "#4A638D" }}>total leads captured</p>
-                  </div>
-                  <div className="rounded-xl border p-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                    <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>Presales Trend</p>
-                    <TrendChart metrics={metrics} field="presalesPipelineCount" color="#C9A84C" label="" />
-                  </div>
+            {/* KPI CARDS */}
+            {isPreLaunch ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-xl border p-6" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+                  <p className="text-xs mb-2" style={{ color: "#9CA3AF" }}>Presales Pipeline</p>
+                  <p className="text-4xl font-bold" style={{ color: "#C9A84C" }}>{current?.presalesPipelineCount ?? 0}</p>
+                  <p className="text-xs mt-1" style={{ color: "#4A638D" }}>total leads captured</p>
                 </div>
-              ) : current ? (
-                <>
-                  <div className="grid grid-cols-4 gap-4 mb-6">
-                    {[
-                      { label: "Class Occupancy", value: formatPercent(current.classFillRate),    trend: trendDirection(current.classFillRate,    prev?.classFillRate    ?? current.classFillRate),    trendStr: prev ? trendLabel(current.classFillRate,    prev.classFillRate)    : undefined },
-                      { label: "Active Members",  value: formatNumber(current.activeMemberships), trend: trendDirection(current.activeMemberships, prev?.activeMemberships ?? current.activeMemberships), trendStr: prev ? trendLabel(current.activeMemberships, prev.activeMemberships) : undefined },
-                      { label: "Weekly Revenue",  value: formatCurrency(current.weeklyRevenue),   trend: trendDirection(current.weeklyRevenue,    prev?.weeklyRevenue    ?? current.weeklyRevenue),    trendStr: prev ? trendLabel(current.weeklyRevenue,    prev.weeklyRevenue)    : undefined },
-                      { label: "Weekly Churn",    value: formatPercent(current.weeklyChurn),      trend: trendDirection(current.weeklyChurn,      prev?.weeklyChurn      ?? current.weeklyChurn),      trendStr: prev ? trendLabel(current.weeklyChurn,      prev.weeklyChurn)      : undefined, reverse: true },
-                    ].map(({ label, value, trend, trendStr, reverse }) => (
-                      <div key={label} className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                        <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{label}</p>
-                        <p className="text-2xl font-bold">{value}</p>
-                        {trendStr && (
-                          <p className={cn("text-xs mt-1.5 font-medium",
-                            trend === "flat" ? "text-neutral-400" :
-                            (trend === "up" && !reverse) || (trend === "down" && reverse) ? "text-green-600" : "text-orange-500"
-                          )}>
-                            {trendStr} WoW
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <MetricCharts metrics={metrics} />
-                </>
-              ) : null}
-            </section>
-
-            {/* HOW CLIENTS BOOK */}
-            {hasBooking && (() => {
-              const total = current!.memberBookings + current!.classPackBookings + current!.classPassBookings;
-              const segments = [
-                { label: "Members",     value: current!.memberBookings,    color: "#4A638D", pct: current!.memberBookings    / total },
-                { label: "Class Packs", value: current!.classPackBookings, color: "#C9A84C", pct: current!.classPackBookings / total },
-                { label: "ClassPass",   value: current!.classPassBookings, color: "#9CA3AF", pct: current!.classPassBookings / total },
-              ];
-              return (
-                <section id="booking" className="scroll-mt-24 mb-8">
-                  <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                    <h3 className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "#4A638D" }}>How Clients Book</h3>
-                    <div className="flex h-6 rounded-full overflow-hidden mb-4 gap-0.5">
-                      {segments.map((s) => (
-                        <div key={s.label} style={{ width: `${s.pct * 100}%`, background: s.color }} title={`${s.label}: ${s.value}`} />
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      {segments.map((s) => (
-                        <div key={s.label} className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                            <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{s.label}</span>
-                          </div>
-                          <p className="text-xl font-bold pl-4">{s.value.toLocaleString()}</p>
-                          <p className="text-xs pl-4" style={{ color: "#4A638D" }}>{Math.round(s.pct * 100)}% of bookings</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-              );
-            })()}
-
-            {/* PERIOD COMPARISON */}
-            {metrics.length >= 2 && (
-              <section id="period-comparison" className="scroll-mt-24 mb-8">
-                <MetricsComparison metrics={metrics} />
-              </section>
-            )}
-
-            {/* RETENTION AI */}
-            {retentionData && (
-              <section id="retention" className="scroll-mt-24 mb-8">
-                <RetentionPreview studioId={studio.id} summary={retentionData.summary} />
-              </section>
-            )}
-
-            {/* WEEKLY SCHEDULE */}
-            {schedule.length > 0 && (
-              <section id="schedule" className="scroll-mt-24 mb-8">
-                <ScheduleGrid days={schedule} classMetrics={classMetrics} scheduleHref={scheduleUrl(studio.name, studio.state)} analyticsHref={`/studios/${studio.id}/schedule`} />
-              </section>
-            )}
-
-            {/* RECENT REVIEWS */}
-            {reviews.length > 0 && (
-              <section id="reviews" className="scroll-mt-24 mb-8">
-                <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                  <ReviewsScroll reviews={reviews} studioId={studio.id} studioName={studio.name} />
+                <div className="rounded-xl border p-6" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+                  <p className="text-xs mb-3" style={{ color: "#9CA3AF" }}>Presales Trend</p>
+                  <TrendChart metrics={metrics} field="presalesPipelineCount" color="#C9A84C" label="" />
                 </div>
-              </section>
-            )}
-
-            {/* STAFF ROSTER */}
-            <section id="staff" className="scroll-mt-24 mb-8">
-              <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                <h3 className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "#4A638D" }}>Staff Roster</h3>
-                <StaffRoster staff={instructors} />
               </div>
-            </section>
+            ) : current ? (
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { label: "Class Occupancy", value: formatPercent(current.classFillRate),    trend: trendDirection(current.classFillRate,    prev?.classFillRate    ?? current.classFillRate),    trendStr: prev ? trendLabel(current.classFillRate,    prev.classFillRate)    : undefined },
+                  { label: "Active Members",  value: formatNumber(current.activeMemberships), trend: trendDirection(current.activeMemberships, prev?.activeMemberships ?? current.activeMemberships), trendStr: prev ? trendLabel(current.activeMemberships, prev.activeMemberships) : undefined },
+                  { label: "Weekly Revenue",  value: formatCurrency(current.weeklyRevenue),   trend: trendDirection(current.weeklyRevenue,    prev?.weeklyRevenue    ?? current.weeklyRevenue),    trendStr: prev ? trendLabel(current.weeklyRevenue,    prev.weeklyRevenue)    : undefined },
+                  { label: "Weekly Churn",    value: formatPercent(current.weeklyChurn),      trend: trendDirection(current.weeklyChurn,      prev?.weeklyChurn      ?? current.weeklyChurn),      trendStr: prev ? trendLabel(current.weeklyChurn,      prev.weeklyChurn)      : undefined, reverse: true },
+                ].map(({ label, value, trend, trendStr, reverse }) => (
+                  <div key={label} className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+                    <p className="text-xs mb-2" style={{ color: "#9CA3AF" }}>{label}</p>
+                    <p className="text-2xl font-bold">{value}</p>
+                    {trendStr && (
+                      <p className={cn("text-xs mt-1.5 font-medium",
+                        trend === "flat" ? "text-neutral-400" :
+                        (trend === "up" && !reverse) || (trend === "down" && reverse) ? "text-green-600" : "text-orange-500"
+                      )}>
+                        {trendStr} WoW
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {/* TREND CHARTS */}
+            {!isPreLaunch && metrics.length > 0 && (
+              <MetricCharts metrics={metrics} />
+            )}
+
+            {/* RETENTION PREVIEW */}
+            {retentionData && (
+              <RetentionPreview studioId={studio.id} summary={retentionData.summary} />
+            )}
 
             {/* ACTIVE ALERTS */}
             {anomalies.length > 0 && (
-              <section id="alerts" className="scroll-mt-24 mb-8">
-                <h3 className="text-xs font-bold tracking-widest uppercase mb-4" style={{ color: "#4A638D" }}>Active Alerts</h3>
+              <div>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#4A638D" }}>Active Alerts</p>
                 <AnomalyFeed anomalies={anomalies} />
-              </section>
+              </div>
+            )}
+
+            {/* SUB-PAGE NAV CARDS */}
+            {subPages.length > 0 && (
+              <div>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#9CA3AF" }}>Studio Sections</p>
+                <div className="grid grid-cols-1 gap-3">
+                  {subPages.map(({ href, label, desc }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="rounded-xl border px-5 py-4 flex items-center justify-between group transition-all hover:shadow-sm"
+                      style={{ background: "#fff", borderColor: "#C8D8EE" }}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: "#1F2937" }}>{label}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{desc}</p>
+                      </div>
+                      <span className="text-sm transition-transform group-hover:translate-x-0.5" style={{ color: "#C8D8EE" }}>→</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             )}
 
           </div>

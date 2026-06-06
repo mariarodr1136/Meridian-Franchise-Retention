@@ -33,11 +33,11 @@ export async function GET(
     status: studio.status,
     openedAt: studio.openedAt?.toISOString() ?? null,
     franchiseeName: studio.franchiseeName,
+    address: studio.address,
+    phone: studio.phone,
+    email: studio.email,
     latestMetric: studio.metrics[0]
-      ? {
-          ...studio.metrics[0],
-          weekOf: studio.metrics[0].weekOf.toISOString(),
-        }
+      ? { ...studio.metrics[0], weekOf: studio.metrics[0].weekOf.toISOString() }
       : null,
     metrics: studio.metrics.map((m) => ({ ...m, weekOf: m.weekOf.toISOString() })),
     instructors: studio.instructors.map((i) => ({
@@ -49,4 +49,21 @@ export async function GET(
       generatedAt: a.generatedAt.toISOString(),
     })),
   });
+}
+
+export async function PUT(
+  req: NextRequest,
+  ctx: RouteContext<"/api/studios/[id]">
+) {
+  const { id } = await ctx.params;
+  const body = await req.json() as Record<string, unknown>;
+
+  const allowed = ["name", "address", "phone", "email", "franchiseeName", "status"] as const;
+  const data: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (key in body) data[key] = body[key];
+  }
+
+  const updated = await db.studio.update({ where: { id }, data });
+  return Response.json({ id: updated.id, name: updated.name });
 }

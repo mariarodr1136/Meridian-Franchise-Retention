@@ -5,9 +5,10 @@ import type { NavSection } from "@/types";
 
 interface Props {
   sections: NavSection[];
+  label?: string;
 }
 
-export function StudioNav({ sections }: Props) {
+export function StudioNav({ sections, label = "On this page" }: Props) {
   const [active, setActive] = useState(sections[0]?.id ?? "");
 
   useEffect(() => {
@@ -31,15 +32,15 @@ export function StudioNav({ sections }: Props) {
   }
 
   return (
-    <div className="w-56 flex-shrink-0">
+    <div>
       <div
-        className="sticky top-24 rounded-2xl overflow-hidden"
+        className="rounded-2xl overflow-hidden"
         style={{ border: "1px solid #C8D8EE", background: "#fff", boxShadow: "0 1px 4px rgba(74,99,141,0.07)" }}
       >
         {/* Header */}
         <div className="px-5 py-4" style={{ borderBottom: "1px solid #EEF3FB" }}>
           <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#9CA3AF" }}>
-            On this page
+            {label}
           </p>
         </div>
 

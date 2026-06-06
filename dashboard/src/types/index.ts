@@ -15,6 +15,7 @@ export interface Studio {
   franchiseeName: string;
   address: string | null;
   phone: string | null;
+  email?: string | null;
 }
 
 export interface StudioMetric {
@@ -117,4 +118,49 @@ export interface NetworkStats {
   networkOccupancy: number;
   totalWeeklyRevenue: number;
   unresolvedAnomalies: number;
+}
+
+export interface StudioOperations {
+  id: string;
+  studioId: string;
+  leaseExpiresAt: string | null;
+  landlordName: string | null;
+  landlordPhone: string | null;
+  landlordEmail: string | null;
+  alarmCompany: string | null;
+  alarmCode: string | null;
+  alarmPhone: string | null;
+  hvacCompany: string | null;
+  hvacPhone: string | null;
+  hvacContractExpiresAt: string | null;
+  electricianName: string | null;
+  electricianPhone: string | null;
+  internetProvider: string | null;
+  wifiPassword: string | null;
+  notes: string | null;
+  updatedAt: string;
+}
+
+export interface SalesRecord {
+  id: string;
+  studioId: string;
+  month: string;
+  category: string;
+  product: string;
+  unitsSold: number;
+  revenue: number;
+}
+
+export interface InventoryItem {
+  id: string;
+  studioId: string;
+  month: string;
+  name: string;
+  category: string;
+  openingQty: number;
+  receivedQty: number;
+  usedQty: number;
+  closingQty: number;
+  reorderPoint: number;
+  updatedAt: string;
 }

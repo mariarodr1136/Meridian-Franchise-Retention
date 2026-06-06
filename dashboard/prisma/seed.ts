@@ -894,9 +894,182 @@ async function main() {
     await db.classMetric.createMany({ data: classMetricData.slice(i, i + 1000) as any });
   }
 
+  // ── STUDIO OPERATIONS ─────────────────────────────────────────────────────
+
+  function futureDate(yearsMin: number, yearsMax: number): Date {
+    const d = new Date("2026-06-01");
+    const months = Math.round((yearsMin + Math.random() * (yearsMax - yearsMin)) * 12);
+    d.setMonth(d.getMonth() + months);
+    return d;
+  }
+
+  const ALARM_COS  = ["ADT Security", "Alarm.com", "Brinks Home", "Vivint Smart Home", "SimpliSafe"];
+  const HVAC_COS   = ["Comfort Systems USA", "ARS Rescue Rooter", "One Hour Heating & AC", "ServiceMaster", "Lennox Service"];
+  const ELECTRIC   = ["Mister Sparky", "Benjamin Franklin Plumbing", "Precision Electric", "Bright Electric", "PowerTech Services"];
+  const ISPs       = ["Comcast Business", "AT&T Business", "Cox Business", "Spectrum Business", "Verizon Business"];
+  const LANDLORDS  = [
+    { name: "Regency Centers Corp", phone: "(904) 598-7000", email: "leasing@regencycenters.com" },
+    { name: "Brookfield Properties", phone: "(212) 417-7000", email: "leasing@brookfield.com" },
+    { name: "Kimco Realty", phone: "(516) 869-9000", email: "leasing@kimcorealty.com" },
+    { name: "Equity One Realty", phone: "(305) 947-1664", email: "leasing@equityone.com" },
+    { name: "Weingarten Realty", phone: "(713) 866-6000", email: "leasing@weingarten.com" },
+    { name: "Federal Realty", phone: "(301) 998-8100", email: "leasing@federalrealty.com" },
+    { name: "Inland Retail Properties", phone: "(630) 218-8000", email: "leasing@inland.com" },
+    { name: "Simon Property Group", phone: "(317) 636-1600", email: "leasing@simon.com" },
+    { name: "GGP Inc.", phone: "(312) 960-5000", email: "leasing@ggp.com" },
+    { name: "Macerich Company", phone: "(310) 394-6000", email: "leasing@macerich.com" },
+  ];
+
+  const operationsData: object[] = [];
+  const openStudios = studioDefs.filter(s => s.status !== "pre-launch");
+  openStudios.forEach((sd, i) => {
+    const id = byName[sd.name];
+    if (!id) return;
+    const ll = LANDLORDS[i % LANDLORDS.length];
+    const alarm = ALARM_COS[i % ALARM_COS.length];
+    const hvac  = HVAC_COS[i % HVAC_COS.length];
+    const elec  = ELECTRIC[i % ELECTRIC.length];
+    const isp   = ISPs[i % ISPs.length];
+    const wifiChars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const wifiPwd = Array.from({ length: 12 }, (_, k) => wifiChars[(i * 7 + k * 3) % wifiChars.length]).join("");
+    const alarmArea = Math.floor(1000 + (i * 137) % 9000);
+    const alarmCode = `${alarmArea}`;
+    const alarmPhone = `(${800 + (i % 10)}) ${200 + (i % 800)}-${1000 + (i % 9000)}`;
+    const hvacPhone  = `(${305 + (i % 5) * 100}) ${400 + (i % 600)}-${2000 + (i % 8000)}`;
+    const elecPhone  = `(${786 + (i % 3) * 50}) ${300 + (i % 700)}-${3000 + (i % 7000)}`;
+
+    operationsData.push({
+      studioId:              id,
+      leaseExpiresAt:        futureDate(0.5, 6),
+      landlordName:          ll.name,
+      landlordPhone:         ll.phone,
+      landlordEmail:         ll.email,
+      alarmCompany:          alarm,
+      alarmCode,
+      alarmPhone,
+      hvacCompany:           hvac,
+      hvacPhone,
+      hvacContractExpiresAt: futureDate(0.25, 2),
+      electricianName:       elec,
+      electricianPhone:      elecPhone,
+      internetProvider:      isp,
+      wifiPassword:          `JetSet${wifiPwd}!`,
+      notes: i % 5 === 0 ? "After-hours key in lockbox by rear door. Code matches alarm." : null,
+    });
+  });
+
+  await db.studioOperations.createMany({ data: operationsData as any });
+
+  // ── SALES RECORDS ─────────────────────────────────────────────────────────
+
+  function monthStart(monthsBack: number): Date {
+    const d = new Date("2026-06-01");
+    d.setDate(1);
+    d.setMonth(d.getMonth() - monthsBack);
+    return d;
+  }
+
+  type ProductDef = { product: string; category: string; unitPrice: number };
+  const PRODUCTS: ProductDef[] = [
+    { product: "Grip Socks – Small",  category: "retail",      unitPrice: 20 },
+    { product: "Grip Socks – Medium", category: "retail",      unitPrice: 20 },
+    { product: "Grip Socks – Large",  category: "retail",      unitPrice: 20 },
+    { product: "Water Bottle",        category: "retail",      unitPrice: 35 },
+    { product: "Resistance Band",     category: "retail",      unitPrice: 25 },
+    { product: "Gift Card $25",       category: "gift_cards",  unitPrice: 25 },
+    { product: "Gift Card $50",       category: "gift_cards",  unitPrice: 50 },
+    { product: "Gift Card $100",      category: "gift_cards",  unitPrice: 100 },
+  ];
+
+  const salesData: object[] = [];
+  const metricsByStudio = new Map<string, typeof metricDefs[0]>();
+  metricDefs.forEach(m => metricsByStudio.set(byName[m.name] ?? "", m));
+
+  openStudios.forEach((sd) => {
+    const id = byName[sd.name];
+    if (!id) return;
+    const mDef = metricsByStudio.get(id);
+    const healthMultiplier = mDef?.type === "healthy" ? 1.0 : mDef?.type === "new" ? 0.55 : 0.40;
+
+    for (let mo = 0; mo < 12; mo++) {
+      const month = monthStart(mo);
+      const seasonFactor = [1.05, 1.03, 1.10, 1.08, 1.06, 0.92, 0.85, 0.88, 1.02, 1.08, 1.12, 1.15][month.getMonth()];
+
+      PRODUCTS.forEach((p, pi) => {
+        const baseUnits = p.category === "retail"
+          ? Math.round((40 + pi * 3) * healthMultiplier * seasonFactor)
+          : Math.round((8 + pi * 2) * healthMultiplier * seasonFactor);
+        const jitter = () => Math.round((Math.random() - 0.5) * baseUnits * 0.3);
+        const units = Math.max(0, baseUnits + jitter());
+        salesData.push({
+          studioId: id,
+          month,
+          category: p.category,
+          product: p.product,
+          unitsSold: units,
+          revenue: units * p.unitPrice,
+        });
+      });
+    }
+  });
+
+  await db.salesRecord.createMany({ data: salesData as any });
+
+  // ── INVENTORY ITEMS ───────────────────────────────────────────────────────
+
+  type InventoryDef = { name: string; category: string; reorderPoint: number; baseQty: number };
+  const INVENTORY_ITEMS: InventoryDef[] = [
+    { name: "Grip Socks – Small",   category: "retail",    reorderPoint: 20,  baseQty: 80  },
+    { name: "Grip Socks – Medium",  category: "retail",    reorderPoint: 20,  baseQty: 100 },
+    { name: "Grip Socks – Large",   category: "retail",    reorderPoint: 20,  baseQty: 60  },
+    { name: "Water Bottles",        category: "retail",    reorderPoint: 10,  baseQty: 30  },
+    { name: "Resistance Bands",     category: "retail",    reorderPoint: 10,  baseQty: 25  },
+    { name: "Paper Towels (rolls)", category: "supplies",  reorderPoint: 12,  baseQty: 48  },
+    { name: "Hand Sanitizer (L)",   category: "supplies",  reorderPoint: 6,   baseQty: 24  },
+    { name: "Cleaning Solution (L)",category: "supplies",  reorderPoint: 4,   baseQty: 12  },
+  ];
+
+  const inventoryData: object[] = [];
+  openStudios.forEach((sd, si) => {
+    const id = byName[sd.name];
+    if (!id) return;
+    const mDef = metricsByStudio.get(id);
+    const salesMult = mDef?.type === "healthy" ? 1.0 : mDef?.type === "new" ? 0.6 : 0.45;
+
+    INVENTORY_ITEMS.forEach((item, ii) => {
+      let runningQty = Math.round(item.baseQty * salesMult * (0.8 + (si * ii % 5) * 0.08));
+
+      for (let mo = 5; mo >= 0; mo--) {
+        const month = monthStart(mo);
+        const used  = Math.round(item.baseQty * salesMult * 0.6 * (0.85 + Math.random() * 0.3));
+        const openingQty = runningQty;
+        const received   = used > openingQty - item.reorderPoint
+          ? Math.round(item.baseQty * 1.5)
+          : 0;
+        const actualUsed = Math.min(used, openingQty + received);
+        const closingQty = Math.max(0, openingQty + received - actualUsed);
+        runningQty = closingQty;
+
+        inventoryData.push({
+          studioId: id,
+          month,
+          name:         item.name,
+          category:     item.category,
+          openingQty,
+          receivedQty:  received,
+          usedQty:      actualUsed,
+          closingQty,
+          reorderPoint: item.reorderPoint,
+        });
+      }
+    });
+  });
+
+  await db.inventoryItem.createMany({ data: inventoryData as any });
+
   const open = studioDefs.filter(s => s.status !== "pre-launch").length;
   const pre  = studioDefs.filter(s => s.status === "pre-launch").length;
-  console.log(`✓ Seeded ${studioDefs.length} studios (${open} open · ${pre} pre-launch), ${allMetrics.length} weekly metrics, ${instrData.length} instructors, 11 anomalies, ${reviewData.length} reviews, ${classMetricData.length} class metrics`);
+  console.log(`✓ Seeded ${studioDefs.length} studios (${open} open · ${pre} pre-launch), ${allMetrics.length} weekly metrics, ${instrData.length} instructors, 11 anomalies, ${reviewData.length} reviews, ${classMetricData.length} class metrics, ${operationsData.length} operations, ${salesData.length} sales records, ${inventoryData.length} inventory items`);
 }
 
 main()
