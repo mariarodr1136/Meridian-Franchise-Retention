@@ -87,9 +87,9 @@ export default async function DashboardPage() {
   }));
 
   return (
-    <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
+    <div className="min-h-screen w-full" style={{ background: "#F0F5FB" }}>
       {/* Hero + stat bar */}
-      <div className="relative w-full overflow-hidden" style={{ height: "280px" }}>
+      <div className="relative overflow-hidden" style={{ width: "100vw", height: "280px" }}>
         <Image
           src="/jetset-hero2.jpg"
           alt="JetSet Modern Pilates studio"

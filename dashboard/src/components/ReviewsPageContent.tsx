@@ -7,6 +7,7 @@ const SOURCE_LABEL: Record<string, string> = { google: "Google", classpass: "Cla
 
 type SortKey = "recent" | "highest" | "lowest";
 
+
 function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
@@ -49,23 +50,27 @@ function SourceSummary({ reviews, source }: { reviews: Review[]; source: string 
   );
 }
 
-function ReviewCard({ review, onSelect }: { review: Review; onSelect: (r: Review) => void }) {
+function ReviewCard({ review }: { review: Review }) {
+  const [expanded, setExpanded] = useState(false);
   return (
-    <button
-      onClick={() => onSelect(review)}
-      className="rounded-xl p-5 border text-left w-full transition-all duration-200 cursor-pointer"
-      style={{ background: "#fff", borderColor: "#EEF3FB" }}
+    <div
+      onClick={() => setExpanded(!expanded)}
+      className="rounded-xl p-5 border text-left w-full cursor-pointer"
+      style={{
+        background: "#fff",
+        borderColor: expanded ? "#4A638D" : "#EEF3FB",
+        boxShadow: expanded ? "0 4px 20px rgba(74,99,141,0.1)" : "none",
+        transition: "border-color 0.2s, box-shadow 0.2s, transform 0.18s",
+      }}
       onMouseEnter={(e) => {
-        const el = e.currentTarget as HTMLButtonElement;
-        el.style.transform = "translateY(-3px)";
-        el.style.boxShadow = "0 8px 24px rgba(74,99,141,0.14)";
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.transform = "translateY(-2px)";
         el.style.borderColor = "#4A638D";
       }}
       onMouseLeave={(e) => {
-        const el = e.currentTarget as HTMLButtonElement;
+        const el = e.currentTarget as HTMLDivElement;
         el.style.transform = "translateY(0)";
-        el.style.boxShadow = "none";
-        el.style.borderColor = "#EEF3FB";
+        el.style.borderColor = expanded ? "#4A638D" : "#EEF3FB";
       }}
     >
       <div className="flex items-start justify-between mb-3">
@@ -76,25 +81,55 @@ function ReviewCard({ review, onSelect }: { review: Review; onSelect: (r: Review
             <span className="text-xs font-normal ml-1.5" style={{ color: "#9CA3AF" }}>{review.rating}.0 / 5</span>
           </p>
         </div>
-        <span className="text-xs flex-shrink-0 ml-3" style={{ color: "#9CA3AF" }}>
-          {new Date(review.reviewDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-        </span>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+          <span className="text-xs" style={{ color: "#9CA3AF" }}>
+            {new Date(review.reviewDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </span>
+          <svg
+            width="10" height="10" viewBox="0 0 10 6" fill="none" aria-hidden="true"
+            style={{
+              color: "#9CA3AF",
+              transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              flexShrink: 0,
+            }}
+          >
+            <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
       </div>
-      <p className="text-sm leading-relaxed mb-3" style={{
-        color: "#374151",
-        display: "-webkit-box",
-        WebkitLineClamp: 4,
-        WebkitBoxOrient: "vertical",
-        overflow: "hidden",
-      } as React.CSSProperties}>
+      <p
+        className="text-sm leading-relaxed"
+        style={{
+          color: "#374151",
+          display: "-webkit-box",
+          WebkitLineClamp: expanded ? "unset" : 4,
+          WebkitBoxOrient: "vertical",
+          overflow: expanded ? "visible" : "hidden",
+        } as React.CSSProperties}
+      >
         {review.body}
       </p>
-      <p className="text-[10px] font-semibold" style={{ color: "#4A638D" }}>Click to read full review →</p>
-    </button>
+      <div style={{
+        maxHeight: expanded ? "28px" : "0",
+        overflow: "hidden",
+        transition: "max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+        marginTop: expanded ? 10 : 0,
+      }}>
+        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold text-white" style={{ background: "#4A638D" }}>
+          {SOURCE_LABEL[review.source]}
+        </span>
+      </div>
+      {!expanded && (
+        <p className="text-[10px] font-semibold mt-3" style={{ color: "#4A638D" }}>Click to read full review →</p>
+      )}
+    </div>
   );
 }
 
-function SourceSection({ reviews, source, sort, onSelect }: { reviews: Review[]; source: string; sort: SortKey; onSelect: (r: Review) => void }) {
+function SourceSection({ reviews, source, sort }: {
+  reviews: Review[]; source: string; sort: SortKey;
+}) {
   const sorted = [...reviews].sort((a, b) => {
     if (sort === "highest") return b.rating - a.rating;
     if (sort === "lowest")  return a.rating - b.rating;
@@ -105,20 +140,22 @@ function SourceSection({ reviews, source, sort, onSelect }: { reviews: Review[];
     <div>
       <SourceSummary reviews={reviews} source={source} />
       <div className="flex flex-col gap-3 mt-4">
-        {sorted.map((r) => <ReviewCard key={r.id} review={r} onSelect={onSelect} />)}
+        {sorted.map((r) => <ReviewCard key={r.id} review={r} />)}
       </div>
     </div>
   );
 }
 
-interface Props { reviews: Review[] }
+interface Props {
+  reviews: Review[];
+}
 
 export function ReviewsPageContent({ reviews }: Props) {
-  const [sort, setSort]       = useState<SortKey>("recent");
-  const [selected, setSelected] = useState<Review | null>(null);
+  const [sort, setSort] = useState<SortKey>("recent");
 
   const googleReviews    = reviews.filter((r) => r.source === "google");
   const classpassReviews = reviews.filter((r) => r.source === "classpass");
+
   const sorts: { key: SortKey; label: string }[] = [
     { key: "recent",  label: "Most Recent"  },
     { key: "highest", label: "Highest Rated" },
@@ -130,7 +167,9 @@ export function ReviewsPageContent({ reviews }: Props) {
       {/* Sort control */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>
-          {googleReviews.length > 0 && classpassReviews.length > 0 ? "Google · ClassPass" : googleReviews.length > 0 ? "Google Reviews" : "ClassPass Reviews"}
+          {googleReviews.length > 0 && classpassReviews.length > 0
+            ? "Google · ClassPass"
+            : googleReviews.length > 0 ? "Google Reviews" : "ClassPass Reviews"}
         </p>
         <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F0F5FB" }}>
           {sorts.map(({ key, label }) => (
@@ -149,64 +188,21 @@ export function ReviewsPageContent({ reviews }: Props) {
         </div>
       </div>
 
-      {/* Review columns */}
+      {/* Google + ClassPass columns */}
       {googleReviews.length > 0 && classpassReviews.length > 0 ? (
         <div className="grid grid-cols-2 gap-6">
-          <SourceSection reviews={googleReviews}    source="google"    sort={sort} onSelect={setSelected} />
-          <SourceSection reviews={classpassReviews} source="classpass" sort={sort} onSelect={setSelected} />
+          <SourceSection reviews={googleReviews}    source="google"    sort={sort} />
+          <SourceSection reviews={classpassReviews} source="classpass" sort={sort} />
         </div>
       ) : (
         <SourceSection
           reviews={googleReviews.length > 0 ? googleReviews : classpassReviews}
           source={googleReviews.length > 0 ? "google" : "classpass"}
           sort={sort}
-          onSelect={setSelected}
         />
       )}
 
-      {/* Modal */}
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ background: "rgba(0,0,0,0.35)" }}
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl bg-white"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-6 py-5 flex items-start justify-between" style={{ background: "#F8FAFD", borderBottom: "1px solid #EEF3FB" }}>
-              <div>
-                <p className="text-base font-bold" style={{ color: "#1F2937" }}>{selected.author}</p>
-                <p className="text-sm mt-0.5" style={{ color: "#C9A84C" }}>
-                  {"★".repeat(selected.rating)}{"☆".repeat(5 - selected.rating)}
-                  <span className="text-xs font-normal ml-2" style={{ color: "#9CA3AF" }}>{selected.rating}.0 out of 5</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold text-white" style={{ background: "#4A638D" }}>
-                    {SOURCE_LABEL[selected.source]}
-                  </span>
-                  <span className="text-xs" style={{ color: "#9CA3AF" }}>
-                    {new Date(selected.reviewDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 cursor-pointer"
-                  style={{ background: "#EEF3FB", color: "#4A638D" }}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            <div className="px-6 py-6">
-              <p className="text-sm leading-relaxed" style={{ color: "#374151" }}>{selected.body}</p>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

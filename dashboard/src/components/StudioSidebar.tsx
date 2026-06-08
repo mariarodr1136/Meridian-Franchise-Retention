@@ -3,27 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const PAGES = [
-  { id: "overview",   label: "Overview",   icon: "◈" },
-  { id: "classes",    label: "Classes",    icon: "◉" },
-  { id: "sales",      label: "Sales",      icon: "◎" },
-  { id: "operations", label: "Operations", icon: "◐" },
-  { id: "inventory",  label: "Inventory",  icon: "◇" },
-  { id: "settings",   label: "Settings",   icon: "◫" },
+const ALL_PAGES = [
+  { id: "overview",   label: "Overview"   },
+  { id: "classes",    label: "Classes"    },
+  { id: "sales",      label: "Sales"      },
+  { id: "operations", label: "Operations" },
+  { id: "inventory",  label: "Inventory"  },
+  { id: "reviews",    label: "Reviews"    },
+  { id: "settings",   label: "Settings"   },
 ] as const;
+
+const PRE_LAUNCH_PAGE_IDS = new Set(["overview", "sales", "operations", "settings"]);
 
 interface Props {
   studioId: string;
+  studioStatus?: string;
 }
 
-export function StudioSidebar({ studioId }: Props) {
+export function StudioSidebar({ studioId, studioStatus }: Props) {
   const pathname = usePathname();
+  const isPreLaunch = studioStatus === "pre-launch";
+  const PAGES = ALL_PAGES.filter((p) => !isPreLaunch || PRE_LAUNCH_PAGE_IDS.has(p.id));
 
   function activePage(): string {
     if (pathname.endsWith("/classes"))    return "classes";
     if (pathname.endsWith("/sales"))      return "sales";
     if (pathname.endsWith("/operations")) return "operations";
     if (pathname.endsWith("/inventory"))  return "inventory";
+    if (pathname.endsWith("/reviews"))    return "reviews";
     if (pathname.endsWith("/settings"))   return "settings";
     return "overview";
   }
@@ -49,7 +56,7 @@ export function StudioSidebar({ studioId }: Props) {
         </div>
 
         <div className="px-3 py-3 flex flex-col gap-0.5">
-          {PAGES.map(({ id, label, icon }) => {
+          {PAGES.map(({ id, label }) => {
             const isActive = current === id;
             return (
               <Link
@@ -62,7 +69,14 @@ export function StudioSidebar({ studioId }: Props) {
                     : { color: "#6B7280", fontWeight: 400 }
                 }
               >
-                <span className="text-[11px] opacity-60">{icon}</span>
+                <span
+                  className="rounded-full flex-shrink-0"
+                  style={{
+                    width: 6,
+                    height: 6,
+                    background: isActive ? "#4A638D" : "#D1D5DB",
+                  }}
+                />
                 {label}
               </Link>
             );

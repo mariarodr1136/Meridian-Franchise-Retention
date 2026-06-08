@@ -40,7 +40,39 @@ export default async function ClassesPage({
     db.review.findMany({ where: { studioId: id }, orderBy: { reviewDate: "desc" } }),
   ]);
 
-  if (!studio || studio.status === "pre-launch") notFound();
+  if (!studio) notFound();
+
+  const isPreLaunch = studio.status === "pre-launch";
+  const locationLine = [studio.city, studio.state, studio.country !== "US" ? studio.country : null]
+    .filter(Boolean).join(", ");
+
+  if (isPreLaunch) {
+    return (
+      <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
+        <header className="sticky top-0 z-10 w-full" style={{ background: "#4A638D" }}>
+          <div className="max-w-[1340px] mx-auto px-6 h-16 flex items-center justify-between">
+            <Link href="/"><Image src="/jetset-logo-transparent.png" alt="JetSet Modern Pilates" width={150} height={80} priority className="object-contain transition-opacity hover:opacity-80" /></Link>
+            <Link href={`/studios/${id}`} className="text-sm font-medium transition-opacity hover:opacity-70 text-white">← {studio.name}</Link>
+          </div>
+        </header>
+        <div className="max-w-[1340px] mx-auto px-6 py-8">
+          <div className="mb-8 pb-6" style={{ borderBottom: "1px solid #C8D8EE" }}>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-bold" style={{ color: "#1F2937" }}>Classes</h1>
+              <StatusBadge status={studio.status as StudioStatus} />
+            </div>
+            <p className="text-sm" style={{ color: "#6B7280" }}>{studio.name} · {locationLine}</p>
+          </div>
+          <div className="flex gap-8">
+            <StudioSidebar studioId={id} studioStatus={studio.status} />
+            <div className="flex-1 min-w-0 flex items-center justify-center py-24">
+              <p className="text-sm" style={{ color: "#9CA3AF" }}>Class data will be available once this studio opens.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const schedule = await fetchStudioSchedule(studio.name, studio.state);
 
@@ -154,9 +186,6 @@ export default async function ClassesPage({
     ...(reviews.length > 0                     ? [{ id: "reviews",   label: "Reviews"           }] : []),
   ];
 
-  const locationLine = [studio.city, studio.state, studio.country !== "US" ? studio.country : null]
-    .filter(Boolean).join(", ");
-
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
       <header className="sticky top-0 z-10 w-full" style={{ background: "#4A638D" }}>
@@ -176,8 +205,8 @@ export default async function ClassesPage({
         </div>
 
         <div className="flex gap-8">
-          <div className="flex flex-col gap-4 w-52 flex-shrink-0">
-            <StudioSidebar studioId={id} />
+          <div className="flex flex-col gap-4 w-52 flex-shrink-0 sticky top-24 self-start">
+            <StudioSidebar studioId={id} studioStatus={studio.status} />
             {navSections.length > 0 && <StudioNav sections={navSections} label="On this page" />}
           </div>
 

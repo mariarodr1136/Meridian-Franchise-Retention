@@ -12,7 +12,7 @@ const severityConfig = {
 
 const categoryLabel: Record<string, string> = {
   churn: "Churn", occupancy: "Occupancy", membership: "Membership",
-  instructor: "Instructor", presales: "Presales",
+  revenue: "Revenue", instructor: "Instructor", presales: "Presales",
 };
 
 interface Props {
@@ -101,24 +101,20 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
           {list.map((a) => {
             const sc = severityConfig[a.severity as keyof typeof severityConfig];
             const date = new Date(a.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+            const isExpanded = selected?.id === a.id;
             return (
-              <button
+              <div
                 key={a.id}
-                onClick={() => setSelected(a)}
-                className={cn(
-                  "rounded-xl border text-left transition-all cursor-pointer",
-                  tab === "resolved" && "opacity-60"
-                )}
-                style={{ background: "#fff", borderColor: "#E5E7EB" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "#4A638D";
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 0 3px rgba(74,99,141,0.12)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "#E5E7EB";
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                onClick={() => setSelected(isExpanded ? null : a)}
+                className={cn("rounded-xl border text-left cursor-pointer", tab === "resolved" && "opacity-70")}
+                style={{
+                  background: "#fff",
+                  borderColor: isExpanded ? sc.dot : "#E5E7EB",
+                  boxShadow: isExpanded ? `0 4px 20px rgba(0,0,0,0.09)` : "none",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
               >
+                {/* Always-visible card body */}
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -133,87 +129,64 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
                     </div>
                     <div className="flex items-center gap-1.5">
                       {tab === "resolved" && (
-                        <span className="text-[10px] font-bold text-green-600">✓</span>
+                        <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>✓</span>
                       )}
                       <span className="text-[10px]" style={{ color: "#9CA3AF" }}>{date}</span>
+                      <svg
+                        width="10" height="10" viewBox="0 0 10 6" fill="none" aria-hidden="true"
+                        style={{
+                          color: "#9CA3AF",
+                          transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                     </div>
                   </div>
                   {a.studioName && (
                     <p className="text-xs font-semibold mb-1" style={{ color: "#1F2937" }}>{a.studioName}</p>
                   )}
-                  <p className="text-[11px] leading-relaxed" style={{ color: "#6B7280" }}>{a.summary}</p>
+                  <p
+                    className={cn("text-[11px] leading-relaxed", !isExpanded && "line-clamp-2")}
+                    style={{ color: "#6B7280" }}
+                  >
+                    {a.summary}
+                  </p>
                 </div>
-              </button>
+
+                {/* Expandable action section */}
+                <div style={{
+                  maxHeight: isExpanded ? "96px" : "0",
+                  overflow: "hidden",
+                  transition: "max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                }}>
+                  <div className="px-4 pb-4">
+                    <div style={{ height: 1, background: "#F3F4F6", marginBottom: 12 }} />
+                    {tab !== "resolved" ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleResolve(a); }}
+                        disabled={resolving}
+                        className="w-full text-xs font-semibold py-2 rounded-lg disabled:opacity-50 cursor-pointer"
+                        style={{ background: "#4A638D", color: "#fff", transition: "background 0.15s" }}
+                        onMouseEnter={(e) => { if (!resolving) (e.currentTarget as HTMLButtonElement).style.background = "#3d527a"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#4A638D"; }}
+                      >
+                        {resolving ? "Resolving…" : "Mark Resolved"}
+                      </button>
+                    ) : (
+                      <p className="text-[11px] font-medium text-center" style={{ color: "#16A34A" }}>
+                        This alert has been resolved
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
       )}
-
-      {/* Modal */}
-      {selected && (() => {
-        const sc = severityConfig[selected.severity as keyof typeof severityConfig];
-        const date = new Date(selected.generatedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            style={{ background: "rgba(0,0,0,0.35)" }}
-            onClick={() => setSelected(null)}
-          >
-            <div
-              className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl bg-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Colored header */}
-              <div className="px-6 py-5 flex items-center justify-between" style={{ background: sc.labelBg, borderBottom: `1px solid ${sc.dot}22` }}>
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
-                  <span className="text-xs font-bold tracking-widest uppercase" style={{ color: sc.labelColor }}>
-                    {sc.label}
-                  </span>
-                  <span className="text-xs" style={{ color: sc.labelColor, opacity: 0.4 }}>·</span>
-                  <span className="text-xs tracking-wide uppercase font-medium" style={{ color: sc.labelColor, opacity: 0.65 }}>
-                    {categoryLabel[selected.category] ?? selected.category}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  {selected.resolved && (
-                    <span className="text-xs font-semibold text-green-600">✓ Resolved</span>
-                  )}
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 cursor-pointer"
-                    style={{ background: `${sc.dot}22`, color: sc.labelColor }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="px-6 py-6">
-                {selected.studioName && (
-                  <p className="text-base font-bold mb-1" style={{ color: "#1F2937" }}>{selected.studioName}</p>
-                )}
-                <p className="text-xs font-medium mb-4" style={{ color: "#9CA3AF" }}>{date}</p>
-                <p className="text-sm leading-relaxed" style={{ color: "#374151" }}>{selected.summary}</p>
-
-                {!selected.resolved && (
-                  <div className="mt-6 flex justify-end">
-                    <button
-                      onClick={() => handleResolve(selected)}
-                      disabled={resolving}
-                      className="text-xs font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 cursor-pointer"
-                      style={{ background: "#4A638D", color: "#fff" }}
-                    >
-                      {resolving ? "Resolving…" : "Mark Resolved"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </>
   );
 }

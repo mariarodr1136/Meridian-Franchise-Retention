@@ -627,6 +627,7 @@ async function main() {
   const lead = () => leadPool[leadIdx++   % leadPool.length];
 
   const instrData: object[] = [];
+  const studioInstructorNames: Record<string, string[]> = {};
 
   function addStaff(studioName: string, opts: { instructors: number; leads: number; atRisk?: boolean }) {
     const id = byName[studioName];
@@ -659,11 +660,14 @@ async function main() {
     }
 
     // Instructors
+    if (!studioInstructorNames[studioName]) studioInstructorNames[studioName] = [];
     for (let i = 0; i < opts.instructors; i++) {
       const expired = !!opts.atRisk && i < Math.ceil(opts.instructors * 0.4);
       const pending = !expired && !!opts.atRisk && i === opts.instructors - 1;
+      const name = inst();
+      studioInstructorNames[studioName].push(name);
       instrData.push({
-        studioId: id, name: inst(), role: "instructor",
+        studioId: id, name, role: "instructor",
         certificationStatus: expired ? "expired" : pending ? "pending" : "certified",
         lastEvalDate: expired ? new Date("2025-10-15") : pending ? null : new Date("2026-04-20"),
         performanceScore: expired ? Math.floor(65 + Math.random() * 12) : pending ? null : Math.floor(80 + Math.random() * 16),
@@ -807,6 +811,39 @@ async function main() {
         const three = THREE_STAR[o % THREE_STAR.length];
         reviewData.push({ studioId: id, source: three.source, author: three.author, rating: 3, body: three.body, reviewDate: daysAgo(55 + (o % 20)) });
       }
+    }
+  });
+
+  // Named reviews that mention specific instructors by first name
+  const NAMED_TEMPLATES = [
+    { author: "Emily R.",   source: "google",    rating: 5, body: "{name}'s class changed my entire approach to fitness. She breaks down every movement so clearly — I left understanding my body better than years of other workouts combined." },
+    { author: "Claire B.",  source: "classpass", rating: 5, body: "Took a class with {name} on a whim and she completely sold me on this studio. So motivating without being overwhelming, and her cueing is genuinely the best I've experienced." },
+    { author: "Meg O.",     source: "google",    rating: 5, body: "{name}'s Saturday class was exactly what I needed. She modified for my lower back without making me feel singled out, and still gave me a seriously challenging workout. Phenomenal instructor." },
+    { author: "Jess T.",    source: "classpass", rating: 4, body: "{name} is really great — very knowledgeable and encouraging. I just wish there were more of her time slots available during the week. Her 8am fills up instantly every single week." },
+    { author: "Dani S.",    source: "google",    rating: 5, body: "I've been to dozens of boutique fitness studios and {name} is one of the best instructors I've ever had. She remembers your name, your limitations, and pushes you in exactly the right ways." },
+    { author: "Rina M.",    source: "classpass", rating: 4, body: "{name} knew everyone in the room by the second class. The correction she gave me on my footwork made an immediate difference. Coming back every week from now on." },
+    { author: "Holly P.",   source: "google",    rating: 5, body: "{name}'s energy is just infectious. The class flew by and I was genuinely shocked at how hard I'd worked. Already booked her next three slots — do not sleep on this instructor." },
+    { author: "Kayla J.",   source: "classpass", rating: 3, body: "The studio itself is great but I think {name}'s pacing is a bit fast for where I am right now. Others in the class seemed to love it. Might try a different instructor next time." },
+    { author: "Simone W.",  source: "google",    rating: 5, body: "First class with {name} and I was immediately a regular. She has this rare ability to make a room full of mixed levels all feel like the class was designed specifically for them." },
+    { author: "Leah F.",    source: "classpass", rating: 5, body: "My friend dragged me to {name}'s class and now I'm going three times a week. The reformer work she programs is so smart — feels challenging but you never feel like you might injure yourself." },
+  ];
+
+  studioDefs.filter(s => s.status !== "pre-launch").forEach((sd, studioIdx) => {
+    const id = byName[sd.name];
+    if (!id) return;
+    const names = studioInstructorNames[sd.name] ?? [];
+    const count = Math.min(names.length, sd.status === "at-risk" ? 1 : sd.status === "new" ? 2 : 3);
+    for (let i = 0; i < count; i++) {
+      const firstName = names[i].split(" ")[0];
+      const tpl = NAMED_TEMPLATES[(studioIdx + i * 3) % NAMED_TEMPLATES.length];
+      reviewData.push({
+        studioId: id,
+        source: tpl.source,
+        author: tpl.author,
+        rating: tpl.rating,
+        body: tpl.body.replace("{name}", firstName),
+        reviewDate: daysAgo(7 + i * 12 + (studioIdx % 11)),
+      });
     }
   });
 

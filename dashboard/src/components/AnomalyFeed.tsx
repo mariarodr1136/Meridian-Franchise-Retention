@@ -47,107 +47,90 @@ export function AnomalyFeed({ anomalies }: Props) {
   }
 
   return (
-    <>
-      <div className="flex flex-col gap-2">
-        {sorted.map((a) => {
-          const sc = severityConfig[a.severity as keyof typeof severityConfig];
-          const date = new Date(a.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-          return (
-            <button
-              key={a.id}
-              onClick={() => setSelected(a)}
-              className="rounded-xl border bg-white text-left transition-all cursor-pointer w-full"
-              style={{ borderColor: "#E5E7EB" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#4A638D";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,99,141,0.12)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#E5E7EB";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              <div className="p-3.5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
-                    <span className="text-[10px] font-semibold tracking-wide uppercase px-1.5 py-0.5 rounded"
-                      style={{ background: sc.labelBg, color: sc.labelColor }}>
-                      {sc.label}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-wide" style={{ color: "#9CA3AF" }}>
-                      {categoryLabel[a.category] ?? a.category}
-                    </span>
-                  </div>
-                  <span className="text-[10px]" style={{ color: "#9CA3AF" }}>{date}</span>
-                </div>
-                {a.studioName && (
-                  <p className="text-xs font-semibold mb-1" style={{ color: "#1F2937" }}>{a.studioName}</p>
-                )}
-                <p className="text-[11px] leading-relaxed" style={{ color: "#6B7280" }}>{a.summary}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {selected && (() => {
-        const sc = severityConfig[selected.severity as keyof typeof severityConfig];
-        const date = new Date(selected.generatedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    <div className="flex flex-col gap-2">
+      {sorted.map((a) => {
+        const sc = severityConfig[a.severity as keyof typeof severityConfig];
+        const date = new Date(a.generatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        const isExpanded = selected?.id === a.id;
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            style={{ background: "rgba(0,0,0,0.35)" }}
-            onClick={() => setSelected(null)}
+            key={a.id}
+            onClick={() => setSelected(isExpanded ? null : a)}
+            className="rounded-xl border bg-white text-left cursor-pointer w-full"
+            style={{
+              borderColor: isExpanded ? sc.dot : "#E5E7EB",
+              boxShadow: isExpanded ? "0 4px 16px rgba(0,0,0,0.08)" : "none",
+              transition: "border-color 0.2s, box-shadow 0.2s",
+            }}
           >
-            <div
-              className="w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl bg-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Colored header */}
-              <div className="px-6 py-5 flex items-center justify-between" style={{ background: sc.labelBg, borderBottom: `1px solid ${sc.dot}22` }}>
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
-                  <span className="text-xs font-bold tracking-widest uppercase" style={{ color: sc.labelColor }}>
+            {/* Always-visible header */}
+            <div className="p-3.5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: sc.dot }} />
+                  <span className="text-[10px] font-semibold tracking-wide uppercase px-1.5 py-0.5 rounded"
+                    style={{ background: sc.labelBg, color: sc.labelColor }}>
                     {sc.label}
                   </span>
-                  <span className="text-xs" style={{ color: sc.labelColor, opacity: 0.4 }}>·</span>
-                  <span className="text-xs tracking-wide uppercase font-medium" style={{ color: sc.labelColor, opacity: 0.65 }}>
-                    {categoryLabel[selected.category] ?? selected.category}
+                  <span className="text-[10px] uppercase tracking-wide" style={{ color: "#9CA3AF" }}>
+                    {categoryLabel[a.category] ?? a.category}
                   </span>
                 </div>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 cursor-pointer"
-                  style={{ background: `${sc.dot}22`, color: sc.labelColor }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="px-6 py-6">
-                {selected.studioName && (
-                  <p className="text-base font-bold mb-1" style={{ color: "#1F2937" }}>{selected.studioName}</p>
-                )}
-                <p className="text-xs font-medium mb-4" style={{ color: "#9CA3AF" }}>{date}</p>
-                <p className="text-sm leading-relaxed" style={{ color: "#374151" }}>{selected.summary}</p>
-
-                <div className="mt-6 flex justify-end">
-                  <button
-                    onClick={() => handleResolve(selected)}
-                    disabled={resolving}
-                    className="text-xs font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 cursor-pointer"
-                    style={{ background: "#4A638D", color: "#fff" }}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px]" style={{ color: "#9CA3AF" }}>{date}</span>
+                  <svg
+                    width="10" height="10" viewBox="0 0 10 6" fill="none" aria-hidden="true"
+                    style={{
+                      color: "#9CA3AF",
+                      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                      flexShrink: 0,
+                    }}
                   >
-                    {resolving ? "Resolving…" : "Mark Resolved"}
-                  </button>
+                    <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
+              </div>
+              {a.studioName && (
+                <p className="text-xs font-semibold mb-1" style={{ color: "#1F2937" }}>{a.studioName}</p>
+              )}
+              <p
+                className="text-[11px] leading-relaxed"
+                style={{
+                  color: "#6B7280",
+                  display: "-webkit-box",
+                  WebkitLineClamp: isExpanded ? "unset" : 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: isExpanded ? "visible" : "hidden",
+                }}
+              >
+                {a.summary}
+              </p>
+            </div>
+
+            {/* Expandable resolve section */}
+            <div style={{
+              maxHeight: isExpanded ? "80px" : "0",
+              overflow: "hidden",
+              transition: "max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}>
+              <div className="px-3.5 pb-3.5">
+                <div style={{ height: 1, background: "#F3F4F6", marginBottom: 10 }} />
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleResolve(a); }}
+                  disabled={resolving}
+                  className="w-full text-xs font-semibold py-2 rounded-lg disabled:opacity-50 cursor-pointer"
+                  style={{ background: "#4A638D", color: "#fff", transition: "background 0.15s" }}
+                  onMouseEnter={(e) => { if (!resolving) (e.currentTarget as HTMLButtonElement).style.background = "#3d527a"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#4A638D"; }}
+                >
+                  {resolving ? "Resolving…" : "Mark Resolved"}
+                </button>
               </div>
             </div>
           </div>
         );
-      })()}
-    </>
+      })}
+    </div>
   );
 }

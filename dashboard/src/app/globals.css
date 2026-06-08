@@ -39,9 +39,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5fb; }
-::-webkit-scrollbar-thumb { background: #C8D8EE; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4A638D; }
+html { scrollbar-width: thin; scrollbar-color: #C8D8EE transparent; }

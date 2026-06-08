@@ -68,7 +68,7 @@ export default async function OperationsPage({
         </div>
 
         <div className="flex gap-8">
-          <StudioSidebar studioId={id} />
+          <StudioSidebar studioId={id} studioStatus={studio.status} />
           <div className="flex-1 min-w-0">
             <OperationsPanel studioId={id} ops={ops} />
           </div>

@@ -8,9 +8,10 @@ import { AnomalyFeed } from "@/components/AnomalyFeed";
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { MetricCharts } from "@/components/MetricCharts";
 import { RetentionPreview } from "@/components/RetentionPreview";
+import { ReviewsScroll } from "@/components/ReviewsScroll";
 import { generateStudioChurn } from "@/lib/churn";
 import { formatPercent, formatNumber, formatCurrency, trendDirection, trendLabel, cn } from "@/lib/utils";
-import type { StudioStatus, StudioMetric, Anomaly } from "@/types";
+import type { StudioStatus, StudioMetric, Anomaly, Review } from "@/types";
 
 async function getStudio(id: string) {
   return db.studio.findUnique({
@@ -18,6 +19,7 @@ async function getStudio(id: string) {
     include: {
       metrics:   { orderBy: { weekOf: "desc" } },
       anomalies: { where: { resolved: false }, orderBy: { generatedAt: "desc" } },
+      reviews:   { orderBy: { reviewDate: "desc" }, take: 20 },
     },
   });
 }
@@ -42,6 +44,16 @@ export default async function StudioPage({
     memberBookings: m.memberBookings,
     classPackBookings: m.classPackBookings,
     classPassBookings: m.classPassBookings,
+  }));
+
+  const reviews: Review[] = studio.reviews.map((r) => ({
+    id: r.id,
+    studioId: r.studioId,
+    source: r.source as "google" | "classpass",
+    author: r.author,
+    rating: r.rating,
+    body: r.body,
+    reviewDate: r.reviewDate.toISOString(),
   }));
 
   const anomalies: Anomaly[] = studio.anomalies.map((a) => ({
@@ -117,7 +129,7 @@ export default async function StudioPage({
 
         {/* Sidebar + content */}
         <div className="flex gap-8">
-          <StudioSidebar studioId={studio.id} />
+          <StudioSidebar studioId={studio.id} studioStatus={studio.status} />
 
           <div className="flex-1 min-w-0 flex flex-col gap-6">
 
@@ -173,6 +185,13 @@ export default async function StudioPage({
               <div>
                 <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#4A638D" }}>Active Alerts</p>
                 <AnomalyFeed anomalies={anomalies} />
+              </div>
+            )}
+
+            {/* REVIEWS SCROLL */}
+            {reviews.length > 0 && (
+              <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+                <ReviewsScroll reviews={reviews} studioId={studio.id} studioName={studio.name} />
               </div>
             )}
 

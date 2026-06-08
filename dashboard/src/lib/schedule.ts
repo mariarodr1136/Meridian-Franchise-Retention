@@ -27,6 +27,16 @@ export function scheduleUrl(studioName: string, state: string | null): string {
   return `https://jetsetpilates.com/${(state ?? "").toLowerCase()}/${toSlug(studioName)}/schedule/`;
 }
 
+function weekStartDate(weekOffset: number): string {
+  const d = new Date();
+  // align to Sunday of the current week, then shift by offset weeks
+  d.setDate(d.getDate() - d.getDay() + weekOffset * 7);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
 function parseStartHour(timeStr: string): number {
   const m = timeStr.match(/^(\d+):(\d+)(am|pm)/i);
   if (!m) return 0;
@@ -40,13 +50,15 @@ function parseStartHour(timeStr: string): number {
 
 export async function fetchStudioSchedule(
   studioName: string,
-  state: string | null
+  state: string | null,
+  weekOffset = 0
 ): Promise<ScheduleDay[]> {
-  const url = scheduleUrl(studioName, state);
+  const base = scheduleUrl(studioName, state);
+  const url = weekOffset !== 0 ? `${base}?date=${weekStartDate(weekOffset)}` : base;
   let html: string;
   try {
     const res = await fetch(url, {
-      next: { revalidate: 3600 },
+      cache: "no-store",
       headers: { "User-Agent": "Mozilla/5.0" },
     });
     if (!res.ok) return [];
@@ -98,7 +110,15 @@ export async function fetchStudioSchedule(
       classes.push({ day, date, time, startHour, name, instructor, isPast });
     }
 
-    days.push({ day, date, classes });
+    // Deduplicate: keep first occurrence per start time
+    const seen = new Set<number>();
+    const unique = classes.filter((c) => {
+      if (seen.has(c.startHour)) return false;
+      seen.add(c.startHour);
+      return true;
+    });
+
+    days.push({ day, date, classes: unique });
   }
 
   return days;

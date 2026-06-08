@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { AlertsGrid } from "@/components/AlertsGrid";
+import { ScanButton } from "@/components/ScanButton";
 import type { Anomaly } from "@/types";
 
 const severityOrder = { high: 0, medium: 1, low: 2 };
@@ -54,7 +55,8 @@ export default async function AlertsPage() {
               {active.length} active alert{active.length !== 1 ? "s" : ""} across the network
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-4">
+            <ScanButton />
             {(["high", "medium", "low"] as const).map((s) => {
               const count = active.filter((a) => a.severity === s).length;
               if (!count) return null;

@@ -59,7 +59,7 @@ export default async function InventoryPage({
         </div>
 
         <div className="flex gap-8">
-          <StudioSidebar studioId={id} />
+          <StudioSidebar studioId={id} studioStatus={studio.status} />
           <div className="flex-1 min-w-0">
             {items.length === 0 ? (
               <div className="rounded-2xl border p-16 text-center" style={{ background: "#fff", borderColor: "#C8D8EE" }}>

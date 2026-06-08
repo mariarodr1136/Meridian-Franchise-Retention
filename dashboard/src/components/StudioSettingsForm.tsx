@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Studio, Instructor } from "@/types";
+import type { Studio, Instructor, StaffRole } from "@/types";
 
 interface Props {
   studio: Studio & { email: string | null };
@@ -9,6 +9,13 @@ interface Props {
 }
 
 const STATUSES = ["healthy", "at-risk", "new", "pre-launch"] as const;
+
+const ROLE_LABELS: Record<StaffRole, string> = {
+  director_of_operations: "Director of Operations",
+  general_manager:        "General Manager",
+  studio_lead:            "Studio Lead",
+  instructor:             "Instructor",
+};
 
 function Field({
   label, value, onChange, type = "text", hint,
@@ -34,12 +41,8 @@ function Field({
   );
 }
 
-const CERT_LABELS: Record<string, string> = { certified: "Certified", pending: "Pending", expired: "Expired" };
-const ROLE_LABELS: Record<string, string> = {
-  director_of_operations: "Director of Operations",
-  general_manager: "General Manager",
-  studio_lead: "Studio Lead",
-  instructor: "Instructor",
+type DraftMember = Omit<Instructor, "studioId" | "certificationStatus" | "performanceScore"> & {
+  _new?: boolean;
 };
 
 export function StudioSettingsForm({ studio, instructors }: Props) {
@@ -52,9 +55,15 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
     status:         studio.status,
   });
 
-  const [staffList, setStaffList] = useState<Instructor[]>(instructors);
+  const [staffList, setStaffList]   = useState<Instructor[]>(instructors);
+  const [editMode, setEditMode]     = useState(false);
+  const [draft, setDraft]           = useState<DraftMember[]>([]);
+  const [removed, setRemoved]       = useState<Set<string>>(new Set());
+
   const [infoSaving, setInfoSaving] = useState(false);
-  const [infoSaved, setInfoSaved]   = useState(false);
+  const [infoSaved,  setInfoSaved]  = useState(false);
+  const [staffSaving, setStaffSaving] = useState(false);
+  const [staffSaved,  setStaffSaved]  = useState(false);
 
   async function saveInfo() {
     setInfoSaving(true);
@@ -68,17 +77,93 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
     setTimeout(() => setInfoSaved(false), 3000);
   }
 
-  function updateStaff(id: string, key: keyof Instructor, value: string) {
-    setStaffList((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, [key]: value } : s))
-    );
+  function openEdit() {
+    setDraft(staffList.map((s) => ({
+      id:           s.id,
+      name:         s.name,
+      role:         s.role,
+      lastEvalDate: s.lastEvalDate,
+    })));
+    setRemoved(new Set());
+    setEditMode(true);
   }
 
-  const CERT_COLORS: Record<string, { bg: string; color: string }> = {
-    certified: { bg: "#F0FDF4", color: "#166534" },
-    pending:   { bg: "#FFF7ED", color: "#9A3412" },
-    expired:   { bg: "#FEF2F2", color: "#991B1B" },
-  };
+  function cancelEdit() {
+    setEditMode(false);
+    setDraft([]);
+    setRemoved(new Set());
+  }
+
+  function updateDraft(id: string, key: keyof DraftMember, value: string) {
+    setDraft((prev) => prev.map((m) => m.id === id ? { ...m, [key]: value } : m));
+  }
+
+  function removeDraft(id: string, isNew: boolean) {
+    if (isNew) {
+      setDraft((prev) => prev.filter((m) => m.id !== id));
+    } else {
+      setRemoved((prev) => new Set([...prev, id]));
+      setDraft((prev) => prev.filter((m) => m.id !== id));
+    }
+  }
+
+  function addMember() {
+    const tempId = `new-${Date.now()}`;
+    setDraft((prev) => [...prev, { id: tempId, name: "", role: "instructor", lastEvalDate: null, _new: true }]);
+  }
+
+  async function saveStaff() {
+    setStaffSaving(true);
+
+    const ops: Promise<unknown>[] = [];
+
+    // Deletes
+    removed.forEach((id) => {
+      ops.push(fetch(`/api/studios/${studio.id}/instructors/${id}`, { method: "DELETE" }));
+    });
+
+    // Updates & creates
+    for (const m of draft) {
+      if (!m.name.trim()) continue;
+      if (m._new) {
+        ops.push(
+          fetch(`/api/studios/${studio.id}/instructors`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: m.name, role: m.role, lastEvalDate: m.lastEvalDate }),
+          }).then((r) => r.json())
+        );
+      } else {
+        const original = staffList.find((s) => s.id === m.id);
+        if (!original) continue;
+        const changed =
+          m.name !== original.name ||
+          m.role !== original.role ||
+          m.lastEvalDate !== original.lastEvalDate;
+        if (changed) {
+          ops.push(
+            fetch(`/api/studios/${studio.id}/instructors/${m.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: m.name, role: m.role, lastEvalDate: m.lastEvalDate }),
+            })
+          );
+        }
+      }
+    }
+
+    await Promise.all(ops);
+
+    // Refetch fresh list
+    const res  = await fetch(`/api/studios/${studio.id}`);
+    const data = await res.json() as { instructors: Instructor[] };
+    setStaffList(data.instructors ?? []);
+
+    setStaffSaving(false);
+    setStaffSaved(true);
+    setEditMode(false);
+    setTimeout(() => setStaffSaved(false), 3000);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,11 +185,11 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
         </div>
 
         <div className="p-5 grid grid-cols-2 gap-4">
-          <Field label="Studio Name" value={info.name} onChange={(v) => setInfo((p) => ({ ...p, name: v }))} />
-          <Field label="Franchisee Name" value={info.franchiseeName} onChange={(v) => setInfo((p) => ({ ...p, franchiseeName: v }))} />
-          <Field label="Address" value={info.address} onChange={(v) => setInfo((p) => ({ ...p, address: v }))} />
-          <Field label="Phone" value={info.phone} onChange={(v) => setInfo((p) => ({ ...p, phone: v }))} type="tel" />
-          <Field label="Email" value={info.email} onChange={(v) => setInfo((p) => ({ ...p, email: v }))} type="email" />
+          <Field label="Studio Name"     value={info.name}           onChange={(v) => setInfo((p) => ({ ...p, name: v }))} />
+          <Field label="Franchisee Name" value={info.franchiseeName}  onChange={(v) => setInfo((p) => ({ ...p, franchiseeName: v }))} />
+          <Field label="Address"         value={info.address}         onChange={(v) => setInfo((p) => ({ ...p, address: v }))} />
+          <Field label="Phone"           value={info.phone}           onChange={(v) => setInfo((p) => ({ ...p, phone: v }))} type="tel" />
+          <Field label="Email"           value={info.email}           onChange={(v) => setInfo((p) => ({ ...p, email: v }))} type="email" />
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold" style={{ color: "#6B7280" }}>Status</label>
             <select
@@ -123,75 +208,133 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
 
       {/* Staff Roster */}
       <div className="rounded-xl border overflow-hidden" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
-        <div className="px-5 py-4" style={{ borderBottom: "1px solid #EEF3FB" }}>
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid #EEF3FB" }}>
           <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Staff Roster</p>
-          <p className="text-xs mt-1" style={{ color: "#9CA3AF" }}>Edit certification status and roles for each team member.</p>
+          <div className="flex items-center gap-3">
+            {staffSaved && !editMode && <p className="text-xs" style={{ color: "#16A34A" }}>Saved.</p>}
+            {editMode ? (
+              <>
+                <button
+                  onClick={cancelEdit}
+                  className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                  style={{ border: "1px solid #C8D8EE", color: "#6B7280", background: "#fff" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveStaff}
+                  disabled={staffSaving}
+                  className="text-xs px-4 py-1.5 rounded-lg font-semibold text-white"
+                  style={{ background: "#4A638D" }}
+                >
+                  {staffSaving ? "Saving…" : "Save"}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={openEdit}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer"
+                style={{ border: "1px solid #C8D8EE", color: "#4A638D", background: "#EEF3FB" }}
+              >
+                Edit
+              </button>
+            )}
+          </div>
         </div>
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr style={{ background: "#F8FAFD" }}>
-              {["Name", "Role", "Certification", "Last Eval", "Performance"].map((h) => (
-                <th key={h} className="px-5 py-3 text-left text-xs font-semibold" style={{ color: "#9CA3AF" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {staffList.map((staff, i) => {
-              const certStyle = CERT_COLORS[staff.certificationStatus] ?? CERT_COLORS.certified;
+        {editMode ? (
+          /* ── Edit mode ── */
+          <div className="p-4 flex flex-col gap-1">
+            {draft.map((m) => {
+              const isInstructor = m.role === "instructor";
               return (
-                <tr key={staff.id} style={{ borderTop: i > 0 ? "1px solid #F0F5FB" : undefined }}>
-                  <td className="px-5 py-3 font-medium" style={{ color: "#1F2937" }}>{staff.name}</td>
-                  <td className="px-5 py-3">
-                    <select
-                      value={staff.role}
-                      onChange={(e) => updateStaff(staff.id, "role", e.target.value)}
-                      className="text-xs rounded px-2 py-1 outline-none cursor-pointer"
-                      style={{ border: "1px solid #C8D8EE", color: "#4A638D", background: "#EEF3FB" }}
-                    >
-                      {Object.entries(ROLE_LABELS).map(([val, lbl]) => (
-                        <option key={val} value={val}>{lbl}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-5 py-3">
-                    <select
-                      value={staff.certificationStatus}
-                      onChange={(e) => updateStaff(staff.id, "certificationStatus", e.target.value)}
-                      className="text-xs rounded px-2 py-1 outline-none cursor-pointer font-medium"
-                      style={{ border: "none", background: certStyle.bg, color: certStyle.color }}
-                    >
-                      {Object.entries(CERT_LABELS).map(([val, lbl]) => (
-                        <option key={val} value={val}>{lbl}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>
-                    {staff.lastEvalDate
-                      ? new Date(staff.lastEvalDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                      : "—"}
-                  </td>
-                  <td className="px-5 py-3">
-                    {staff.performanceScore != null ? (
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-20 rounded-full overflow-hidden" style={{ background: "#EEF3FB" }}>
-                          <div className="h-full rounded-full" style={{ width: `${staff.performanceScore}%`, background: staff.performanceScore >= 85 ? "#16A34A" : staff.performanceScore >= 70 ? "#D97706" : "#DC2626" }} />
-                        </div>
-                        <span className="text-xs tabular-nums" style={{ color: "#6B7280" }}>{staff.performanceScore.toFixed(0)}</span>
-                      </div>
-                    ) : <span style={{ color: "#D1D5DB" }}>—</span>}
-                  </td>
-                </tr>
+                <div
+                  key={m.id}
+                  className="grid gap-2 items-center py-2 border-b"
+                  style={{ gridTemplateColumns: "1fr 160px 130px 28px", borderColor: "#EEF3FB" }}
+                >
+                  {/* Name */}
+                  <input
+                    type="text"
+                    value={m.name}
+                    placeholder="Full name"
+                    onChange={(e) => updateDraft(m.id, "name", e.target.value)}
+                    className="text-sm rounded-lg px-3 py-1.5 outline-none"
+                    style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
+                  />
+                  {/* Role */}
+                  <select
+                    value={m.role}
+                    onChange={(e) => updateDraft(m.id, "role", e.target.value)}
+                    className="text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer"
+                    style={{ border: "1px solid #C8D8EE", color: "#4A638D", background: "#EEF3FB" }}
+                  >
+                    {(Object.entries(ROLE_LABELS) as [StaffRole, string][]).map(([val, lbl]) => (
+                      <option key={val} value={val}>{lbl}</option>
+                    ))}
+                  </select>
+                  {/* Last eval (instructors only) */}
+                  {isInstructor ? (
+                    <input
+                      type="date"
+                      value={m.lastEvalDate ? m.lastEvalDate.slice(0, 10) : ""}
+                      onChange={(e) => updateDraft(m.id, "lastEvalDate", e.target.value || null as unknown as string)}
+                      className="text-xs rounded-lg px-2 py-1.5 outline-none"
+                      style={{ border: "1px solid #C8D8EE", color: "#6B7280", background: "#F8FAFD" }}
+                    />
+                  ) : (
+                    <span />
+                  )}
+                  {/* Remove */}
+                  <button
+                    onClick={() => removeDraft(m.id, !!m._new)}
+                    className="flex items-center justify-center rounded-full text-xs font-bold leading-none"
+                    style={{ width: 22, height: 22, background: "#FEF2F2", color: "#DC2626" }}
+                    title="Remove"
+                  >
+                    ×
+                  </button>
+                </div>
               );
             })}
-          </tbody>
-        </table>
 
-        <div className="px-5 py-4" style={{ borderTop: "1px solid #EEF3FB" }}>
-          <p className="text-xs" style={{ color: "#9CA3AF" }}>
-            Staff role and certification changes are reflected immediately in the roster view.
-          </p>
-        </div>
+            <button
+              onClick={addMember}
+              className="mt-3 text-xs font-medium self-start px-3 py-1.5 rounded-lg"
+              style={{ border: "1px dashed #C8D8EE", color: "#4A638D", background: "#F8FAFD" }}
+            >
+              + Add member
+            </button>
+          </div>
+        ) : (
+          /* ── Read-only view ── */
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ background: "#F8FAFD" }}>
+                {["Name", "Role", "Last Eval"].map((h) => (
+                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold" style={{ color: "#9CA3AF" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {staffList.map((s, i) => {
+                const isInstructor = s.role === "instructor";
+                const evalDate = s.lastEvalDate
+                  ? new Date(s.lastEvalDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  : "—";
+                return (
+                  <tr key={s.id} style={{ borderTop: i > 0 ? "1px solid #F0F5FB" : undefined }}>
+                    <td className="px-5 py-3" style={{ color: "#1F2937" }}>{s.name}</td>
+                    <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>{ROLE_LABELS[s.role]}</td>
+                    <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>
+                      {isInstructor ? evalDate : ""}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
