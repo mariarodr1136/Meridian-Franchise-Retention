@@ -9,6 +9,7 @@
 ![Recharts](https://img.shields.io/badge/Recharts-Data%20Visualization-22C55E)
 ![OpenAI](https://img.shields.io/badge/OpenAI-AI%20Integration-412991)
 ![Radix%20UI](https://img.shields.io/badge/Radix%20UI-Component%20Library-purple)
+![react--simple--maps](https://img.shields.io/badge/react--simple--maps-Map%20Visualization-4A638D)
 
 A full-stack internal analytics platform for franchise headquarters to monitor, diagnose, and act on performance data across an entire studio network — in real time, from a single interface.
 
@@ -35,13 +36,17 @@ Live Application: XXX
 - [What It Does](#what-it-does)
 - [Features](#features)
   - [Network Command Center](#network-command-center)
+  - [Network Map](#network-map)
   - [Studio Detail](#studio-detail)
   - [Rule-Based Alert Engine](#rule-based-alert-engine)
   - [Churn Prediction Model](#churn-prediction-model)
+  - [Network-Wide Retention Intelligence](#network-wide-retention-intelligence)
   - [Weekly Schedule Intelligence](#weekly-schedule-intelligence)
   - [Instructor Analytics](#instructor-analytics)
   - [Reviews System](#reviews-system)
   - [Studio Sub-Pages](#studio-sub-pages)
+  - [Franchise Pipeline](#franchise-pipeline)
+  - [Weekly Network Digest](#weekly-network-digest)
 - [Architecture](#architecture)
 - [Data Model](#data-model)
 - [Tech Stack](#tech-stack)
@@ -59,12 +64,19 @@ Live Application: XXX
 - **Network-wide KPI bar** — real-time aggregates across all open studios: total active members, network avg occupancy, total weekly revenue, at-risk studio count
 - **Alert feed** — active alerts surfaced across all studios with severity tagging; inline accordion expand with one-click resolve
 
+### Network Map
+- **Interactive US map** — all studio locations plotted on a zoomable, pannable SVG map of the United States, powered by `react-simple-maps`
+- **Status-coded markers** — each pin is colored by studio status (healthy, at-risk, new, pre-launch) with a pulsing ring on at-risk locations
+- **Hover tooltips** — hovering a marker surfaces studio name, city, occupancy, and weekly revenue inline
+- **Zoom and pan** — full `ZoomableGroup` support for exploring dense market clusters
+
 ### Studio Detail
 - **KPI cards** — class occupancy, active memberships, weekly revenue, weekly churn, each with WoW delta and directional trend
 - **Metric trend charts** — 12-week sparkline charts per metric via Recharts area charts with gradient fills
 - **Retention preview** — pulls from the churn model and surfaces risk summary on the main studio page
 - **Active alerts** — studio-scoped anomaly feed, same inline expand behavior as the network feed
 - **Reviews scroll** — horizontal scroll row of recent reviews from Google and ClassPass, each expandable inline with blue accent on expand, linking through to the full reviews page
+- **Metrics comparison** — period-over-period analysis with monthly, quarterly, and yearly aggregation modes; each period shows avg fill rate, total revenue, membership count, and avg churn with a side-by-side comparison view
 
 ### Rule-Based Alert Engine
 Four alert categories monitored automatically across every studio on every scan:
@@ -78,6 +90,11 @@ Four alert categories monitored automatically across every studio on every scan:
 
 Alerts are regenerated from fresh metrics on each scan, with resolved alerts preserved as history. Each alert message includes specific numbers, trends, and a recommended action.
 
+The dedicated `/alerts` page adds:
+- **Severity filter tabs** — filter the full alert list to Critical, Warning, or Advisory with one click
+- **Active / Resolved toggle** — switch between open alerts and the resolved history log
+- **Detail panel** — click any alert to expand a side panel with full context, category, and a resolve button
+
 ### Churn Prediction Model
 A deterministic, seeded probabilistic model that generates per-member churn predictions from studio-level metric data — no external ML service required.
 
@@ -86,6 +103,14 @@ A deterministic, seeded probabilistic model that generates per-member churn pred
 - **Revenue at risk** — projected annual revenue exposure across high and medium-risk members
 - **Deterministic output** — same studio always produces the same member list; no randomness between page loads
 - Seeded PRNG using a linear congruential generator keyed to studio ID — privacy-safe, no real member data required
+
+### Network-Wide Retention Intelligence
+A standalone `/churn` dashboard that aggregates churn predictions across every studio into a single actionable view — distinct from the per-studio retention page.
+
+- **Studio risk rankings** — all studios sorted by high-risk member count, each with a visual risk bar and % at-risk indicator
+- **Member table** — per-studio member list sorted by churn probability, with inline expand showing risk factors and a plain-language suggested action; filterable by risk tier (all / high / medium / low)
+- **Network summary stats** — total members analyzed, high/medium risk counts, and aggregate annual revenue at risk
+- **Retention ROI Calculator** — interactive slider: set a retention rate target and instantly see how much annual revenue would be protected across the studio's high-risk members
 
 ### Weekly Schedule Intelligence
 - **7-day calendar grid** — live class schedule per studio, color-coded by historical fill rate (green ≥ 80%, amber 55–79%, red < 55%)
@@ -115,6 +140,24 @@ Every live studio has a full suite of operational pages accessible via the persi
 - **Operations** — lease expiry, landlord contacts, alarm company, HVAC contract, electrician, internet/Wi-Fi
 - **Inventory** — month-by-month stock levels with opening/closing quantities and reorder alerts
 - **Settings** — studio info, staff roster with certification status and performance scores
+
+### Franchise Pipeline
+A `/pipeline` page for tracking prospective franchise locations from first contact through pre-sales.
+
+- **Kanban board** — draggable cards organized across five stages: Discovery, Agreement Signed, Site Selected, Permits & Construction, and Pre-Sales; each card shows franchisee name, market, territory type, expected open date, and checklist progress (docs, lease, training)
+- **Pipeline summary bar** — count of leads per stage plus a stalled lead indicator (flagging any lead inactive for 14+ days)
+- **Stage entry timestamps** — each lead tracks when it entered its current stage, enabling stall detection
+
+### Weekly Network Digest
+A `/digest` page that generates a printable weekly performance report for the entire franchise network.
+
+- **Network KPI snapshot** — active members, network avg occupancy, and total weekly revenue with week-over-week deltas
+- **Studio count breakdown** — total studios, healthy, at-risk, and pre-launch counts at a glance
+- **Top studios table** — top 5 studios ranked by weekly revenue with fill rate
+- **Active alerts summary** — critical and warning counts with the top alerts listed inline
+- **At-risk studio detail** — table of at-risk studios with fill rate, membership, revenue, and churn for each
+- **New studio ramp progress** — ramp progress bars showing fill rate and membership counts for newly opened locations
+- **Print/export** — one-click browser print with a formatted print layout (screen chrome hidden, print header and footer injected)
 
 ---
 
@@ -189,6 +232,7 @@ Studio
 | Data viz | Recharts 3 |
 | ORM | Prisma 7 |
 | Database | SQLite via better-sqlite3 |
+| Map | react-simple-maps + us-atlas topojson |
 | Animations | CSS `max-height` transitions + `cubic-bezier` easing |
 | Package manager | npm |
 
@@ -232,6 +276,9 @@ dashboard/
 │   ├── app/
 │   │   ├── page.tsx           network overview (home)
 │   │   ├── alerts/            network-wide alert center
+│   │   ├── churn/             network-wide retention intelligence
+│   │   ├── digest/            weekly network digest (printable)
+│   │   ├── pipeline/          franchise pipeline kanban
 │   │   └── studios/[id]/
 │   │       ├── page.tsx       studio overview
 │   │       ├── classes/       schedule + analytics
