@@ -112,48 +112,15 @@ export function StudioGrid({ studios }: Props) {
         )}
       </div>
 
-      {/* Status filter pills */}
-      {tab === "open" && (
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
-          {([
-            { value: "all",      label: "All" },
-            { value: "healthy",  label: "Healthy" },
-            { value: "at-risk",  label: "At Risk" },
-            { value: "new",      label: "New" },
-          ] as { value: StudioStatus | "all"; label: string }[]).map(({ value, label }) => {
-            const active = statusFilter === value;
-            return (
-              <button
-                key={value}
-                onClick={() => setStatusFilter(value)}
-                className="text-xs font-medium px-3 py-1 rounded-full border transition-all cursor-pointer"
-                style={{
-                  background:   active ? "#4A638D" : "#FFFFFF",
-                  color:        active ? "#FFFFFF" : "#4A638D",
-                  borderColor:  active ? "#4A638D" : "#C8D8EE",
-                }}
-              >
-                {label}
-                <span className="ml-1.5 opacity-60">
-                  {value === "all"
-                    ? tabFiltered.length
-                    : tabFiltered.filter((s) => s.status === value).length}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       {/* Tab toggle */}
-      <div className="flex gap-8 mb-6">
+      <div className="flex gap-8 mb-4">
         {(["open", "coming-soon"] as const).map((t) => {
           const label = t === "open" ? "Open Locations" : "Coming Soon";
           const active = tab === t;
           return (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setStatusFilter("all"); }}
               className="pb-2 text-sm font-bold tracking-widest uppercase transition-colors cursor-pointer"
               style={{
                 fontFamily: "var(--font-montserrat), Montserrat, sans-serif",
@@ -162,6 +129,39 @@ export function StudioGrid({ studios }: Props) {
               }}
             >
               {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Status filter pills */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        {([
+          { value: "all",      label: "All" },
+          { value: "healthy",  label: "Healthy" },
+          { value: "at-risk",  label: "At Risk" },
+          { value: "new",      label: "New" },
+        ] as { value: StudioStatus | "all"; label: string }[]).map(({ value, label }) => {
+          const active = statusFilter === value && tab === "open";
+          const disabled = tab === "coming-soon";
+          return (
+            <button
+              key={value}
+              onClick={() => { if (!disabled) setStatusFilter(value); }}
+              className="text-xs font-medium px-3 py-1 rounded-full border transition-all"
+              style={{
+                background:  disabled ? "#F3F4F6" : active ? "#4A638D" : "#FFFFFF",
+                color:       disabled ? "#D1D5DB" : active ? "#FFFFFF" : "#4A638D",
+                borderColor: disabled ? "#E5E7EB" : active ? "#4A638D" : "#C8D8EE",
+                cursor:      disabled ? "default" : "pointer",
+              }}
+            >
+              {label}
+              <span className="ml-1.5 opacity-60">
+                {value === "all"
+                  ? tabFiltered.length
+                  : tabFiltered.filter((s) => s.status === value).length}
+              </span>
             </button>
           );
         })}

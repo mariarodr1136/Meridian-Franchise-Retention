@@ -209,7 +209,7 @@ export default async function DashboardPage() {
                   </span>
                 )}
               </div>
-              <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 220px)" }}>
+              <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 220px)", paddingTop: "4px" }}>
                 <AnomalyFeed anomalies={anomalyList} />
               </div>
             </div>

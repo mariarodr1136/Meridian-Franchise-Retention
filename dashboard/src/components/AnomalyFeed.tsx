@@ -20,6 +20,7 @@ export function AnomalyFeed({ anomalies }: Props) {
   const [items, setItems] = useState<Anomaly[]>(anomalies);
   const [selected, setSelected] = useState<Anomaly | null>(null);
   const [resolving, setResolving] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const sorted = [...items].sort((a, b) => {
     const o = { high: 0, medium: 1, low: 2 };
@@ -56,11 +57,18 @@ export function AnomalyFeed({ anomalies }: Props) {
           <div
             key={a.id}
             onClick={() => setSelected(isExpanded ? null : a)}
+            onMouseEnter={() => setHoveredId(a.id)}
+            onMouseLeave={() => setHoveredId(null)}
             className="rounded-xl border bg-white text-left cursor-pointer w-full"
             style={{
-              borderColor: isExpanded ? sc.dot : "#E5E7EB",
-              boxShadow: isExpanded ? "0 4px 16px rgba(0,0,0,0.08)" : "none",
-              transition: "border-color 0.2s, box-shadow 0.2s",
+              borderColor: isExpanded ? sc.dot : hoveredId === a.id ? "#4A638D" : "#E5E7EB",
+              boxShadow: isExpanded
+                ? "0 4px 16px rgba(0,0,0,0.08)"
+                : hoveredId === a.id
+                ? "0 6px 20px rgba(74,99,141,0.15)"
+                : "none",
+              transform: !isExpanded && hoveredId === a.id ? "translateY(-2px)" : "translateY(0)",
+              transition: "border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease",
             }}
           >
             {/* Always-visible header */}
