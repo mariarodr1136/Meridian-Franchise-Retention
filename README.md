@@ -25,9 +25,13 @@ From the network home page, operators get an instant read on every studio: occup
 
 ---
 
-Live Application: XXX
+Live Application: https://jetset-franchise-intelligence.onrender.com/
 
 *Note: The live application is hosted on Render's free tier, so the backend may take 1–2 minutes to wake up on the first visit after inactivity.*
+
+---
+
+https://github.com/user-attachments/assets/c3223171-da8d-4156-af18-0e0c81c7b5fb
 
 ---
 
@@ -161,6 +165,15 @@ A `/digest` page that generates a printable weekly performance report for the en
 
 ---
 
+<img width="1466" height="799" alt="Screenshot 2026-06-09 at 3 06 56 PM" src="https://github.com/user-attachments/assets/3ee6734f-8733-4174-a3d6-f3ff2f9d8cc9" />
+
+---
+
+<img width="1466" height="796" alt="Screenshot 2026-06-09 at 3 07 33 PM" src="https://github.com/user-attachments/assets/278e2c7f-f259-47f7-b904-7959c1f45cc0" />
+
+
+---
+
 ## Architecture
 
 ```
@@ -264,6 +277,13 @@ curl -X POST http://localhost:3000/api/anomalies/generate
 Or trigger it from the Scan button on the network overview page.
 
 ---
+
+<img width="1451" height="791" alt="Screenshot 2026-06-09 at 3 07 21 PM" src="https://github.com/user-attachments/assets/05f20162-d5e0-4970-b778-b1df094c9803" />
+
+
+
+---
+
 
 ## Project Structure
 
