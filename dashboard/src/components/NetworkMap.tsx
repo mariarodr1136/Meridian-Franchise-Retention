@@ -169,6 +169,19 @@ export function NetworkMap({ studios }: Props) {
   return (
     // Outer wrapper — position:relative with NO overflow:hidden so popup can escape the card
     <div ref={wrapperRef} style={{ position: "relative" }}>
+      <style>{`
+        @keyframes at-risk-pulse {
+          0%   { transform: scale(1);    opacity: 0;    animation-timing-function: ease-in; }
+          20%  { transform: scale(1.2);  opacity: 0.45; animation-timing-function: ease-out; }
+          80%  { transform: scale(2.2);  opacity: 0; }
+          100% { transform: scale(2.2);  opacity: 0; }
+        }
+        .at-risk-pulse {
+          animation: at-risk-pulse 2.6s linear infinite;
+          transform-origin: center;
+          transform-box: fill-box;
+        }
+      `}</style>
       <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#C8D8EE", background: "#FFFFFF" }}>
         {/* Legend row */}
         <div className="flex items-center gap-4 px-5 py-3 border-b" style={{ borderColor: "#E4EDF8" }}>
@@ -263,6 +276,7 @@ export function NetworkMap({ studios }: Props) {
                     stroke={STATUS_COLOR[studio.status as StudioStatus]}
                     strokeWidth={1}
                     opacity={0.35}
+                    className={studio.status === "at-risk" && selected?.id !== studio.id ? "at-risk-pulse" : undefined}
                     style={{ pointerEvents: "none" }}
                   />
                 )}
