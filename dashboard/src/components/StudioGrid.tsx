@@ -28,8 +28,9 @@ interface Props {
 
 export function StudioGrid({ studios }: Props) {
   const [query, setQuery]         = useState("");
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [tab, setTab]             = useState<"open" | "coming-soon">("open");
+  const [statusFilter, setStatusFilter] = useState<StudioStatus | "all">("all");
 
   const tabFiltered = useMemo(() =>
     studios.filter((s) => tab === "open" ? s.status !== "pre-launch" : s.status === "pre-launch"),
@@ -37,15 +38,17 @@ export function StudioGrid({ studios }: Props) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return tabFiltered;
-    return tabFiltered.filter(
-      (s) =>
+    return tabFiltered.filter((s) => {
+      if (statusFilter !== "all" && s.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
         s.name.toLowerCase().includes(q) ||
         s.city.toLowerCase().includes(q) ||
         (s.state ?? "").toLowerCase().includes(q) ||
         s.region.toLowerCase().includes(q)
-    );
-  }, [tabFiltered, query]);
+      );
+    });
+  }, [tabFiltered, query, statusFilter]);
 
   const byState = useMemo(() => {
     const map: Record<string, StudioWithLatestMetric[]> = {};
@@ -59,7 +62,7 @@ export function StudioGrid({ studios }: Props) {
   }, [filtered]);
 
   function toggleRegion(region: string) {
-    setCollapsed((prev) => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       next.has(region) ? next.delete(region) : next.add(region);
       return next;
@@ -109,6 +112,39 @@ export function StudioGrid({ studios }: Props) {
         )}
       </div>
 
+      {/* Status filter pills */}
+      {tab === "open" && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {([
+            { value: "all",      label: "All" },
+            { value: "healthy",  label: "Healthy" },
+            { value: "at-risk",  label: "At Risk" },
+            { value: "new",      label: "New" },
+          ] as { value: StudioStatus | "all"; label: string }[]).map(({ value, label }) => {
+            const active = statusFilter === value;
+            return (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className="text-xs font-medium px-3 py-1 rounded-full border transition-all cursor-pointer"
+                style={{
+                  background:   active ? "#4A638D" : "#FFFFFF",
+                  color:        active ? "#FFFFFF" : "#4A638D",
+                  borderColor:  active ? "#4A638D" : "#C8D8EE",
+                }}
+              >
+                {label}
+                <span className="ml-1.5 opacity-60">
+                  {value === "all"
+                    ? tabFiltered.length
+                    : tabFiltered.filter((s) => s.status === value).length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Tab toggle */}
       <div className="flex gap-8 mb-6">
         {(["open", "coming-soon"] as const).map((t) => {
@@ -138,7 +174,7 @@ export function StudioGrid({ studios }: Props) {
       ) : (
         byState.map(([stateCode, stateStudios]) => {
           const stateName = STATE_NAMES[stateCode] ?? stateCode;
-          const isCollapsed = collapsed.has(stateCode);
+          const isCollapsed = !expanded.has(stateCode);
           const statusCounts = (["healthy", "at-risk", "new", "pre-launch"] as StudioStatus[])
             .map((s) => ({ status: s, count: stateStudios.filter((st) => st.status === s).length }))
             .filter((s) => s.count > 0);
@@ -178,13 +214,19 @@ export function StudioGrid({ studios }: Props) {
                 </svg>
               </button>
 
-              {!isCollapsed && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-                  {stateStudios.map((studio) => (
-                    <StudioCard key={studio.id} studio={studio} />
-                  ))}
+              <div style={{
+                display: "grid",
+                gridTemplateRows: isCollapsed ? "0fr" : "1fr",
+                transition: "grid-template-rows 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
+              }}>
+                <div style={{ overflow: "hidden", minHeight: 0 }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+                    {stateStudios.map((studio) => (
+                      <StudioCard key={studio.id} studio={studio} />
+                    ))}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           );
         })

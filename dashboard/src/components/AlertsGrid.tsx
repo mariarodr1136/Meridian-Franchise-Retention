@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Anomaly } from "@/types";
 import { cn } from "@/lib/utils";
+import { ScanButton } from "@/components/ScanButton";
 
 const severityConfig = {
   high:   { dot: "#DC2626", label: "Critical", labelBg: "#FEE2E2", labelColor: "#B91C1C" },
@@ -26,6 +27,7 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
   const [resolved, setResolved] = useState<Anomaly[]>(resolvedAnomalies);
   const [selected, setSelected] = useState<Anomaly | null>(null);
   const [resolving, setResolving] = useState(false);
+  const [severityFilter, setSeverityFilter] = useState<"high" | "medium" | "low" | null>(null);
 
   async function handleResolve(anomaly: Anomaly) {
     setResolving(true);
@@ -42,14 +44,25 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
   function switchTab(t: "active" | "resolved") {
     setTab(t);
     setSelected(null);
+    setSeverityFilter(null);
   }
 
-  const list = tab === "active" ? active : resolved;
+  const severityCounts = {
+    high:   active.filter((a) => a.severity === "high").length,
+    medium: active.filter((a) => a.severity === "medium").length,
+    low:    active.filter((a) => a.severity === "low").length,
+  };
+
+  const baseList = tab === "active" ? active : resolved;
+  const list = severityFilter && tab === "active"
+    ? baseList.filter((a) => a.severity === severityFilter)
+    : baseList;
 
   return (
     <>
       {/* Tab bar */}
       <div className="flex items-center gap-2 mb-6">
+        {/* Active / Resolved tabs */}
         {(["active", "resolved"] as const).map((t) => {
           const count = t === "active" ? active.length : resolved.length;
           const isCurrent = tab === t;
@@ -78,6 +91,49 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
             </button>
           );
         })}
+
+        {/* Severity filter pills — only on active tab */}
+        {tab === "active" && (["high", "medium", "low"] as const).some((s) => severityCounts[s] > 0) && (
+          <>
+            <div style={{ width: 1, height: 18, background: "#E5E7EB", margin: "0 2px", flexShrink: 0 }} />
+            {(["high", "medium", "low"] as const).map((s) => {
+              const count = severityCounts[s];
+              if (!count) return null;
+              const sc = severityConfig[s];
+              const isOn = severityFilter === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setSeverityFilter(isOn ? null : s)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer"
+                  style={isOn
+                    ? { background: sc.dot, color: "#fff", border: `1px solid ${sc.dot}` }
+                    : { background: "#fff", border: "1px solid #C8D8EE", color: sc.labelColor }
+                  }
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ background: isOn ? "rgba(255,255,255,0.75)" : sc.dot }}
+                  />
+                  {sc.label}
+                  <span
+                    className="text-[10px] font-bold px-1 py-0.5 rounded-full"
+                    style={isOn
+                      ? { background: "rgba(255,255,255,0.2)", color: "#fff" }
+                      : { background: sc.labelBg, color: sc.labelColor }
+                    }
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </>
+        )}
+
+        <div className="ml-auto">
+          <ScanButton />
+        </div>
       </div>
 
       {/* Grid */}
@@ -111,7 +167,7 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
                   background: "#fff",
                   borderColor: isExpanded ? sc.dot : "#E5E7EB",
                   boxShadow: isExpanded ? `0 4px 20px rgba(0,0,0,0.09)` : "none",
-                  transition: "border-color 0.2s, box-shadow 0.2s",
+                  transition: "border-color 0.35s ease, box-shadow 0.35s ease",
                 }}
               >
                 {/* Always-visible card body */}
@@ -156,22 +212,21 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
                   </p>
                 </div>
 
-                {/* Expandable action section */}
+                {/* Expandable action section — grid-row trick for true height animation */}
                 <div style={{
-                  maxHeight: isExpanded ? "96px" : "0",
-                  overflow: "hidden",
-                  transition: "max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                  display: "grid",
+                  gridTemplateRows: isExpanded ? "1fr" : "0fr",
+                  transition: "grid-template-rows 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}>
+                  <div style={{ overflow: "hidden", minHeight: 0 }}>
                   <div className="px-4 pb-4">
                     <div style={{ height: 1, background: "#F3F4F6", marginBottom: 12 }} />
                     {tab !== "resolved" ? (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleResolve(a); }}
                         disabled={resolving}
-                        className="w-full text-xs font-semibold py-2 rounded-lg disabled:opacity-50 cursor-pointer"
-                        style={{ background: "#4A638D", color: "#fff", transition: "background 0.15s" }}
-                        onMouseEnter={(e) => { if (!resolving) (e.currentTarget as HTMLButtonElement).style.background = "#3d527a"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#4A638D"; }}
+                        className="w-full text-xs font-semibold py-2 rounded-lg disabled:opacity-50 cursor-pointer transition-all duration-300 ease-in-out hover:brightness-90 active:scale-[0.98]"
+                        style={{ background: "#4A638D", color: "#fff" }}
                       >
                         {resolving ? "Resolving…" : "Mark Resolved"}
                       </button>
@@ -180,6 +235,7 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
                         This alert has been resolved
                       </p>
                     )}
+                  </div>
                   </div>
                 </div>
               </div>

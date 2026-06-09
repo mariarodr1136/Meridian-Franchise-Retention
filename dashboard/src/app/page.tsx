@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { StudioGrid } from "@/components/StudioGrid";
 import { AnomalyFeed } from "@/components/AnomalyFeed";
 import { StatusBadge } from "@/components/StatusBadge";
+import { NetworkMapSection } from "@/components/NetworkMapSection";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import type { StudioStatus, StudioWithLatestMetric, Anomaly } from "@/types";
 
@@ -11,7 +12,7 @@ async function getNetworkData() {
   const [studios, anomalies] = await Promise.all([
     db.studio.findMany({
       include: {
-        metrics: { orderBy: { weekOf: "desc" }, take: 1 },
+        metrics: { orderBy: { weekOf: "desc" }, take: 2 },
       },
       orderBy: [{ region: "asc" }, { name: "asc" }],
     }),
@@ -24,10 +25,27 @@ async function getNetworkData() {
   return { studios, anomalies };
 }
 
-function NetworkStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function delta(current: number, prev: number): { pct: number; dir: "up" | "down" | "flat" } | null {
+  if (!prev) return null;
+  const pct = ((current - prev) / prev) * 100;
+  return { pct: Math.abs(pct), dir: pct > 0.4 ? "up" : pct < -0.4 ? "down" : "flat" };
+}
+
+function NetworkStat({ label, value, sub, wow }: {
+  label: string; value: string; sub?: string;
+  wow?: { pct: number; dir: "up" | "down" | "flat" } | null;
+}) {
   return (
     <div className="text-center px-6 py-4">
-      <p className="text-2xl font-bold text-white whitespace-nowrap">{value}</p>
+      <div className="flex items-center justify-center gap-1.5">
+        <p className="text-2xl font-bold text-white whitespace-nowrap">{value}</p>
+        {wow && wow.dir !== "flat" && (
+          <span className="text-xs font-semibold whitespace-nowrap"
+            style={{ color: wow.dir === "up" ? "#86EFAC" : "#FCA5A5" }}>
+            {wow.dir === "up" ? "↑" : "↓"}{wow.pct.toFixed(1)}%
+          </span>
+        )}
+      </div>
       <p className="text-xs mt-0.5 whitespace-nowrap" style={{ color: "rgba(255,255,255,0.6)" }}>
         {label}{sub ? ` · ${sub}` : ""}
       </p>
@@ -41,10 +59,15 @@ export default async function DashboardPage() {
   const openStudios = studios.filter((s) => s.status !== "pre-launch");
   const atRiskCount = studios.filter((s) => s.status === "at-risk").length;
   const totalMembers = openStudios.reduce((sum, s) => sum + (s.metrics[0]?.activeMemberships ?? 0), 0);
+  const prevMembers  = openStudios.reduce((sum, s) => sum + (s.metrics[1]?.activeMemberships ?? 0), 0);
   const avgOccupancy = openStudios.length
     ? openStudios.reduce((sum, s) => sum + (s.metrics[0]?.classFillRate ?? 0), 0) / openStudios.length
     : 0;
+  const prevOccupancy = openStudios.length
+    ? openStudios.reduce((sum, s) => sum + (s.metrics[1]?.classFillRate ?? 0), 0) / openStudios.length
+    : 0;
   const totalRevenue = openStudios.reduce((sum, s) => sum + (s.metrics[0]?.weeklyRevenue ?? 0), 0);
+  const prevRevenue  = openStudios.reduce((sum, s) => sum + (s.metrics[1]?.weeklyRevenue ?? 0), 0);
 
   const studioList: StudioWithLatestMetric[] = studios.map((s) => ({
     id: s.id,
@@ -130,15 +153,15 @@ export default async function DashboardPage() {
             {/* Stats centered */}
             <div className="flex flex-1 items-center justify-center">
               {[
-                { label: "Total Studios",     value: String(studios.length), sub: `${openStudios.length} open` },
-                { label: "Active Members",    value: formatNumber(totalMembers) },
-                { label: "Network Occupancy", value: formatPercent(avgOccupancy) },
-                { label: "Weekly Revenue",    value: formatCurrency(totalRevenue) },
-                { label: "At-Risk Studios",   value: String(atRiskCount) },
-                { label: "Open Anomalies",    value: String(anomalies.length) },
+                { label: "Total Studios",     value: String(studios.length), sub: `${openStudios.length} open`, wow: null },
+                { label: "Active Members",    value: formatNumber(totalMembers), wow: delta(totalMembers, prevMembers) },
+                { label: "Network Occupancy", value: formatPercent(avgOccupancy), wow: delta(avgOccupancy, prevOccupancy) },
+                { label: "Weekly Revenue",    value: formatCurrency(totalRevenue), wow: delta(totalRevenue, prevRevenue) },
+                { label: "At-Risk Studios",   value: String(atRiskCount), wow: null },
+                { label: "Open Anomalies",    value: String(anomalies.length), wow: null },
               ].map((stat, i, arr) => (
                 <div key={stat.label} className="flex items-center">
-                  <NetworkStat label={stat.label} value={stat.value} sub={stat.sub} />
+                  <NetworkStat label={stat.label} value={stat.value} sub={stat.sub} wow={stat.wow} />
                   {i < arr.length - 1 && (
                     <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
                   )}
@@ -146,18 +169,13 @@ export default async function DashboardPage() {
               ))}
             </div>
 
-            {/* Retention AI */}
-            <div className="flex-none">
-              <Link href="/churn" className="text-sm font-medium transition-opacity hover:opacity-70 text-white whitespace-nowrap">
-                Retention AI →
-              </Link>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Main content */}
       <div className="max-w-[1400px] mx-auto px-6 py-8">
+        <NetworkMapSection studios={studioList} />
         <div className="flex gap-8">
           <StudioGrid studios={studioList} />
 

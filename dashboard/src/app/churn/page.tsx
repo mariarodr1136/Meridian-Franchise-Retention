@@ -361,10 +361,10 @@ export default function ChurnPage() {
                         className={cn(
                           "px-3 py-1.5 rounded-md text-xs font-medium transition-all capitalize",
                           filterLevel === level
-                            ? "text-white bg-[#262626]"
-                            : "hover:bg-[#262626]"
+                            ? "text-white bg-[#4A638D]"
+                            : "hover:bg-[#4A638D]"
                         )}
-                        style={{ color: filterLevel === level ? "#fafafa" : "#737373" }}
+                        style={{ color: filterLevel === level ? "#ffffff" : "#4A638D" }}
                       >
                         {level}
                       </button>

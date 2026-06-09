@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { AlertsGrid } from "@/components/AlertsGrid";
-import { ScanButton } from "@/components/ScanButton";
 import type { Anomaly } from "@/types";
 
 const severityOrder = { high: 0, medium: 1, low: 2 };
@@ -48,28 +47,11 @@ export default async function AlertsPage() {
       </header>
 
       <div className="max-w-[1200px] mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: "#1F2937" }}>Network Alerts</h1>
-            <p className="text-sm mt-1" style={{ color: "#6B7280" }}>
-              {active.length} active alert{active.length !== 1 ? "s" : ""} across the network
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ScanButton />
-            {(["high", "medium", "low"] as const).map((s) => {
-              const count = active.filter((a) => a.severity === s).length;
-              if (!count) return null;
-              const colors = { high: "#DC2626", medium: "#D97706", low: "#4A638D" };
-              const labels = { high: "Critical", medium: "Warning", low: "Advisory" };
-              return (
-                <span key={s} className="text-xs font-medium px-3 py-1 rounded-full text-white"
-                  style={{ background: colors[s] }}>
-                  {count} {labels[s]}
-                </span>
-              );
-            })}
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold" style={{ color: "#1F2937" }}>Network Alerts</h1>
+          <p className="text-sm mt-1" style={{ color: "#6B7280" }}>
+            {active.length} active alert{active.length !== 1 ? "s" : ""} across the network
+          </p>
         </div>
 
         <AlertsGrid anomalies={active} resolvedAnomalies={resolved} />

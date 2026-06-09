@@ -108,24 +108,24 @@ export function AnomalyFeed({ anomalies }: Props) {
               </p>
             </div>
 
-            {/* Expandable resolve section */}
+            {/* Expandable resolve section — grid-row trick for smooth height animation */}
             <div style={{
-              maxHeight: isExpanded ? "80px" : "0",
-              overflow: "hidden",
-              transition: "max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+              display: "grid",
+              gridTemplateRows: isExpanded ? "1fr" : "0fr",
+              transition: "grid-template-rows 0.45s cubic-bezier(0.4, 0, 0.2, 1)",
             }}>
-              <div className="px-3.5 pb-3.5">
-                <div style={{ height: 1, background: "#F3F4F6", marginBottom: 10 }} />
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleResolve(a); }}
-                  disabled={resolving}
-                  className="w-full text-xs font-semibold py-2 rounded-lg disabled:opacity-50 cursor-pointer"
-                  style={{ background: "#4A638D", color: "#fff", transition: "background 0.15s" }}
-                  onMouseEnter={(e) => { if (!resolving) (e.currentTarget as HTMLButtonElement).style.background = "#3d527a"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#4A638D"; }}
-                >
-                  {resolving ? "Resolving…" : "Mark Resolved"}
-                </button>
+              <div style={{ overflow: "hidden", minHeight: 0 }}>
+                <div className="px-3.5 pb-3.5">
+                  <div style={{ height: 1, background: "#F3F4F6", marginBottom: 10 }} />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleResolve(a); }}
+                    disabled={resolving}
+                    className="w-full text-xs font-semibold py-2 rounded-lg disabled:opacity-50 cursor-pointer transition-all duration-300 ease-in-out hover:brightness-90 active:scale-[0.98]"
+                    style={{ background: "#4A638D", color: "#fff" }}
+                  >
+                    {resolving ? "Resolving…" : "Mark Resolved"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

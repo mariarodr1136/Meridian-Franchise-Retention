@@ -345,6 +345,9 @@ export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref, 
             background: "#fff",
             border: "1px solid #C8D8EE",
             boxShadow: "0 12px 32px rgba(74,99,141,0.16)",
+            animation: "popupEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            transformOrigin: "top right",
+            willChange: "transform, opacity",
           }}
         >
           {/* Panel header */}
