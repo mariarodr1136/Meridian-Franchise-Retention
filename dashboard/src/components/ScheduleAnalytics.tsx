@@ -98,7 +98,7 @@ export function ScheduleAnalytics({ slotStats, instructorStats }: Props) {
               </tr>
             </thead>
             <tbody>
-              {timeSlots.map((slot) => (
+              {timeSlots.map((slot, rowIdx) => (
                 <tr key={slot}>
                   <td className="py-1 pr-4 font-medium whitespace-nowrap" style={{ color: "#6B7280" }}>{slot}</td>
                   {activeDays.map((d) => {
@@ -118,7 +118,7 @@ export function ScheduleAnalytics({ slotStats, instructorStats }: Props) {
                           {Math.round(stat.avgFillRate * 100)}%
                           {isHov && (
                             <div
-                              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-xl p-3 shadow-xl z-50 whitespace-nowrap pointer-events-none"
+                              className={`absolute ${rowIdx <= 1 ? "top-full mt-2" : "bottom-full mb-2"} left-1/2 -translate-x-1/2 rounded-xl p-3 shadow-xl z-50 whitespace-nowrap pointer-events-none`}
                               style={{ background: "#1c1c1c", color: "#fafafa", minWidth: "140px" }}
                             >
                               <p className="font-semibold text-xs mb-2">{DAY_LABELS[d]} · {slot}</p>

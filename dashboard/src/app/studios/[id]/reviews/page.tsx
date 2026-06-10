@@ -70,7 +70,7 @@ export default async function StudioReviewsPage({
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
       {/* Header */}
-      <header className="sticky top-0 z-10 w-full" style={{ background: "#4A638D" }}>
+      <header className="sticky top-0 z-40 w-full" style={{ background: "#4A638D" }}>
         <div className="max-w-[1340px] mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/"><Image
             src="/jetset-logo-transparent.png"

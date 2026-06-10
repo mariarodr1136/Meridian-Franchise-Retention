@@ -98,7 +98,7 @@ export default async function StudioPage({
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
       {/* Header */}
-      <header className="sticky top-0 z-10 w-full" style={{ background: "#4A638D" }}>
+      <header className="sticky top-0 z-40 w-full" style={{ background: "#4A638D" }}>
         <div className="max-w-[1340px] mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/"><Image src="/jetset-logo-transparent.png" alt="JetSet Modern Pilates" width={150} height={80} priority className="object-contain transition-opacity hover:opacity-80" /></Link>
           <Link href="/" className="text-sm font-medium transition-opacity hover:opacity-70 text-white">← Network</Link>
@@ -204,14 +204,14 @@ export default async function StudioPage({
                     <Link
                       key={href}
                       href={href}
-                      className="rounded-xl border px-5 py-4 flex items-center justify-between group transition-all hover:shadow-sm"
-                      style={{ background: "#fff", borderColor: "#C8D8EE" }}
+                      className="rounded-xl border border-[#C8D8EE] px-5 py-4 flex items-center justify-between group transition-all hover:border-[#4A638D] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(74,99,141,0.12)]"
+                      style={{ background: "#fff" }}
                     >
                       <div>
                         <p className="text-sm font-semibold" style={{ color: "#1F2937" }}>{label}</p>
                         <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{desc}</p>
                       </div>
-                      <span className="text-sm transition-transform group-hover:translate-x-0.5" style={{ color: "#C8D8EE" }}>→</span>
+                      <span className="text-sm transition-all group-hover:translate-x-0.5 group-hover:text-[#4A638D]" style={{ color: "#C8D8EE" }}>→</span>
                     </Link>
                   ))}
                 </div>

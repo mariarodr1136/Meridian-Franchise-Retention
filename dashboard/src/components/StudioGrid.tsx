@@ -155,6 +155,8 @@ export function StudioGrid({ studios }: Props) {
                 borderColor: disabled ? "#E5E7EB" : active ? "#4A638D" : "#C8D8EE",
                 cursor:      disabled ? "default" : "pointer",
               }}
+              onMouseEnter={(e) => { if (!disabled && !active) e.currentTarget.style.boxShadow = "0 0 0 2px #4A638D"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; }}
             >
               {label}
               <span className="ml-1.5 opacity-60">

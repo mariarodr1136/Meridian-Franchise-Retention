@@ -52,7 +52,7 @@ export default async function SettingsPage({
 
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
-      <header className="sticky top-0 z-10 w-full" style={{ background: "#4A638D" }}>
+      <header className="sticky top-0 z-40 w-full" style={{ background: "#4A638D" }}>
         <div className="max-w-[1340px] mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/"><Image src="/jetset-logo-transparent.png" alt="JetSet Modern Pilates" width={150} height={80} priority className="object-contain transition-opacity hover:opacity-80" /></Link>
           <Link href={`/studios/${id}`} className="text-sm font-medium transition-opacity hover:opacity-70 text-white">← {studio.name}</Link>

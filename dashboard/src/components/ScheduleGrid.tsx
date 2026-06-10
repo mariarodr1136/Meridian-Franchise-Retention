@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import type { ClassMetric } from "@/types";
@@ -91,6 +91,7 @@ function shiftWeek(baseDays: ScheduleDay[], offset: number): ScheduleDay[] {
 export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref, studioId }: Props) {
   const [selected, setSelected] = useState<{ cls: ScheduleClass; stats: ClassStats | null } | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentDays = useMemo(() => shiftWeek(days, weekOffset), [days, weekOffset]);
 
@@ -122,18 +123,22 @@ export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref, 
   const today = new Date();
   const todayStr = `${String(today.getMonth() + 1).padStart(2, "0")}/${String(today.getDate()).padStart(2, "0")}`;
 
-  function handleSelect(cls: ScheduleClass, dayStr: string) {
+  function handleHoverEnter(cls: ScheduleClass, dayStr: string) {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
     const dow = DAY_NUM[dayStr] ?? -1;
     const slot = extractTimeSlot(cls.time);
     const stats = statsCache.get(`${dow}-${slot}`) ?? null;
-    setSelected((prev) =>
-      prev?.cls.time === cls.time && prev?.cls.day === cls.day ? null : { cls, stats }
-    );
+    setSelected({ cls, stats });
+  }
+
+  function handleHoverLeave() {
+    closeTimer.current = setTimeout(() => setSelected(null), 200);
   }
 
   return (
+    <div className="relative mb-6">
     <div
-      className="rounded-2xl overflow-hidden mb-6 relative"
+      className="rounded-2xl overflow-hidden"
       style={{ background: "#fff", border: "1px solid #C8D8EE", boxShadow: "0 2px 12px rgba(74,99,141,0.08)" }}
     >
       {/* Header */}
@@ -266,7 +271,6 @@ export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref, 
                     return (
                       <button
                         key={i}
-                        onClick={() => handleSelect(cls, day)}
                         className="rounded-lg text-left w-full cursor-pointer transition-all"
                         style={{
                           display: "flex",
@@ -278,12 +282,14 @@ export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref, 
                           transition: "all 0.15s ease",
                         }}
                         onMouseEnter={(e) => {
+                          handleHoverEnter(cls, day);
                           if (!isSelected) {
                             (e.currentTarget as HTMLButtonElement).style.borderColor = "#B8CCE8";
                             (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 8px rgba(74,99,141,0.1)";
                           }
                         }}
                         onMouseLeave={(e) => {
+                          handleHoverLeave();
                           if (!isSelected) {
                             (e.currentTarget as HTMLButtonElement).style.borderColor = "#EEF3FB";
                             (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 2px rgba(74,99,141,0.04)";
@@ -336,19 +342,22 @@ export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref, 
           );
         })}
       </div>
+    </div>
 
       {/* Detail panel */}
       {selected && (
         <div
-          className="absolute right-4 top-[88px] w-72 rounded-2xl z-10 overflow-hidden"
+          className="absolute right-4 top-[140px] w-72 rounded-2xl z-30 overflow-hidden"
           style={{
             background: "#fff",
             border: "1px solid #C8D8EE",
             boxShadow: "0 12px 32px rgba(74,99,141,0.16)",
-            animation: "popupEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            animation: "popupEnter 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards",
             transformOrigin: "top right",
             willChange: "transform, opacity",
           }}
+          onMouseEnter={() => { if (closeTimer.current) clearTimeout(closeTimer.current); }}
+          onMouseLeave={() => handleHoverLeave()}
         >
           {/* Panel header */}
           <div

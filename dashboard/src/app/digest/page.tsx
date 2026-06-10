@@ -55,7 +55,7 @@ export default async function DigestPage() {
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
       {/* Screen-only header */}
-      <header className="sticky top-0 z-10 w-full print:hidden" style={{ background: "#4A638D" }}>
+      <header className="sticky top-0 z-40 w-full print:hidden" style={{ background: "#4A638D" }}>
         <div className="max-w-[960px] mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/">
             <Image src="/jetset-logo-transparent.png" alt="JetSet Modern Pilates" width={130} height={68} priority className="object-contain" />

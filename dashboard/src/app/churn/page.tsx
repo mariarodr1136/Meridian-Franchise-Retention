@@ -276,7 +276,7 @@ export default function ChurnPage() {
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
       {/* Header */}
-      <header className="sticky top-0 z-10 w-full" style={{ background: "#4A638D" }}>
+      <header className="sticky top-0 z-40 w-full" style={{ background: "#4A638D" }}>
         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
           <Image
             src="/jetset-logo-transparent.png"

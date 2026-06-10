@@ -62,20 +62,15 @@ export function StudioSidebar({ studioId, studioStatus }: Props) {
               <Link
                 key={id}
                 href={href(id)}
-                className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all"
-                style={
+                className={`group flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all ${
                   isActive
-                    ? { background: "#EEF3FB", color: "#4A638D", fontWeight: 600 }
-                    : { color: "#6B7280", fontWeight: 400 }
-                }
+                    ? "bg-[#EEF3FB] text-[#4A638D] font-semibold"
+                    : "text-[#6B7280] font-normal hover:bg-[#EEF3FB] hover:text-[#4A638D] hover:translate-x-1"
+                }`}
               >
                 <span
-                  className="rounded-full flex-shrink-0"
-                  style={{
-                    width: 6,
-                    height: 6,
-                    background: isActive ? "#4A638D" : "#D1D5DB",
-                  }}
+                  className={`rounded-full flex-shrink-0 transition-colors ${isActive ? "bg-[#4A638D]" : "bg-[#D1D5DB] group-hover:bg-[#4A638D]"}`}
+                  style={{ width: 6, height: 6 }}
                 />
                 {label}
               </Link>

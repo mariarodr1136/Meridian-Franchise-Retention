@@ -52,12 +52,11 @@ export function StudioNav({ sections, label = "On this page" }: Props) {
               <button
                 key={id}
                 onClick={() => jumpTo(id)}
-                className="text-left w-full px-3 py-2.5 rounded-xl text-sm transition-all cursor-pointer"
-                style={
+                className={`text-left w-full px-3 py-2.5 rounded-xl text-sm transition-all cursor-pointer ${
                   isActive
-                    ? { background: "#EEF3FB", color: "#4A638D", fontWeight: 600 }
-                    : { color: "#6B7280", fontWeight: 400 }
-                }
+                    ? "bg-[#EEF3FB] text-[#4A638D] font-semibold"
+                    : "text-[#6B7280] font-normal hover:bg-[#EEF3FB] hover:text-[#4A638D] hover:translate-x-1"
+                }`}
               >
                 {label}
               </button>
