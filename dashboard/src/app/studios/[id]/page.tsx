@@ -10,7 +10,8 @@ import { MetricCharts } from "@/components/MetricCharts";
 import { RetentionPreview } from "@/components/RetentionPreview";
 import { ReviewsScroll } from "@/components/ReviewsScroll";
 import { generateStudioChurn } from "@/lib/churn";
-import { formatPercent, formatNumber, formatCurrency, trendDirection, trendLabel, cn } from "@/lib/utils";
+import { formatPercent, formatNumber, formatCurrency, trendDirection, trendLabel } from "@/lib/utils";
+import { MetricBubble } from "@/components/MetricBubble";
 import type { StudioStatus, StudioMetric, Anomaly, Review } from "@/types";
 
 async function getStudio(id: string) {
@@ -148,36 +149,63 @@ export default async function StudioPage({
               </div>
             ) : current ? (
               <div className="grid grid-cols-4 gap-4">
-                {[
-                  { label: "Class Occupancy", value: formatPercent(current.classFillRate),    trend: trendDirection(current.classFillRate,    prev?.classFillRate    ?? current.classFillRate),    trendStr: prev ? trendLabel(current.classFillRate,    prev.classFillRate)    : undefined },
-                  { label: "Active Members",  value: formatNumber(current.activeMemberships), trend: trendDirection(current.activeMemberships, prev?.activeMemberships ?? current.activeMemberships), trendStr: prev ? trendLabel(current.activeMemberships, prev.activeMemberships) : undefined },
-                  { label: "Weekly Revenue",  value: formatCurrency(current.weeklyRevenue),   trend: trendDirection(current.weeklyRevenue,    prev?.weeklyRevenue    ?? current.weeklyRevenue),    trendStr: prev ? trendLabel(current.weeklyRevenue,    prev.weeklyRevenue)    : undefined },
-                  { label: "Weekly Churn",    value: formatPercent(current.weeklyChurn),      trend: trendDirection(current.weeklyChurn,      prev?.weeklyChurn      ?? current.weeklyChurn),      trendStr: prev ? trendLabel(current.weeklyChurn,      prev.weeklyChurn)      : undefined, reverse: true },
-                ].map(({ label, value, trend, trendStr, reverse }) => (
-                  <div key={label} className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
-                    <p className="text-xs mb-2" style={{ color: "#9CA3AF" }}>{label}</p>
-                    <p className="text-2xl font-bold">{value}</p>
-                    {trendStr && (
-                      <p className={cn("text-xs mt-1.5 font-medium",
-                        trend === "flat" ? "text-neutral-400" :
-                        (trend === "up" && !reverse) || (trend === "down" && reverse) ? "text-green-600" : "text-orange-500"
-                      )}>
-                        {trendStr} WoW
-                      </p>
-                    )}
-                  </div>
-                ))}
+                <MetricBubble
+                  label="Class Occupancy"
+                  value={formatPercent(current.classFillRate)}
+                  trend={trendDirection(current.classFillRate, prev?.classFillRate ?? current.classFillRate)}
+                  trendStr={prev ? trendLabel(current.classFillRate, prev.classFillRate) : undefined}
+                  description="Average seat fill rate across all classes this week."
+                  details={[
+                    { label: "Member Bookings",    value: formatNumber(current.memberBookings) },
+                    { label: "Pack Bookings",      value: formatNumber(current.classPackBookings) },
+                    { label: "ClassPass Bookings", value: formatNumber(current.classPassBookings) },
+                  ]}
+                />
+                <MetricBubble
+                  label="Active Members"
+                  value={formatNumber(current.activeMemberships)}
+                  trend={trendDirection(current.activeMemberships, prev?.activeMemberships ?? current.activeMemberships)}
+                  trendStr={prev ? trendLabel(current.activeMemberships, prev.activeMemberships) : undefined}
+                  description="Total active memberships billed this week."
+                  details={[
+                    { label: "Net Change",   value: prev ? `${current.activeMemberships - prev.activeMemberships > 0 ? "+" : ""}${current.activeMemberships - prev.activeMemberships}` : "—" },
+                    { label: "Rev / Member", value: formatCurrency(Math.round(current.weeklyRevenue / (current.activeMemberships || 1))) },
+                  ]}
+                />
+                <MetricBubble
+                  label="Weekly Revenue"
+                  value={formatCurrency(current.weeklyRevenue)}
+                  trend={trendDirection(current.weeklyRevenue, prev?.weeklyRevenue ?? current.weeklyRevenue)}
+                  trendStr={prev ? trendLabel(current.weeklyRevenue, prev.weeklyRevenue) : undefined}
+                  description="Gross revenue collected across all booking types this week."
+                  details={[
+                    { label: "Rev / Member", value: formatCurrency(Math.round(current.weeklyRevenue / (current.activeMemberships || 1))) },
+                    { label: "vs Last Week",  value: prev ? formatCurrency(current.weeklyRevenue - prev.weeklyRevenue) : "—" },
+                  ]}
+                />
+                <MetricBubble
+                  label="Weekly Churn"
+                  value={formatPercent(current.weeklyChurn)}
+                  trend={trendDirection(current.weeklyChurn, prev?.weeklyChurn ?? current.weeklyChurn)}
+                  trendStr={prev ? trendLabel(current.weeklyChurn, prev.weeklyChurn) : undefined}
+                  reverse
+                  description="Share of active members who cancelled this week."
+                  details={[
+                    { label: "Est. Lost",     value: formatNumber(Math.round(current.weeklyChurn * current.activeMemberships)) },
+                    { label: "Still Active",  value: formatNumber(Math.round((1 - current.weeklyChurn) * current.activeMemberships)) },
+                  ]}
+                />
               </div>
             ) : null}
 
             {/* TREND CHARTS */}
             {!isPreLaunch && metrics.length > 0 && (
-              <MetricCharts metrics={metrics} />
+              <MetricCharts metrics={metrics} studioId={studio.id} />
             )}
 
             {/* RETENTION PREVIEW */}
             {retentionData && (
-              <RetentionPreview studioId={studio.id} summary={retentionData.summary} />
+              <RetentionPreview studioId={studio.id} summary={retentionData.summary} members={retentionData.members} />
             )}
 
             {/* ACTIVE ALERTS */}

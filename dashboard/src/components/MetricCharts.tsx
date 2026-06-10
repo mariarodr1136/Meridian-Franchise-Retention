@@ -5,18 +5,19 @@ import { TrendChart } from "./TrendChart";
 import type { StudioMetric } from "@/types";
 
 const RANGES = [
-  { label: "4 wks",  weeks: 4  },
-  { label: "8 wks",  weeks: 8  },
-  { label: "3 mo",   weeks: 13 },
-  { label: "6 mo",   weeks: 26 },
-  { label: "All",    weeks: Infinity },
+  { label: "4W",  weeks: 4,        desc: "4 weeks"  },
+  { label: "8W",  weeks: 8,        desc: "8 weeks"  },
+  { label: "3M",  weeks: 13,       desc: "3 months" },
+  { label: "6M",  weeks: 26,       desc: "6 months" },
+  { label: "All", weeks: Infinity, desc: "All time" },
 ];
 
 interface Props {
   metrics: StudioMetric[];
+  studioId: string;
 }
 
-export function MetricCharts({ metrics }: Props) {
+export function MetricCharts({ metrics, studioId }: Props) {
   const [weeks, setWeeks] = useState(8);
 
   const sliced = useMemo(() => {
@@ -31,17 +32,23 @@ export function MetricCharts({ metrics }: Props) {
     <div>
       {/* Range selector */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs" style={{ color: "#9CA3AF" }}>
-          Showing {showing} of {total} week{total !== 1 ? "s" : ""}
-        </p>
-        <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F0F5FB" }}>
-          {RANGES.map(({ label, weeks: w }) => (
+        <div>
+          <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Trends</p>
+          <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>
+            {showing === total
+              ? `All ${total} week${total !== 1 ? "s" : ""}`
+              : `${showing} of ${total} week${total !== 1 ? "s" : ""}`}
+          </p>
+        </div>
+        <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F0F5FB", border: "1px solid #E2EBF5" }}>
+          {RANGES.map(({ label, weeks: w, desc }) => (
             <button
               key={label}
               onClick={() => setWeeks(w)}
+              title={desc}
               className="text-xs font-semibold px-3 py-1.5 rounded-md transition-all cursor-pointer"
               style={weeks === w
-                ? { background: "#fff", color: "#4A638D", boxShadow: "0 1px 3px rgba(74,99,141,0.15)" }
+                ? { background: "#4A638D", color: "#fff", boxShadow: "0 1px 4px rgba(74,99,141,0.25)" }
                 : { color: "#9CA3AF" }
               }
             >
@@ -51,13 +58,13 @@ export function MetricCharts({ metrics }: Props) {
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          <TrendChart metrics={sliced} field="weeklyRevenue"     color="#C9A84C" label="Weekly Revenue" />
+      {/* Charts stacked for more vertical space */}
+      <div className="flex flex-col gap-4">
+        <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+          <TrendChart metrics={sliced} field="weeklyRevenue"     color="#C9A84C" label="Weekly Revenue" href={`/studios/${studioId}/sales`} />
         </div>
-        <div className="rounded-xl border p-5" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          <TrendChart metrics={sliced} field="activeMemberships" color="#3b82f6" label="Active Memberships" />
+        <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+          <TrendChart metrics={sliced} field="activeMemberships" color="#4A638D" label="Active Memberships" href={`/studios/${studioId}/members`} />
         </div>
       </div>
     </div>

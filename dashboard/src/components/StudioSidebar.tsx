@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ALL_PAGES = [
   { id: "overview",   label: "Overview"   },
+  { id: "members",    label: "Members"    },
   { id: "classes",    label: "Classes"    },
   { id: "sales",      label: "Sales"      },
   { id: "operations", label: "Operations" },
@@ -13,7 +14,7 @@ const ALL_PAGES = [
   { id: "settings",   label: "Settings"   },
 ] as const;
 
-const PRE_LAUNCH_PAGE_IDS = new Set(["overview", "sales", "operations", "settings"]);
+const PRE_LAUNCH_PAGE_IDS = new Set(["overview", "sales", "operations", "settings", "members"]);
 
 interface Props {
   studioId: string;
@@ -26,6 +27,7 @@ export function StudioSidebar({ studioId, studioStatus }: Props) {
   const PAGES = ALL_PAGES.filter((p) => !isPreLaunch || PRE_LAUNCH_PAGE_IDS.has(p.id));
 
   function activePage(): string {
+    if (pathname.endsWith("/members"))    return "members";
     if (pathname.endsWith("/classes"))    return "classes";
     if (pathname.endsWith("/sales"))      return "sales";
     if (pathname.endsWith("/operations")) return "operations";
