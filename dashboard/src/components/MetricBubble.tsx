@@ -31,7 +31,7 @@ export function MetricBubble({ label, value, trend, trendStr, reverse, descripti
 
   return (
     <div
-      className={`rounded-xl border relative cursor-default select-none ${compact ? "p-3" : "p-5"}`}
+      className={`rounded-xl border relative cursor-default select-none h-full ${compact ? "p-3" : "p-5"}`}
       style={{
         background: "#fff",
         borderColor: hovered ? "#4A638D" : "#C8D8EE",

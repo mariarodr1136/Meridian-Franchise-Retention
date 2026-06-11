@@ -113,14 +113,15 @@ export default async function DashboardPage() {
     <div className="min-h-screen w-full" style={{ background: "#F0F5FB" }}>
       {/* Hero + stat bar */}
       <div className="relative overflow-hidden" style={{ width: "100vw", height: "280px" }}>
-        <Image
-          src="/jetset-hero2.jpg"
-          alt="JetSet Modern Pilates studio"
-          fill
-          priority
-          style={{ objectFit: "cover", objectPosition: "center 20%" }}
+        <video
+          src="/jetset-banner.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
         />
-        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.35)" }} />
+        <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.42)" }} />
 
         {/* Franchise Intelligence title */}
         <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: "88px" }}>

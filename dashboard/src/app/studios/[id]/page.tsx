@@ -109,16 +109,20 @@ export default async function StudioPage({
 
       <div className="max-w-[1340px] mx-auto px-6 py-8">
         {/* Studio banner */}
-        <div className="w-full mb-6 rounded-xl overflow-hidden relative" style={{ height: 150 }}>
+        <div className="w-full mb-6 rounded-xl overflow-hidden relative" style={{ height: 160 }}>
           <Image
             src="/jetset-merch.jpg"
             alt=""
             width={1340}
-            height={180}
-            className="w-full h-full object-cover" style={{ objectPosition: "center 33%" }}
+            height={160}
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "center 33%" }}
             priority
           />
-          <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.10)" }} />
+          <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.15)" }} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, textTransform: "uppercase" }}>Studio Overview</h1>
+          </div>
         </div>
 
         {/* Studio title + KPIs */}
