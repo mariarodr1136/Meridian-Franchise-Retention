@@ -111,13 +111,14 @@ export default async function StudioPage({
         {/* Studio banner */}
         <div className="w-full mb-6 rounded-xl overflow-hidden relative" style={{ height: 150 }}>
           <Image
-            src="/jetset-reformer.jpg"
+            src="/jetset-merch.jpg"
             alt=""
             width={1340}
             height={180}
-            className="w-full h-full object-cover" style={{ objectPosition: "center 68%" }}
+            className="w-full h-full object-cover" style={{ objectPosition: "center 33%" }}
             priority
           />
+          <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.10)" }} />
         </div>
 
         {/* Studio title + KPIs */}

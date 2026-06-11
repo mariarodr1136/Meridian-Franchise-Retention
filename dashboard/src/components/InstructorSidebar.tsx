@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 interface InstructorEntry {
   id: string;
@@ -12,9 +13,10 @@ interface InstructorEntry {
 interface Props {
   studioId: string;
   instructors: InstructorEntry[];
+  photoMap?: Map<string, string>;
 }
 
-export function InstructorSidebar({ studioId, instructors }: Props) {
+export function InstructorSidebar({ studioId, instructors, photoMap }: Props) {
   if (!instructors.length) return null;
 
   return (
@@ -32,6 +34,7 @@ export function InstructorSidebar({ studioId, instructors }: Props) {
           {instructors.map((inst) => {
             const full = Math.floor(inst.avg);
             const initials = inst.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+            const photo = photoMap?.get(inst.name);
             return (
               <Link
                 key={inst.id}
@@ -41,11 +44,14 @@ export function InstructorSidebar({ studioId, instructors }: Props) {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "#EEF3FB"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
               >
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white"
-                  style={{ background: "#4A638D" }}
-                >
-                  {initials}
+                <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border" style={{ borderColor: "#C8D8EE" }}>
+                  {photo ? (
+                    <Image src={photo} alt={inst.name} width={28} height={28} className="w-full h-full object-cover object-top" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "#4A638D" }}>
+                      {initials}
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold truncate" style={{ color: "#1F2937" }}>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { Studio, Instructor, StaffRole } from "@/types";
+import { assignStaffPhotos } from "@/lib/staffPhotos";
 
 interface Props {
   studio: Studio & { email: string | null };
@@ -308,32 +310,51 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
           </div>
         ) : (
           /* ── Read-only view ── */
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "#F8FAFD" }}>
-                {["Name", "Role", "Last Eval"].map((h) => (
-                  <th key={h} className="px-5 py-3 text-left text-xs font-semibold" style={{ color: "#9CA3AF" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {staffList.map((s, i) => {
-                const isInstructor = s.role === "instructor";
-                const evalDate = s.lastEvalDate
-                  ? new Date(s.lastEvalDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                  : "—";
-                return (
-                  <tr key={s.id} style={{ borderTop: i > 0 ? "1px solid #F0F5FB" : undefined }}>
-                    <td className="px-5 py-3" style={{ color: "#1F2937" }}>{s.name}</td>
-                    <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>{ROLE_LABELS[s.role]}</td>
-                    <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>
-                      {isInstructor ? evalDate : ""}
-                    </td>
+          (() => {
+            const photoMap = assignStaffPhotos(staffList.map((s) => s.name));
+            return (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ background: "#F8FAFD" }}>
+                    {["Name", "Role", "Last Eval"].map((h) => (
+                      <th key={h} className="px-5 py-3 text-left text-xs font-semibold" style={{ color: "#9CA3AF" }}>{h}</th>
+                    ))}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {staffList.map((s, i) => {
+                    const isInstructor = s.role === "instructor";
+                    const evalDate = s.lastEvalDate
+                      ? new Date(s.lastEvalDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                      : "—";
+                    const photo = photoMap.get(s.name);
+                    return (
+                      <tr key={s.id} style={{ borderTop: i > 0 ? "1px solid #F0F5FB" : undefined }}>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border" style={{ borderColor: "#C8D8EE" }}>
+                              {photo ? (
+                                <Image src={photo} alt={s.name} width={32} height={32} className="w-full h-full object-cover object-top" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-xs font-bold" style={{ background: "linear-gradient(135deg, #4A638D 0%, #6B8AB4 100%)", color: "#fff" }}>
+                                  {s.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <span style={{ color: "#1F2937" }}>{s.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>{ROLE_LABELS[s.role]}</td>
+                        <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>
+                          {isInstructor ? evalDate : ""}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            );
+          })()
         )}
       </div>
     </div>

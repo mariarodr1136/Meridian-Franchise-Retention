@@ -136,7 +136,7 @@ export function ScheduleGrid({ days, classMetrics, scheduleHref, analyticsHref, 
   }
 
   return (
-    <div className="relative mb-6">
+    <div className="relative">
     <div
       className="rounded-2xl overflow-hidden"
       style={{ background: "#fff", border: "1px solid #C8D8EE", boxShadow: "0 2px 12px rgba(74,99,141,0.08)" }}

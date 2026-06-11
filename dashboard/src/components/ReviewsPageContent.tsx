@@ -13,21 +13,34 @@ function RatingBar({ star, count, total }: { star: number; count: number; total:
   return (
     <div className="flex items-center gap-3">
       <span className="text-xs w-6 text-right font-medium" style={{ color: "#374151" }}>{star}★</span>
-      <div className="flex-1 rounded-full overflow-hidden h-2" style={{ background: "#EEF3FB" }}>
+      <div className="flex-1 rounded-full overflow-hidden h-2" style={{ background: "#E4EBF7" }}>
         <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, background: pct > 0 ? "#C9A84C" : "transparent" }} />
       </div>
-      <span className="text-xs w-16" style={{ color: "#9CA3AF" }}>{count} ({Math.round(pct)}%)</span>
+      <span className="text-xs" style={{ color: "#9CA3AF", minWidth: "4.5rem", textAlign: "right" }}>
+        {count} ({Math.round(pct)}%)
+      </span>
     </div>
   );
 }
 
 function SourceSummary({ reviews, source }: { reviews: Review[]; source: string }) {
+  const [hovered, setHovered] = useState(false);
   const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
   const full = Math.floor(avg);
   const half = avg - full >= 0.5;
   const positive = reviews.filter((r) => r.rating >= 4).length;
   return (
-    <div className="rounded-xl border p-5 flex flex-col gap-3" style={{ background: "#F8FAFD", borderColor: "#EEF3FB" }}>
+    <div
+      className="rounded-xl border p-5 flex flex-col gap-3 transition-all cursor-default"
+      style={{
+        background: "#F8FAFD",
+        borderColor: hovered ? "#C8D8EE" : "#EEF3FB",
+        boxShadow: hovered ? "0 4px 16px rgba(74,99,141,0.08)" : "none",
+        transform: hovered ? "translateY(-1px)" : "translateY(0)",
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <div className="flex items-center gap-2">
         <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{ background: "#4A638D" }}>
           {SOURCE_LABEL[source]}
@@ -130,18 +143,36 @@ function ReviewCard({ review }: { review: Review }) {
 function SourceSection({ reviews, source, sort }: {
   reviews: Review[]; source: string; sort: SortKey;
 }) {
+  const [showAll, setShowAll] = useState(false);
   const sorted = [...reviews].sort((a, b) => {
     if (sort === "highest") return b.rating - a.rating;
     if (sort === "lowest")  return a.rating - b.rating;
     return new Date(b.reviewDate).getTime() - new Date(a.reviewDate).getTime();
   });
   if (!sorted.length) return null;
+  const visible = showAll ? sorted : sorted.slice(0, 3);
+  const hasMore = sorted.length > 3;
   return (
     <div>
       <SourceSummary reviews={reviews} source={source} />
       <div className="flex flex-col gap-3 mt-4">
-        {sorted.map((r) => <ReviewCard key={r.id} review={r} />)}
+        {visible.map((r) => <ReviewCard key={r.id} review={r} />)}
       </div>
+      {hasMore && (
+        <button
+          onClick={() => setShowAll((v) => !v)}
+          className="mt-4 w-full py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+          style={{
+            border: "1px solid #C8D8EE",
+            color: "#4A638D",
+            background: showAll ? "#EEF3FB" : "#fff",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#EEF3FB"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = showAll ? "#EEF3FB" : "#fff"; }}
+        >
+          {showAll ? `Show less` : `Show ${sorted.length - 3} more review${sorted.length - 3 !== 1 ? "s" : ""} ↓`}
+        </button>
+      )}
     </div>
   );
 }
@@ -152,6 +183,7 @@ interface Props {
 
 export function ReviewsPageContent({ reviews }: Props) {
   const [sort, setSort] = useState<SortKey>("recent");
+  const [hoveredSort, setHoveredSort] = useState<SortKey | null>(null);
 
   const googleReviews    = reviews.filter((r) => r.source === "google");
   const classpassReviews = reviews.filter((r) => r.source === "classpass");
@@ -176,10 +208,14 @@ export function ReviewsPageContent({ reviews }: Props) {
             <button
               key={key}
               onClick={() => setSort(key)}
+              onMouseEnter={() => setHoveredSort(key)}
+              onMouseLeave={() => setHoveredSort(null)}
               className="text-xs font-semibold px-3 py-1.5 rounded-md transition-all cursor-pointer"
               style={sort === key
                 ? { background: "#fff", color: "#4A638D", boxShadow: "0 1px 3px rgba(74,99,141,0.15)" }
-                : { color: "#9CA3AF" }
+                : hoveredSort === key
+                  ? { background: "#E4EBF5", color: "#4A638D" }
+                  : { color: "#9CA3AF" }
               }
             >
               {label}

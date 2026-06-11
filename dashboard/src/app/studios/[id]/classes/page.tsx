@@ -61,8 +61,8 @@ export default async function ClassesPage({
                 className="w-full h-full object-cover" style={{ objectPosition: "center 78%" }} />
               <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.38)" }} />
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Classes</h1>
-                <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 14, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
+                <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Classes</h1>
+                <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 16, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
               </div>
             </div>
           <div className="flex gap-8">
@@ -154,7 +154,7 @@ export default async function ClassesPage({
 
   // ── Instructor stats via schedule slots ───────────────────────────────
   const slotLookup = new Map<string, SlotStat>(slotStats.map((s) => [`${s.dayOfWeek}|${s.timeSlot}`, s]));
-  const instrMap   = new Map<string, { fills: number[]; count: number }>();
+  const instrMap   = new Map<string, { fills: number[]; count: number; classes: Set<string> }>();
   for (const day of schedule) {
     const dayNum = DAY_NUM[day.day.slice(0, 3)];
     if (dayNum === undefined) continue;
@@ -162,16 +162,18 @@ export default async function ClassesPage({
       if (!cls.instructor) continue;
       const slot = slotLookup.get(`${dayNum}|${cls.time.split(" ")[0]}`);
       if (!slot) continue;
-      if (!instrMap.has(cls.instructor)) instrMap.set(cls.instructor, { fills: [], count: 0 });
+      if (!instrMap.has(cls.instructor)) instrMap.set(cls.instructor, { fills: [], count: 0, classes: new Set() });
       const entry = instrMap.get(cls.instructor)!;
       entry.fills.push(slot.avgFillRate);
       entry.count++;
+      if (cls.name) entry.classes.add(cls.name);
     }
   }
   const instructorStats: InstructorStat[] = Array.from(instrMap.entries())
-    .map(([name, { fills, count }]) => ({
+    .map(([name, { fills, count, classes }]) => ({
       name, classCount: count,
       avgFillRate: fills.reduce((s, v) => s + v, 0) / fills.length,
+      classes: Array.from(classes),
     }))
     .sort((a, b) => b.avgFillRate - a.avgFillRate);
 
@@ -181,10 +183,10 @@ export default async function ClassesPage({
   const hasHighSlots = slotStats.some((s) => s.avgFillRate >= 0.80);
 
   const navSections: NavSection[] = [
-    ...(hasBooking                             ? [{ id: "booking",   label: "How Clients Book"  }] : []),
     ...(schedule.length > 0                    ? [{ id: "schedule",  label: "Weekly Schedule"   }] : []),
-    ...(slotStats.length > 0 || instructorStats.length > 0 ? [{ id: "analytics", label: "Class Analytics"   }] : []),
-    ...(metrics.length >= 2                    ? [{ id: "periods",   label: "Compare Periods"   }] : []),
+    ...(hasBooking                             ? [{ id: "booking",   label: "How Clients Book"  }] : []),
+    ...(slotStats.length > 0                   ? [{ id: "heatmap",   label: "Fill Rate Heatmap" }] : []),
+    ...(instructorStats.length > 0             ? [{ id: "instructors", label: "Instructors"     }] : []),
     ...(reviews.length > 0                     ? [{ id: "reviews",   label: "Reviews"           }] : []),
   ];
 
@@ -204,8 +206,8 @@ export default async function ClassesPage({
             className="w-full h-full object-cover" style={{ objectPosition: "center 78%" }} />
           <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.38)" }} />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Classes</h1>
-            <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 14, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
+            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Classes</h1>
+            <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 16, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
           </div>
         </div>
 

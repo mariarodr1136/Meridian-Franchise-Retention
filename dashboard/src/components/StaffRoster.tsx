@@ -1,4 +1,6 @@
+import Image from "next/image";
 import type { Instructor } from "@/types";
+import { assignStaffPhotos } from "@/lib/staffPhotos";
 
 const SECTIONS: { role: string; label: string }[] = [
   { role: "director_of_operations", label: "Director of Operations" },
@@ -13,6 +15,8 @@ export function StaffRoster({ staff }: Props) {
   if (staff.length === 0) {
     return <p className="text-xs py-6 text-center" style={{ color: "#6B7280" }}>No staff assigned yet.</p>;
   }
+
+  const photoMap = assignStaffPhotos(staff.map((s) => s.name));
 
   const activeSections = SECTIONS
     .map(({ role, label }) => ({ label, role, members: staff.filter((s) => s.role === role) }))
@@ -34,29 +38,50 @@ export function StaffRoster({ staff }: Props) {
             </div>
 
             {isInstructor ? (
-              /* Instructors: name + last eval */
               <div>
                 {members.map((m) => {
                   const evalDate = m.lastEvalDate
                     ? new Date(m.lastEvalDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                     : "—";
+                  const photo = photoMap.get(m.name);
                   return (
-                    <div key={m.id} className="flex items-center justify-between py-1 border-b"
-                      style={{ borderColor: "#EEF3FB" }}>
-                      <span className="text-sm font-medium" style={{ color: "#1F2937" }}>{m.name}</span>
+                    <div key={m.id} className="flex items-center justify-between py-2 border-b" style={{ borderColor: "#EEF3FB" }}>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border" style={{ borderColor: "#C8D8EE" }}>
+                          {photo ? (
+                            <Image src={photo} alt={m.name} width={28} height={28} className="w-full h-full object-cover object-top" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] font-bold" style={{ background: "linear-gradient(135deg, #4A638D 0%, #6B8AB4 100%)", color: "#fff" }}>
+                              {m.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium" style={{ color: "#1F2937" }}>{m.name}</span>
+                      </div>
                       <span className="text-xs" style={{ color: "#6B7280" }}>{evalDate}</span>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              /* Other roles: names only */
               <div>
-                {members.map((m) => (
-                  <div key={m.id} className="py-1 border-b" style={{ borderColor: "#EEF3FB" }}>
-                    <span className="text-sm font-medium" style={{ color: "#1F2937" }}>{m.name}</span>
-                  </div>
-                ))}
+                {members.map((m) => {
+                  const photo = photoMap.get(m.name);
+                  return (
+                    <div key={m.id} className="flex items-center gap-2.5 py-2 border-b" style={{ borderColor: "#EEF3FB" }}>
+                      <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 border" style={{ borderColor: "#C8D8EE" }}>
+                        {photo ? (
+                          <Image src={photo} alt={m.name} width={28} height={28} className="w-full h-full object-cover object-top" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] font-bold" style={{ background: "linear-gradient(135deg, #4A638D 0%, #6B8AB4 100%)", color: "#fff" }}>
+                            {m.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium" style={{ color: "#1F2937" }}>{m.name}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

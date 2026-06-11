@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import type { StudioWithLatestMetric, StudioStatus } from "@/types";
 
@@ -121,29 +121,37 @@ interface Props {
   studios: StudioWithLatestMetric[];
 }
 
-type SelectedStudio = StudioWithLatestMetric & { coords: [number, number]; x: number; y: number };
+type HoveredStudio = StudioWithLatestMetric & { coords: [number, number]; x: number; y: number };
 
 function riskReasons(s: StudioWithLatestMetric): string[] {
   const m = s.latestMetric;
   if (!m) return ["No recent data available"];
   const reasons: string[] = [];
-  if (m.classFillRate < 0.58) reasons.push(`Fill rate at ${(m.classFillRate * 100).toFixed(0)}% — below 70% benchmark`);
-  if (m.weeklyChurn > 0.06)   reasons.push(`Weekly churn at ${(m.weeklyChurn * 100).toFixed(1)}% — above 2% avg`);
-  if (m.weeklyChurn > 0.035 && m.weeklyChurn <= 0.06) reasons.push(`Churn trending upward — monitor closely`);
-  if (m.classFillRate >= 0.58 && m.classFillRate < 0.68) reasons.push(`Fill rate declining — watch for further drop`);
+  if (m.classFillRate < 0.58) reasons.push(`Fill rate ${(m.classFillRate * 100).toFixed(0)}% — below 70% target`);
+  if (m.weeklyChurn > 0.06)   reasons.push(`Churn ${(m.weeklyChurn * 100).toFixed(1)}% — above 2% avg`);
+  if (m.weeklyChurn > 0.035 && m.weeklyChurn <= 0.06) reasons.push(`Churn trending up — monitor closely`);
+  if (m.classFillRate >= 0.58 && m.classFillRate < 0.68) reasons.push(`Fill rate declining — watch trend`);
   return reasons.length ? reasons : ["Metrics under review"];
 }
 
 export function NetworkMap({ studios }: Props) {
-  const [tooltip, setTooltip] = useState<{
-    name: string; city: string; status: StudioStatus; x: number; y: number;
-  } | null>(null);
-  const [selected, setSelected] = useState<SelectedStudio | null>(null);
+  const [hovered, setHovered] = useState<HoveredStudio | null>(null);
   const [zoom, setZoom] = useState(2.2);
+  const [center, setCenter] = useState<[number, number]>([-96, 38]);
   const MIN_ZOOM = 1;
-  const MAX_ZOOM = 4;
+  const MAX_ZOOM = 8;
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDragging = useRef(false);
   const wrapperRef  = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const scheduleHide = useCallback(() => {
+    hideTimerRef.current = setTimeout(() => setHovered(null), 120);
+  }, []);
+
+  const cancelHide = useCallback(() => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+  }, []);
 
   const studiosWithCoords = studios.flatMap((s) => {
     const coords = CITY_COORDS[s.city];
@@ -159,15 +167,14 @@ export function NetworkMap({ studios }: Props) {
   };
 
   function getPopupPos(x: number, y: number, wrapperW: number) {
-    const popupW = 240;
-    const isRight = x + 14 + popupW <= wrapperW;
-    const left = isRight ? x + 14 : x - popupW - 14;
+    const popupW = 300;
+    const isRight = x + 18 + popupW <= wrapperW;
+    const left = isRight ? x + 18 : x - popupW - 18;
     const transformOrigin = isRight ? "top left" : "top right";
-    return { left, top: y - 10, transformOrigin };
+    return { left, top: y - 16, transformOrigin };
   }
 
   return (
-    // Outer wrapper — position:relative with NO overflow:hidden so popup can escape the card
     <div ref={wrapperRef} style={{ position: "relative" }}>
       <style>{`
         @keyframes at-risk-pulse {
@@ -181,7 +188,12 @@ export function NetworkMap({ studios }: Props) {
           transform-origin: center;
           transform-box: fill-box;
         }
+        @keyframes popupEnter {
+          from { opacity: 0; transform: scale(0.93) translateY(4px); }
+          to   { opacity: 1; transform: scale(1)    translateY(0); }
+        }
       `}</style>
+
       <div className="rounded-xl border overflow-hidden" style={{ borderColor: "#C8D8EE", background: "#FFFFFF" }}>
         {/* Legend row */}
         <div className="flex items-center gap-4 px-5 py-3 border-b" style={{ borderColor: "#E4EDF8" }}>
@@ -196,184 +208,180 @@ export function NetworkMap({ studios }: Props) {
         </div>
 
         {/* Map */}
-        <div ref={containerRef} className="relative" style={{ height: "340px" }}
-          onClick={() => setSelected(null)}>
-        {/* Zoom controls */}
-        <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
-          <button
-            onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.4).toFixed(1)))}
-            className="w-7 h-7 rounded-md border flex items-center justify-center text-sm font-bold transition-colors hover:bg-blue-50"
-            style={{ background: "#FFFFFF", borderColor: "#C8D8EE", color: "#4A638D" }}
-          >+</button>
-          <button
-            onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - 0.4).toFixed(1)))}
-            className="w-7 h-7 rounded-md border flex items-center justify-center text-sm font-bold transition-colors hover:bg-blue-50"
-            style={{ background: "#FFFFFF", borderColor: "#C8D8EE", color: "#4A638D" }}
-          >−</button>
-        </div>
-
-        <ComposableMap
-          projection="geoAlbersUsa"
-          style={{ width: "100%", height: "100%", cursor: "grab" }}
+        <div
+          ref={containerRef}
+          className="relative"
+          style={{ height: "340px" }}
+          onDoubleClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.8).toFixed(1)))}
         >
-          <ZoomableGroup
-            zoom={zoom}
-            center={[-96, 38]}
-            onMoveEnd={({ zoom: z }) => setZoom(+z.toFixed(1))}
-            filterZoomEvent={(e) => (e as unknown as Event).type !== "wheel"}
-          >
-            <Geographies geography={GEO_URL}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#EEF3FB"
-                    stroke="#C8D8EE"
-                    strokeWidth={0.5}
-                    style={{ default: { outline: "none" }, hover: { outline: "none" }, pressed: { outline: "none" } }}
-                  />
-                ))
-              }
-            </Geographies>
-
-            {studiosWithCoords.map((studio) => (
-              <Marker
-                key={studio.id}
-                coordinates={studio.coords}
-                onMouseEnter={(e) => {
-                  if (selected?.id === studio.id) return;
-                  const rect = (e.target as SVGElement).closest("svg")!.getBoundingClientRect();
-                  setTooltip({
-                    name: studio.name,
-                    city: studio.city,
-                    status: studio.status as StudioStatus,
-                    x: (e as unknown as MouseEvent).clientX - rect.left,
-                    y: (e as unknown as MouseEvent).clientY - rect.top,
-                  });
-                }}
-                onMouseLeave={() => setTooltip(null)}
-                onClick={(e) => {
-                  (e as unknown as MouseEvent).stopPropagation();
-                  setTooltip(null);
-                  const wRect = wrapperRef.current!.getBoundingClientRect();
-                  const x = (e as unknown as MouseEvent).clientX - wRect.left;
-                  const y = (e as unknown as MouseEvent).clientY - wRect.top;
-                  setSelected(selected?.id === studio.id ? null : { ...studio, x, y });
-                }}
-              >
-                <circle
-                  r={selected?.id === studio.id ? 6 : studio.status === "at-risk" ? 5 : 4}
-                  fill={STATUS_COLOR[studio.status as StudioStatus]}
-                  stroke="#FFFFFF"
-                  strokeWidth={selected?.id === studio.id ? 2 : 1}
-                  style={{ cursor: "pointer", opacity: 0.9 }}
-                />
-                {(studio.status === "at-risk" || selected?.id === studio.id) && (
-                  <circle
-                    r={selected?.id === studio.id ? 10 : 8}
-                    fill="none"
-                    stroke={STATUS_COLOR[studio.status as StudioStatus]}
-                    strokeWidth={1}
-                    opacity={0.35}
-                    className={studio.status === "at-risk" && selected?.id !== studio.id ? "at-risk-pulse" : undefined}
-                    style={{ pointerEvents: "none" }}
-                  />
-                )}
-              </Marker>
-            ))}
-          </ZoomableGroup>
-        </ComposableMap>
-
-        {/* Hover tooltip */}
-        {tooltip && (
-          <div
-            className="absolute pointer-events-none z-10 rounded-lg border px-3 py-2 text-xs shadow-md"
-            style={{
-              left: tooltip.x + 12,
-              top: tooltip.y - 10,
-              background: "#FFFFFF",
-              borderColor: "#C8D8EE",
-              color: "#1F2937",
-              whiteSpace: "nowrap",
-            }}
-          >
-            <p className="font-semibold">{tooltip.name}</p>
-            <p style={{ color: "#6B7280" }}>{tooltip.city}</p>
-            <p className="mt-0.5 capitalize font-medium" style={{ color: STATUS_COLOR[tooltip.status] }}>
-              {tooltip.status.replace("-", " ")}
-            </p>
+          {/* Zoom controls — onDoubleClick stops here so double-clicking buttons doesn't trigger map zoom-in */}
+          <div className="absolute top-3 right-3 z-10 flex flex-col gap-1" onDoubleClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.4).toFixed(1)))}
+              className="w-7 h-7 rounded-md border flex items-center justify-center text-sm font-bold transition-colors hover:bg-blue-50"
+              style={{ background: "#FFFFFF", borderColor: "#C8D8EE", color: "#4A638D" }}
+            >+</button>
+            <button
+              onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - 0.4).toFixed(1)))}
+              className="w-7 h-7 rounded-md border flex items-center justify-center text-sm font-bold transition-colors hover:bg-blue-50"
+              style={{ background: "#FFFFFF", borderColor: "#C8D8EE", color: "#4A638D" }}
+            >−</button>
           </div>
-        )}
 
-        </div>{/* end map area */}
-      </div>{/* end map card (overflow-hidden) */}
+          <ComposableMap
+            projection="geoAlbersUsa"
+            style={{ width: "100%", height: "100%", cursor: "grab" }}
+          >
+            {/* Full-viewport hit area so drag registers over ocean/empty space */}
+            <rect width="100%" height="100%" fill="transparent" />
+            <ZoomableGroup
+              zoom={zoom}
+              center={center}
+              onMoveStart={() => { isDragging.current = true; }}
+              onMoveEnd={({ coordinates, zoom: z }) => {
+                isDragging.current = false;
+                setCenter(coordinates as [number, number]);
+                setZoom(+z.toFixed(1));
+              }}
+              filterZoomEvent={(e) => (e as unknown as Event).type !== "wheel"}
+            >
+              <Geographies geography={GEO_URL}>
+                {({ geographies }) =>
+                  geographies.map((geo) => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill="#EEF3FB"
+                      stroke="#C8D8EE"
+                      strokeWidth={0.5}
+                      style={{ default: { outline: "none" }, hover: { outline: "none" }, pressed: { outline: "none" } }}
+                    />
+                  ))
+                }
+              </Geographies>
 
-      {/* Click popup — rendered outside overflow-hidden card so it's never clipped */}
-      {selected && (() => {
-        const m = selected.latestMetric;
+              {studiosWithCoords.map((studio) => (
+                <Marker
+                  key={studio.id}
+                  coordinates={studio.coords}
+                  onMouseEnter={(e) => {
+                    if (isDragging.current) return;
+                    cancelHide();
+                    const wRect = wrapperRef.current!.getBoundingClientRect();
+                    const x = (e as unknown as MouseEvent).clientX - wRect.left;
+                    const y = (e as unknown as MouseEvent).clientY - wRect.top;
+                    setHovered({ ...studio, x, y });
+                  }}
+                  onMouseLeave={scheduleHide}
+                >
+                  <circle
+                    r={((hovered?.id === studio.id ? 6 : studio.status === "at-risk" ? 5 : 4) * 2.2) / zoom}
+                    fill={STATUS_COLOR[studio.status as StudioStatus]}
+                    stroke="#FFFFFF"
+                    strokeWidth={(hovered?.id === studio.id ? 2 : 1) / zoom}
+                    style={{ cursor: "pointer", opacity: 0.9 }}
+                  />
+                  {(studio.status === "at-risk" || hovered?.id === studio.id) && (
+                    <circle
+                      r={((hovered?.id === studio.id ? 10 : 8) * 2.2) / zoom}
+                      fill="none"
+                      stroke={STATUS_COLOR[studio.status as StudioStatus]}
+                      strokeWidth={1 / zoom}
+                      opacity={0.35}
+                      className={studio.status === "at-risk" && hovered?.id !== studio.id ? "at-risk-pulse" : undefined}
+                      style={{ pointerEvents: "none" }}
+                    />
+                  )}
+                </Marker>
+              ))}
+            </ZoomableGroup>
+          </ComposableMap>
+        </div>
+      </div>
+
+      {/* Hover popup — rendered outside overflow-hidden card so it's never clipped */}
+      {hovered && (() => {
+        const m = hovered.latestMetric;
         const wrapperW = wrapperRef.current?.offsetWidth ?? 800;
-        const { left, top, transformOrigin } = getPopupPos(selected.x, selected.y, wrapperW);
-        const status = selected.status as StudioStatus;
-        const reasons = status === "at-risk" ? riskReasons(selected) : [];
+        const { left, top, transformOrigin } = getPopupPos(hovered.x, hovered.y, wrapperW);
+        const status = hovered.status as StudioStatus;
+        const reasons = status === "at-risk" ? riskReasons(hovered) : [];
 
         return (
           <div
-            className="absolute z-20 rounded-xl border shadow-lg overflow-hidden"
+            className="absolute z-20 rounded-xl overflow-hidden"
             style={{
-              left, top, width: 240,
-              background: "#FFFFFF", borderColor: "#C8D8EE",
-              animation: "popupEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+              left, top, width: 300,
+              border: "1px solid #C8D8EE",
+              boxShadow: "0 8px 32px rgba(74,99,141,0.18), 0 2px 8px rgba(74,99,141,0.10)",
+              animation: "popupEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards",
               transformOrigin,
               willChange: "transform, opacity",
             }}
+            onMouseEnter={cancelHide}
+            onMouseLeave={scheduleHide}
           >
-            {/* Header */}
-            <div className="px-4 py-3 flex items-start justify-between gap-2"
-              style={{ background: STATUS_COLOR[status] + "14", borderBottom: `1px solid ${STATUS_COLOR[status]}30` }}>
+            {/* Navy header */}
+            <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2"
+              style={{ background: "#4A638D" }}>
               <div className="min-w-0">
-                <p className="text-sm font-bold truncate" style={{ color: "#1F2937" }}>{selected.name}</p>
-                <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
-                  {selected.city}{selected.state ? `, ${selected.state}` : ""}
+                <p className="text-sm font-bold text-white truncate"
+                  style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", letterSpacing: "0.02em" }}>
+                  {hovered.name}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>
+                  {hovered.city}{hovered.state ? `, ${hovered.state}` : ""}
                 </p>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full capitalize"
-                  style={{ background: STATUS_COLOR[status] + "20", color: STATUS_COLOR[status] }}>
-                  {status.replace("-", " ")}
-                </span>
-                <button onClick={() => setSelected(null)}
-                  className="text-xs opacity-40 hover:opacity-70 transition-opacity leading-none cursor-pointer"
-                  style={{ color: "#4A638D" }}>✕</button>
-              </div>
+              <span
+                className="text-xs font-semibold px-2 py-0.5 rounded-full capitalize flex-shrink-0 mt-0.5"
+                style={{
+                  background: "rgba(255,255,255,0.15)",
+                  color: "#FFFFFF",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                {status.replace("-", " ")}
+              </span>
             </div>
 
-            {/* Metrics */}
+            {/* Status accent bar */}
+            <div style={{ height: "3px", background: STATUS_COLOR[status] }} />
+
+            {/* Metrics grid */}
             {m ? (
-              <div className="grid grid-cols-2 gap-px p-3 pt-2.5" style={{ background: "#F0F5FB" }}>
+              <div className="p-3 grid grid-cols-2 gap-2" style={{ background: "#FFFFFF" }}>
                 {[
-                  { label: "Fill Rate",  value: `${(m.classFillRate * 100).toFixed(0)}%`,  warn: m.classFillRate < 0.58 },
-                  { label: "Members",    value: m.activeMemberships.toLocaleString(),        warn: false },
-                  { label: "Weekly Rev", value: `$${Math.round(m.weeklyRevenue / 1000)}k`,  warn: false },
-                  { label: "Wkly Churn", value: `${(m.weeklyChurn * 100).toFixed(1)}%`,     warn: m.weeklyChurn > 0.04 },
+                  { label: "Fill Rate",   value: `${(m.classFillRate * 100).toFixed(0)}%`,  warn: m.classFillRate < 0.58 },
+                  { label: "Members",     value: m.activeMemberships.toLocaleString(),        warn: false },
+                  { label: "Weekly Rev",  value: `$${Math.round(m.weeklyRevenue / 1000)}k`,  warn: false },
+                  { label: "Wkly Churn", value: `${(m.weeklyChurn * 100).toFixed(1)}%`,      warn: m.weeklyChurn > 0.04 },
                 ].map(({ label, value, warn }) => (
-                  <div key={label} className="rounded-lg px-2.5 py-2" style={{ background: "#FFFFFF" }}>
-                    <p className="text-xs" style={{ color: "#9CA3AF" }}>{label}</p>
+                  <div key={label} className="rounded-lg px-2.5 py-2"
+                    style={{ background: "#F0F5FB", border: "1px solid #E4EDF8" }}>
+                    <p className="font-semibold uppercase" style={{ color: "#4A638D", fontSize: "9px", letterSpacing: "0.08em" }}>
+                      {label}
+                    </p>
                     <p className="text-sm font-bold mt-0.5" style={{ color: warn ? "#EA580C" : "#1F2937" }}>{value}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="px-4 py-3 text-xs" style={{ color: "#9CA3AF" }}>No metrics available</p>
+              <p className="px-4 py-3 text-xs" style={{ color: "#9CA3AF", background: "#FFFFFF" }}>No metrics available</p>
             )}
 
             {/* At-risk reasons */}
             {reasons.length > 0 && (
-              <div className="px-4 pb-3">
-                <p className="text-xs font-semibold mb-1.5" style={{ color: "#EA580C" }}>Why at risk</p>
+              <div className="mx-3 mb-2 rounded-lg px-3 py-2.5"
+                style={{ background: "#FFF7ED", border: "1px solid #FDBA74" }}>
+                <p className="text-xs font-bold uppercase mb-1.5"
+                  style={{ color: "#EA580C", letterSpacing: "0.06em", fontSize: "9px" }}>
+                  Why at risk
+                </p>
                 <ul className="space-y-1">
                   {reasons.map((r, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: "#6B7280" }}>
+                    <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: "#92400E" }}>
                       <span className="mt-0.5 flex-shrink-0" style={{ color: "#EA580C" }}>▸</span>
                       {r}
                     </li>
@@ -383,11 +391,11 @@ export function NetworkMap({ studios }: Props) {
             )}
 
             {/* CTA */}
-            <div className="px-3 pb-3">
+            <div className="px-3 pb-3" style={{ background: "#FFFFFF" }}>
               <a
-                href={`/studios/${selected.id}`}
+                href={`/studios/${hovered.id}`}
                 className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-85"
-                style={{ background: "#4A638D" }}
+                style={{ background: "#4A638D", letterSpacing: "0.04em" }}
               >
                 View Studio Details →
               </a>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { Review } from "@/types";
 
 const SOURCE_LABEL: Record<string, string> = { google: "Google", classpass: "ClassPass" };
@@ -86,9 +87,11 @@ interface Props {
   instructorName: string;
   studioName: string;
   reviews: Review[];
+  photo?: string;
 }
 
-export function InstructorReviewsContent({ instructorName, studioName, reviews }: Props) {
+export function InstructorReviewsContent({ instructorName, studioName, reviews, photo }: Props) {
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const avg = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0;
@@ -98,13 +101,21 @@ export function InstructorReviewsContent({ instructorName, studioName, reviews }
   return (
     <div>
       {/* Instructor profile card */}
-      <div className="rounded-2xl border p-6 mb-8" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+      <div
+        className="rounded-2xl border p-6 mb-8 transition-all cursor-default"
+        style={{ background: "#fff", borderColor: hoveredStar !== null ? "#4A638D" : "#C8D8EE", boxShadow: hoveredStar !== null ? "0 4px 20px rgba(74,99,141,0.10)" : "none" }}
+        onMouseEnter={() => setHoveredStar(-1)}
+        onMouseLeave={() => setHoveredStar(null)}
+      >
         <div className="flex items-center gap-5">
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold text-white"
-            style={{ background: "#4A638D" }}
-          >
-            {initials}
+          <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border-2" style={{ borderColor: "#C8D8EE" }}>
+            {photo ? (
+              <Image src={photo} alt={instructorName} width={56} height={56} className="w-full h-full object-cover object-top" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white" style={{ background: "#4A638D" }}>
+                {initials}
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold" style={{ color: "#111827" }}>{instructorName}</h1>
@@ -124,7 +135,7 @@ export function InstructorReviewsContent({ instructorName, studioName, reviews }
 
           {/* Rating breakdown */}
           {reviews.length > 0 && (
-            <div className="flex flex-col gap-1.5 w-48 flex-shrink-0">
+            <div className="flex flex-col gap-1 w-52 flex-shrink-0">
               {[5, 4, 3, 2, 1].map((star) => {
                 const count = reviews.filter((r) => r.rating === star).length;
                 const pct = (count / reviews.length) * 100;
@@ -137,7 +148,7 @@ export function InstructorReviewsContent({ instructorName, studioName, reviews }
                         style={{ width: `${pct}%`, background: pct > 0 ? "#C9A84C" : "transparent" }}
                       />
                     </div>
-                    <span className="text-xs w-4 text-right" style={{ color: "#9CA3AF" }}>{count}</span>
+                    <span className="text-xs text-right" style={{ color: "#9CA3AF", minWidth: "3rem" }}>{count}</span>
                   </div>
                 );
               })}

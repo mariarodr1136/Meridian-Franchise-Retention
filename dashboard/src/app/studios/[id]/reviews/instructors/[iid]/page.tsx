@@ -3,13 +3,20 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { InstructorReviewsContent } from "@/components/InstructorReviewsContent";
+import { InstructorSidebar } from "@/components/InstructorSidebar";
+import { StudioSidebar } from "@/components/StudioSidebar";
 import type { Review } from "@/types";
+import { assignStaffPhotos } from "@/lib/staffPhotos";
 
 async function getData(studioId: string, iid: string) {
   const [studio, instructor] = await Promise.all([
     db.studio.findUnique({
       where: { id: studioId },
-      select: { id: true, name: true, reviews: { orderBy: { reviewDate: "desc" } } },
+      select: {
+        id: true, name: true, status: true,
+        reviews: { orderBy: { reviewDate: "desc" } },
+        instructors: { select: { id: true, name: true, role: true }, orderBy: { name: "asc" } },
+      },
     }),
     db.instructor.findUnique({
       where: { id: iid },
@@ -42,10 +49,27 @@ export default async function InstructorReviewsPage({
   const re = new RegExp(`\\b${first}\\b`, "i");
   const mentionedReviews = reviews.filter((r) => re.test(r.body));
 
+  const instructors = (studio.instructors ?? []).filter((i) => i.role === "instructor");
+  const photoMap = assignStaffPhotos(instructors.map((i) => i.name));
+  const photo = photoMap.get(instructor.name);
+
+  const mentionedInstructors = instructors
+    .map((inst) => {
+      const fn = inst.name.split(" ")[0];
+      if (fn.length < 3) return null;
+      const ire = new RegExp(`\\b${fn}\\b`, "i");
+      const matched = reviews.filter((r) => ire.test(r.body));
+      if (!matched.length) return null;
+      const avg = matched.reduce((s, r) => s + r.rating, 0) / matched.length;
+      return { id: inst.id, name: inst.name, avg, count: matched.length };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b!.avg - a!.avg) as { id: string; name: string; avg: number; count: number }[];
+
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
       <header className="sticky top-0 z-40 w-full" style={{ background: "#4A638D" }}>
-        <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-[1340px] mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/"><Image
             src="/jetset-logo-transparent.png"
             alt="JetSet Modern Pilates"
@@ -61,12 +85,21 @@ export default async function InstructorReviewsPage({
         </div>
       </header>
 
-      <div className="max-w-[1200px] mx-auto px-6 py-8">
-        <InstructorReviewsContent
-          instructorName={instructor.name}
-          studioName={studio.name}
-          reviews={mentionedReviews}
-        />
+      <div className="max-w-[1340px] mx-auto px-6 py-8">
+        <div className="flex gap-8">
+          <StudioSidebar studioId={id} studioStatus={studio.status} />
+
+          <div className="flex-1 min-w-0">
+            <InstructorReviewsContent
+              instructorName={instructor.name}
+              studioName={studio.name}
+              reviews={mentionedReviews}
+              photo={photo}
+            />
+          </div>
+
+          <InstructorSidebar studioId={id} instructors={mentionedInstructors} photoMap={photoMap} />
+        </div>
       </div>
     </div>
   );

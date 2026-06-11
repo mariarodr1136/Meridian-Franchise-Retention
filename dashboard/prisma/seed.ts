@@ -680,7 +680,7 @@ async function main() {
     const atRisk = sd.status === "at-risk";
     const isNew  = sd.status === "new";
     // Bigger/established markets get more instructors; new studios fewer; at-risk fewest
-    const instrCount = atRisk ? 2 : isNew ? 3 : 4;
+    const instrCount = atRisk ? 3 : isNew ? 4 : 6;
     const leadCount  = atRisk ? 1 : isNew ? 1 : 2;
     addStaff(sd.name, { instructors: instrCount, leads: leadCount, atRisk });
   }
@@ -720,6 +720,14 @@ async function main() {
     { author: "Camille B.",  source: "google",    body: "I've tried SoulCycle, Orangetheory, CrossFit — nothing has transformed my body like JETSET. The reformer is no joke. Within two months I had visible results I hadn't achieved in years." },
     { author: "Rachel P.",   source: "classpass", body: "The studio itself is beautiful — clean, modern, and well-maintained. But it's really the instructors that make this place special. They remember your name from day one and genuinely care." },
     { author: "Stephanie W.", source: "google",  body: "Incredible studio. The classes are always perfectly structured — tough enough to feel like you worked hard, but you leave feeling energized not destroyed. This is my happy place." },
+    { author: "Kristin A.",  source: "google",    body: "Three months in and I'm genuinely shocked by my progress. My core is stronger than it's ever been and my posture has completely transformed. The reformer format is unlike anything I've tried before — addictive in the best way." },
+    { author: "Beth N.",     source: "classpass", body: "Came back to exercise after a two-year break and this studio made it feel completely safe and exciting. The instructors modified everything for my level and never made me feel behind. Truly the best re-entry into fitness I could have asked for." },
+    { author: "Caroline M.", source: "google",    body: "The 6am classes alone are worth the membership. Energetic, perfectly curated, and the instructors show up with the same enthusiasm every single time. Leaving a morning class here feels better than any coffee." },
+    { author: "Vanessa T.",  source: "classpass", body: "Every single instructor has something different to offer and all of them are exceptional. No two classes feel the same, which keeps me consistently motivated. Six months in and I still get excited to come every week." },
+    { author: "Paige L.",    source: "google",    body: "I've done SoulCycle, Orangetheory, yoga, HIIT — nothing has made me feel as strong as consistent reformer work here. It builds real functional strength, not just cardio. Game changer for me." },
+    { author: "Amber J.",    source: "classpass", body: "The playlists alone are worth showing up for but the workouts genuinely deliver. I came for one class and immediately bought a membership. The vibe is upscale without being intimidating — everyone is welcome here." },
+    { author: "Rose K.",     source: "google",    body: "Signed up on a whim three months ago and have not looked back. I can see my body changing in ways that years of gym work never produced. The reformer targets muscles I didn't know I had. Completely sold." },
+    { author: "Nina P.",     source: "classpass", body: "The community at this studio is just as impressive as the workout. Within a few weeks, instructors knew my name and goals. There's a real sense of belonging here. I bring everyone I know and they all end up staying." },
   ];
 
   const FOUR_STAR: { author: string; body: string; source: string }[] = [
@@ -729,6 +737,10 @@ async function main() {
     { author: "Lexi F.",     source: "classpass", body: "Great experience overall. Instructors are attentive and the reformers are high quality. A few instructor changes lately but the core team is still excellent. Will definitely keep coming." },
     { author: "Morgan D.",   source: "google",    body: "Really solid studio. The reformer Pilates format works so well — challenging but low impact so my joints feel great. I come about 3x a week and have noticed a huge improvement in my overall fitness." },
     { author: "Haley J.",    source: "classpass", body: "Super clean, professional, and the instructors clearly know their stuff. I'd give it 5 stars but the waitlist situation is real — you have to book days in advance for popular time slots." },
+    { author: "Jenna W.",    source: "google",    body: "Really solid studio. My only small complaint is that the early morning slots are incredibly hard to book — they fill up within minutes. Clearly a sign that the classes are great, which they are. Just wish there was more availability." },
+    { author: "Carly D.",    source: "classpass", body: "Excellent experience overall. The reformers are top quality and the instructors clearly love what they do. The front desk check-in process is a little slow during peak hours but that's genuinely the only thing I'd flag." },
+    { author: "Andrea K.",   source: "google",    body: "Love this place. Strong 4 stars — I'd give 5 but I've had two classes cancelled last-minute over the past few months. That said, every class I've actually attended has been fantastic and the team is incredibly warm." },
+    { author: "Harper T.",   source: "classpass", body: "Really great workout and professional staff. I find the class pacing a bit intense for where I currently am but others in my class clearly thrived on it. More beginner-specific slots would be a nice addition." },
   ];
 
   const THREE_STAR: { author: string; body: string; source: string }[] = [
@@ -736,12 +748,17 @@ async function main() {
     { author: "Allison T.",   source: "classpass", body: "Hit or miss depending on the instructor. When you get a great one it's a 5-star experience, but lately the consistency just isn't there. The concept is great — execution needs some work." },
     { author: "Dana R.",      source: "google",   body: "The reformers are high quality and the workout is solid, but I've noticed the studio feels less personal lately. Classes seem more rushed and there's less attention to individual form corrections." },
     { author: "Kira W.",      source: "classpass", body: "Average experience for the price point. Some instructors are excellent, others are just okay. The studio is clean and well-equipped but I expect more personalization at this price." },
+    { author: "Patricia F.", source: "google",    body: "The reformer quality and facility are genuinely excellent. But I've had two instructors who didn't offer any modifications for a small injury I mentioned. At this price point I expect better attention to individual needs." },
+    { author: "Valerie H.",  source: "classpass", body: "Mixed feelings. The best classes here are legitimately 5 stars. But there's a significant gap between the senior and newer instructors. If you can specifically book the veterans, do — otherwise it's pretty average." },
+    { author: "Sandra N.",   source: "google",    body: "Good not great. The equipment is pristine and the studio looks beautiful. But over the past couple of months the class experience has felt more transactional. Less of the community feel that made me sign up." },
   ];
 
   const TWO_STAR: { author: string; body: string; source: string }[] = [
     { author: "Monica V.",   source: "google",    body: "Really disappointed in how things have gone recently. Loved this place when it first opened but there have been a lot of changes and it just doesn't feel the same. Instructor departures, half-full classes — something's off." },
     { author: "Tara S.",     source: "classpass", body: "The late cancel policy is extremely punitive — $35 for canceling 10 hours before class due to an emergency. Workout is fine but the policies and the way customer service handled my complaint left a lot to be desired." },
     { author: "Brittany L.", source: "google",    body: "I really wanted to love this place. The equipment is great and the concept is solid, but the management feel has really declined. Class sizes feel too big now and instructors are stretched thin." },
+    { author: "Melissa C.",  source: "google",    body: "Really disappointed lately. The quality used to be consistently excellent and now it feels hit-or-miss. Two instructor departures in one month, classes that feel rushed. Not what I signed up for." },
+    { author: "Whitney B.",  source: "classpass", body: "The equipment is good but the experience has gone downhill. Long waitlists followed by last-minute cancellations, and when I reached out to customer service I felt completely brushed off. Reconsidering my membership." },
   ];
 
   const NEW_STUDIO: { author: string; body: string; source: string }[] = [
@@ -750,6 +767,9 @@ async function main() {
     { author: "Sophie N.",   source: "google",    body: "Early adopter here and loving every single class. The instructors correct your form throughout and make sure you're getting the most out of the workout. Impressed with the quality for such a new studio." },
     { author: "Zoe K.",      source: "classpass", body: "Tried it on a whim and now I'm fully committed. Great energy for a brand new studio — already feels like a real community. Instructors are top tier. So glad they came to this area." },
     { author: "Ava R.",      source: "google",    body: "Brand new but already running like a well-oiled machine. Punctual classes, beautiful space, and instructors who genuinely care. Already booked my next two weeks of classes." },
+    { author: "Lily S.",     source: "google",    body: "Just discovered this studio and I'm already obsessed. New location but you can tell the team has deep experience — everything is polished, professional, and so welcoming. My new weekly ritual." },
+    { author: "Emma J.",     source: "classpass", body: "Tried it the first week they opened and the quality blew me away for a brand new studio. The instructors are patient, the equipment is immaculate, and the class structure is one of the best I've experienced anywhere." },
+    { author: "Nora K.",     source: "google",    body: "So glad this opened near me. I was intimidated by reformer Pilates before but the instructors here made the first class feel completely approachable. Already booked my third class and I've only been twice." },
   ];
 
   function daysAgo(n: number): Date {
@@ -769,14 +789,15 @@ async function main() {
     const isNew    = sd.status === "new";
 
     if (isNew) {
-      const picks = [0, 1, 2, 3, (o % 2 === 0 ? 4 : 1)].slice(0, 4 + (o % 2));
+      const picks = [0, 1, 2, 3, 4, (o % 3 === 0 ? 5 : o % 3 === 1 ? 6 : 7)].slice(0, 5 + (o % 2));
       picks.forEach((pi, i) => {
         const t = NEW_STUDIO[pi % NEW_STUDIO.length];
-        reviewData.push({ studioId: id, source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(10 + i * 14 + (o % 7)) });
+        reviewData.push({ studioId: id, source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(8 + i * 12 + (o % 7)) });
       });
       const four = FOUR_STAR[(o + 2) % FOUR_STAR.length];
-      // Always ensure ClassPass is present
       reviewData.push({ studioId: id, source: "classpass", author: four.author, rating: 4, body: four.body, reviewDate: daysAgo(5 + (o % 8)) });
+      const fourB = FOUR_STAR[(o + 5) % FOUR_STAR.length];
+      reviewData.push({ studioId: id, source: "google", author: fourB.author, rating: 4, body: fourB.body, reviewDate: daysAgo(20 + (o % 10)) });
 
     } else if (isAtRisk) {
       const fivePick = FIVE_STAR[(o + 3) % FIVE_STAR.length];
@@ -788,6 +809,8 @@ async function main() {
       reviewData.push({ studioId: id, source: threeA.source, author: threeA.author, rating: 3, body: threeA.body, reviewDate: daysAgo(30 + (o % 15)) });
       const threeB = THREE_STAR[(o + 2) % THREE_STAR.length];
       reviewData.push({ studioId: id, source: threeB.source, author: threeB.author, rating: 3, body: threeB.body, reviewDate: daysAgo(18 + (o % 10)) });
+      const threeC = THREE_STAR[(o + 4) % THREE_STAR.length];
+      reviewData.push({ studioId: id, source: threeC.source, author: threeC.author, rating: 3, body: threeC.body, reviewDate: daysAgo(10 + (o % 8)) });
       const twoA = TWO_STAR[o % TWO_STAR.length];
       reviewData.push({ studioId: id, source: twoA.source, author: twoA.author, rating: 2, body: twoA.body, reviewDate: daysAgo(7 + (o % 6)) });
       if (o % 2 === 0) {
@@ -796,8 +819,8 @@ async function main() {
       }
 
     } else {
-      const fivePicks = [o % FIVE_STAR.length, (o + 2) % FIVE_STAR.length, (o + 5) % FIVE_STAR.length, (o + 8) % FIVE_STAR.length];
-      const dateBases = [45, 28, 16, 6];
+      const fivePicks = [o % FIVE_STAR.length, (o + 2) % FIVE_STAR.length, (o + 4) % FIVE_STAR.length, (o + 7) % FIVE_STAR.length, (o + 10) % FIVE_STAR.length, (o + 13) % FIVE_STAR.length];
+      const dateBases = [60, 42, 30, 20, 10, 3];
       fivePicks.forEach((pi, i) => {
         const t = FIVE_STAR[pi];
         reviewData.push({ studioId: id, source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(dateBases[i] + (o % 8)) });
@@ -805,12 +828,11 @@ async function main() {
       const fourA = FOUR_STAR[(o + o) % FOUR_STAR.length];
       reviewData.push({ studioId: id, source: "google", author: fourA.author, rating: 4, body: fourA.body, reviewDate: daysAgo(35 + (o % 12)) });
       const fourB = FOUR_STAR[(o + 3) % FOUR_STAR.length];
-      // Always ensure ClassPass is present
       reviewData.push({ studioId: id, source: "classpass", author: fourB.author, rating: 4, body: fourB.body, reviewDate: daysAgo(10 + (o % 9)) });
-      if (o % 3 === 0) {
-        const three = THREE_STAR[o % THREE_STAR.length];
-        reviewData.push({ studioId: id, source: three.source, author: three.author, rating: 3, body: three.body, reviewDate: daysAgo(55 + (o % 20)) });
-      }
+      const fourC = FOUR_STAR[(o + 6) % FOUR_STAR.length];
+      reviewData.push({ studioId: id, source: fourC.source, author: fourC.author, rating: 4, body: fourC.body, reviewDate: daysAgo(22 + (o % 7)) });
+      const three = THREE_STAR[o % THREE_STAR.length];
+      reviewData.push({ studioId: id, source: three.source, author: three.author, rating: 3, body: three.body, reviewDate: daysAgo(55 + (o % 20)) });
     }
   });
 
@@ -832,7 +854,7 @@ async function main() {
     const id = byName[sd.name];
     if (!id) return;
     const names = studioInstructorNames[sd.name] ?? [];
-    const count = Math.min(names.length, sd.status === "at-risk" ? 1 : sd.status === "new" ? 2 : 3);
+    const count = Math.min(names.length, sd.status === "at-risk" ? 2 : sd.status === "new" ? 3 : 4);
     for (let i = 0; i < count; i++) {
       const firstName = names[i].split(" ")[0];
       const tpl = NAMED_TEMPLATES[(studioIdx + i * 3) % NAMED_TEMPLATES.length];

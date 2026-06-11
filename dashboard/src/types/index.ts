@@ -102,6 +102,7 @@ export interface InstructorStat {
   name: string;
   classCount: number;
   avgFillRate: number;
+  classes: string[];
 }
 
 export interface NavSection {

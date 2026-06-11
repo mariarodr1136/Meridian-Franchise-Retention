@@ -6,6 +6,7 @@ import { ReviewsPageContent } from "@/components/ReviewsPageContent";
 import { InstructorSidebar } from "@/components/InstructorSidebar";
 import { StudioSidebar } from "@/components/StudioSidebar";
 import type { Review, StudioStatus } from "@/types";
+import { assignStaffPhotos } from "@/lib/staffPhotos";
 
 async function getStudioWithReviews(id: string) {
   return db.studio.findUnique({
@@ -62,6 +63,7 @@ export default async function StudioReviewsPage({
 
   const instructors = studio.instructors.map((i) => ({ id: i.id, name: i.name }));
   const mentionedInstructors = computeMentions(reviews, instructors);
+  const photoMap = assignStaffPhotos(instructors.map((i) => i.name));
 
   const locationLine = [studio.city, studio.state, studio.country !== "US" ? studio.country : null]
     .filter(Boolean).join(", ");
@@ -91,8 +93,8 @@ export default async function StudioReviewsPage({
             className="w-full h-full object-cover" style={{ objectPosition: "center 78%" }} />
           <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.38)" }} />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Reviews</h1>
-            <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 14, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
+            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Reviews</h1>
+            <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 16, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
           </div>
         </div>
 
@@ -114,7 +116,7 @@ export default async function StudioReviewsPage({
           </div>
 
           {/* Instructor sidebar */}
-          <InstructorSidebar studioId={id} instructors={mentionedInstructors} />
+          <InstructorSidebar studioId={id} instructors={mentionedInstructors} photoMap={photoMap} />
         </div>
       </div>
     </div>
