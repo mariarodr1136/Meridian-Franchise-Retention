@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 import { ClassesPageContent } from "@/components/ClassesPageContent";
 import { StudioSidebar } from "@/components/StudioSidebar";
 import { StudioNav } from "@/components/StudioNav";
-import { StatusBadge } from "@/components/StatusBadge";
 import { fetchStudioSchedule, extractInstructors, scheduleUrl } from "@/lib/schedule";
 import type { StudioMetric, Instructor, Review, ClassMetric, SlotStat, InstructorStat, NavSection, StudioStatus } from "@/types";
 
@@ -56,13 +55,16 @@ export default async function ClassesPage({
           </div>
         </header>
         <div className="max-w-[1340px] mx-auto px-6 py-8">
-          <div className="mb-8 pb-6" style={{ borderBottom: "1px solid #C8D8EE" }}>
-            <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold" style={{ color: "#1F2937" }}>Classes</h1>
-              <StatusBadge status={studio.status as StudioStatus} />
+            {/* Banner */}
+            <div className="mb-8 rounded-xl overflow-hidden relative" style={{ height: 160 }}>
+              <Image src="/jetset-class-wide.jpg" alt="" width={1400} height={160} priority
+                className="w-full h-full object-cover" style={{ objectPosition: "center 78%" }} />
+              <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.38)" }} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Classes</h1>
+                <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 14, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
+              </div>
             </div>
-            <p className="text-sm" style={{ color: "#6B7280" }}>{studio.name} · {locationLine}</p>
-          </div>
           <div className="flex gap-8">
             <StudioSidebar studioId={id} studioStatus={studio.status} />
             <div className="flex-1 min-w-0 flex items-center justify-center py-24">
@@ -196,12 +198,15 @@ export default async function ClassesPage({
       </header>
 
       <div className="max-w-[1340px] mx-auto px-6 py-8">
-        <div className="mb-8 pb-6" style={{ borderBottom: "1px solid #C8D8EE" }}>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold" style={{ color: "#1F2937" }}>Classes</h1>
-            <StatusBadge status={studio.status as StudioStatus} />
+        {/* Banner */}
+        <div className="mb-8 rounded-xl overflow-hidden relative" style={{ height: 160 }}>
+          <Image src="/jetset-class-wide.jpg" alt="" width={1400} height={160} priority
+            className="w-full h-full object-cover" style={{ objectPosition: "center 78%" }} />
+          <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.38)" }} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Classes</h1>
+            <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 14, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
           </div>
-          <p className="text-sm" style={{ color: "#6B7280" }}>{studio.name} · {locationLine}</p>
         </div>
 
         <div className="flex gap-8">

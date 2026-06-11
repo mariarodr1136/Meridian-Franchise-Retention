@@ -109,7 +109,7 @@ export default async function StudioPage({
 
       <div className="max-w-[1340px] mx-auto px-6 py-8">
         {/* Studio banner */}
-        <div className="w-full mb-6 rounded-xl overflow-hidden" style={{ height: 150 }}>
+        <div className="w-full mb-6 rounded-xl overflow-hidden relative" style={{ height: 150 }}>
           <Image
             src="/jetset-reformer.jpg"
             alt=""
