@@ -14,6 +14,22 @@ function prng(seed: number) {
   };
 }
 
+const EMAIL_DOMAINS = ["gmail.com", "yahoo.com", "icloud.com", "outlook.com", "hotmail.com"];
+const AREA_CODES    = ["305", "786", "954", "407", "561", "813", "727", "941", "321", "352"];
+
+function formatPhone(rand: () => number): string {
+  const area = AREA_CODES[Math.floor(rand() * AREA_CODES.length)];
+  const mid  = String(Math.floor(rand() * 900) + 100);
+  const end  = String(Math.floor(rand() * 9000) + 1000);
+  return `(${area}) ${mid}-${end}`;
+}
+
+function joinedDateFromDaysAgo(days: number): string {
+  const d = new Date("2026-06-10");
+  d.setDate(d.getDate() - days);
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
 const FIRST = [
   "Sarah","Jessica","Amanda","Lauren","Stephanie","Nicole","Ashley","Megan",
   "Rebecca","Jennifer","Emily","Olivia","Ava","Sophia","Charlotte","Amelia",
@@ -60,13 +76,20 @@ export function generateStudioMembers({
 
   // Cancelled this month
   for (let i = 0; i < cancelledCount; i++) {
-    const tier = pick(TIERS);
-    const mv   = TIER_VALUE[tier] + Math.round((rand() - 0.5) * 20);
+    const tier      = pick(TIERS);
+    const mv        = TIER_VALUE[tier] + Math.round((rand() - 0.5) * 20);
+    const ageDays   = Math.round(60 + rand() * 900);
+    const firstName = pick(FIRST);
+    const lastName  = pick(LAST);
+    const domain    = EMAIL_DOMAINS[Math.floor(rand() * EMAIL_DOMAINS.length)];
     members.push({
       id: `mbr_${studioId.slice(-5)}_${String(++idx).padStart(4, "0")}`,
-      name: `${pick(FIRST)} ${pick(LAST)}`,
+      name: `${firstName} ${lastName}`,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(rand() * 99) + 1}@${domain}`,
+      phone: formatPhone(rand),
+      joinedDate: joinedDateFromDaysAgo(ageDays),
       membershipTier: tier,
-      membershipAgeDays: Math.round(60 + rand() * 900),
+      membershipAgeDays: ageDays,
       status: "cancelled",
       cancelledDaysAgo: Math.max(1, Math.round(rand() * 29)),
       daysSinceLastVisit: Math.round(10 + rand() * 30),
@@ -77,13 +100,20 @@ export function generateStudioMembers({
 
   // Active members
   for (let i = 0; i < memberCount; i++) {
-    const tier = pick(TIERS);
-    const mv   = TIER_VALUE[tier] + Math.round((rand() - 0.5) * 20);
+    const tier      = pick(TIERS);
+    const mv        = TIER_VALUE[tier] + Math.round((rand() - 0.5) * 20);
+    const ageDays   = Math.round(30 + rand() * 1200);
+    const firstName = pick(FIRST);
+    const lastName  = pick(LAST);
+    const domain    = EMAIL_DOMAINS[Math.floor(rand() * EMAIL_DOMAINS.length)];
     members.push({
       id: `mbr_${studioId.slice(-5)}_${String(++idx).padStart(4, "0")}`,
-      name: `${pick(FIRST)} ${pick(LAST)}`,
+      name: `${firstName} ${lastName}`,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(rand() * 99) + 1}@${domain}`,
+      phone: formatPhone(rand),
+      joinedDate: joinedDateFromDaysAgo(ageDays),
       membershipTier: tier,
-      membershipAgeDays: Math.round(30 + rand() * 1200),
+      membershipAgeDays: ageDays,
       status: "active",
       daysSinceLastVisit: Math.max(1, Math.round(clamp(rand() * rand() * 20, 0, 30))),
       visitsLast30d: Math.round(clamp(2 + rand() * 10, 1, 16)),

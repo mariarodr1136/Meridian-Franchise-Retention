@@ -16,9 +16,10 @@ interface MetricBubbleProps {
   reverse?: boolean;
   description: string;
   details: Detail[];
+  compact?: boolean;
 }
 
-export function MetricBubble({ label, value, trend, trendStr, reverse, description, details }: MetricBubbleProps) {
+export function MetricBubble({ label, value, trend, trendStr, reverse, description, details, compact }: MetricBubbleProps) {
   const [hovered, setHovered] = useState(false);
 
   const trendColor =
@@ -30,7 +31,7 @@ export function MetricBubble({ label, value, trend, trendStr, reverse, descripti
 
   return (
     <div
-      className="rounded-xl border p-5 relative cursor-default select-none"
+      className={`rounded-xl border relative cursor-default select-none ${compact ? "p-3" : "p-5"}`}
       style={{
         background: "#fff",
         borderColor: hovered ? "#4A638D" : "#C8D8EE",
@@ -41,10 +42,10 @@ export function MetricBubble({ label, value, trend, trendStr, reverse, descripti
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <p className="text-xs mb-2" style={{ color: "#9CA3AF" }}>{label}</p>
-      <p className="text-2xl font-bold" style={{ color: "#1F2937" }}>{value}</p>
+      <p className={compact ? "text-[10px] mb-1" : "text-xs mb-2"} style={{ color: "#9CA3AF" }}>{label}</p>
+      <p className={compact ? "text-lg font-bold" : "text-2xl font-bold"} style={{ color: "#1F2937" }}>{value}</p>
       {trendStr && (
-        <p className={cn("text-xs mt-1.5 font-medium", trendColor)}>
+        <p className={cn(compact ? "text-[10px] mt-1" : "text-xs mt-1.5", "font-medium", trendColor)}>
           {trendStr} WoW
         </p>
       )}

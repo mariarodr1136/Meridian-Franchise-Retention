@@ -4,6 +4,9 @@ export type MembershipTier = "unlimited" | "12-class monthly" | "8-class monthly
 export interface StudioMember {
   id: string;
   name: string;
+  email: string;
+  phone: string;
+  joinedDate: string;
   membershipTier: MembershipTier;
   membershipAgeDays: number;
   status: MemberStatus;

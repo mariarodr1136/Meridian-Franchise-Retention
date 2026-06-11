@@ -61,6 +61,94 @@ function StatBubble({
   );
 }
 
+// ── Member detail drawer ───────────────────────────────────────────────────────
+
+function MemberDrawer({ member, onClose }: { member: StudioMember; onClose: () => void }) {
+  const tier      = TIER_COLORS[member.membershipTier];
+  const isCancelled = member.status === "cancelled";
+
+  const infoRow = (label: string, value: string) => (
+    <div className="flex items-center justify-between py-2.5" style={{ borderBottom: "1px solid #F0F5FB" }}>
+      <span className="text-xs" style={{ color: "#9CA3AF" }}>{label}</span>
+      <span className="text-xs font-semibold" style={{ color: "#1F2937" }}>{value}</span>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40"
+        style={{ background: "rgba(74,99,141,0.18)" }}
+        onClick={onClose}
+      />
+      {/* Panel */}
+      <div
+        className="fixed right-0 top-0 h-full z-50 w-80 overflow-y-auto"
+        style={{
+          background: "#fff",
+          borderLeft: "1px solid #C8D8EE",
+          boxShadow: "-8px 0 32px rgba(74,99,141,0.14)",
+          animation: "slideInRight 0.22s cubic-bezier(0.22,1,0.36,1)",
+        }}
+      >
+        <style>{`@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+
+        {/* Header */}
+        <div className="px-5 py-4 flex items-start justify-between" style={{ background: "#4A638D" }}>
+          <div>
+            <p className="text-sm font-bold text-white">{member.name}</p>
+            <span
+              className="inline-block mt-1.5 text-[10px] font-semibold px-2 py-0.5 rounded capitalize"
+              style={{ background: isCancelled ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.18)", color: isCancelled ? "#FCA5A5" : "rgba(255,255,255,0.9)" }}
+            >
+              {isCancelled ? "Cancelled" : member.membershipTier}
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer transition-colors"
+            style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)" }}
+          >
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+              <path d="M1 1l6 6M7 1L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-5 py-4 flex flex-col gap-5">
+
+          {/* Contact */}
+          <div>
+            <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: "#4A638D" }}>Contact</p>
+            {infoRow("Email",  member.email)}
+            {infoRow("Phone",  member.phone)}
+          </div>
+
+          {/* Membership */}
+          <div>
+            <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: "#4A638D" }}>Membership</p>
+            {infoRow("Joined",       member.joinedDate)}
+            {infoRow("Tier",         member.membershipTier)}
+            {infoRow("Tenure",       tenure(member))}
+            {infoRow("Monthly value", formatCurrency(member.monthlyValue))}
+            {isCancelled && member.cancelledDaysAgo !== undefined &&
+              infoRow("Cancelled", `${member.cancelledDaysAgo}d ago`)}
+          </div>
+
+          {/* Activity */}
+          <div>
+            <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: "#4A638D" }}>Activity</p>
+            {infoRow("Last visit",     `${member.daysSinceLastVisit}d ago`)}
+            {!isCancelled && infoRow("Visits this month", String(member.visitsLast30d))}
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
+}
+
 const TIER_COLORS: Record<MembershipTier, { bg: string; color: string }> = {
   "unlimited":        { bg: "#EEF3FB", color: "#4A638D" },
   "12-class monthly": { bg: "#F0FDF4", color: "#16a34a" },
@@ -122,10 +210,11 @@ function Th({
 
 // ── Table rows ─────────────────────────────────────────────────────────────────
 
-function ActiveRow({ member, i }: { member: StudioMember; i: number }) {
+function ActiveRow({ member, i, onClick }: { member: StudioMember; i: number; onClick: () => void }) {
   const tier = TIER_COLORS[member.membershipTier];
   return (
-    <tr className="transition-colors" style={{ background: i % 2 === 0 ? "#fff" : "#FAFBFD" }}
+    <tr className="transition-colors cursor-pointer" style={{ background: i % 2 === 0 ? "#fff" : "#FAFBFD" }}
+      onClick={onClick}
       onMouseEnter={e => (e.currentTarget.style.background = "#F0F5FB")}
       onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#FAFBFD")}>
       <td className="px-4 py-2.5">
@@ -150,10 +239,11 @@ function ActiveRow({ member, i }: { member: StudioMember; i: number }) {
   );
 }
 
-function CancelledRow({ member, i }: { member: StudioMember; i: number }) {
+function CancelledRow({ member, i, onClick }: { member: StudioMember; i: number; onClick: () => void }) {
   const tier = TIER_COLORS[member.membershipTier];
   return (
-    <tr className="transition-colors" style={{ background: i % 2 === 0 ? "#fff" : "#FAFBFD" }}
+    <tr className="transition-colors cursor-pointer" style={{ background: i % 2 === 0 ? "#fff" : "#FAFBFD" }}
+      onClick={onClick}
       onMouseEnter={e => (e.currentTarget.style.background = "#FFF5F5")}
       onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#FAFBFD")}>
       <td className="px-4 py-2.5">
@@ -246,13 +336,14 @@ interface Props {
 }
 
 export function MembersPageContent({ members, studioName }: Props) {
-  const [tab,        setTab]       = useState<Tab>("active");
-  const [query,      setQuery]     = useState("");
-  const [sortKey,    setSortKey]   = useState<SortKey>("name");
-  const [sortDir,    setSortDir]   = useState<SortDir>("asc");
-  const [page,       setPage]      = useState(1);
-  const [exporting,  setExporting] = useState(false);
-  const [hoveredTab, setHoveredTab] = useState<Tab | null>(null);
+  const [tab,            setTab]           = useState<Tab>("active");
+  const [query,          setQuery]         = useState("");
+  const [sortKey,        setSortKey]       = useState<SortKey>("name");
+  const [sortDir,        setSortDir]       = useState<SortDir>("asc");
+  const [page,           setPage]          = useState(1);
+  const [exporting,      setExporting]     = useState(false);
+  const [hoveredTab,     setHoveredTab]    = useState<Tab | null>(null);
+  const [selectedMember, setSelectedMember] = useState<StudioMember | null>(null);
 
   const allCancelled = useMemo(() => members.filter(m => m.status === "cancelled"), [members]);
   const allActive    = useMemo(() => members.filter(m => m.status === "active"),    [members]);
@@ -429,8 +520,8 @@ export function MembersPageContent({ members, studioName }: Props) {
                 <tbody>
                   {pageRows.map((m, i) =>
                     tab === "active"
-                      ? <ActiveRow    key={m.id} member={m} i={i} />
-                      : <CancelledRow key={m.id} member={m} i={i} />
+                      ? <ActiveRow    key={m.id} member={m} i={i} onClick={() => setSelectedMember(m)} />
+                      : <CancelledRow key={m.id} member={m} i={i} onClick={() => setSelectedMember(m)} />
                   )}
                 </tbody>
               </table>
@@ -494,6 +585,10 @@ export function MembersPageContent({ members, studioName }: Props) {
           </>
         )}
       </div>
+
+      {selectedMember && (
+        <MemberDrawer member={selectedMember} onClose={() => setSelectedMember(null)} />
+      )}
     </div>
   );
 }

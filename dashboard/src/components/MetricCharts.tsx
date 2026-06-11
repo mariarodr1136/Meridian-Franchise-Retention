@@ -31,14 +31,9 @@ export function MetricCharts({ metrics, studioId }: Props) {
   return (
     <div>
       {/* Range selector */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Trends</p>
-          <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>
-            {showing === total
-              ? `All ${total} week${total !== 1 ? "s" : ""}`
-              : `${showing} of ${total} week${total !== 1 ? "s" : ""}`}
-          </p>
+          <span className="text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full" style={{ background: "#4A638D", color: "#fff" }}>Overview</span>
         </div>
         <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F0F5FB", border: "1px solid #E2EBF5" }}>
           {RANGES.map(({ label, weeks: w, desc }) => (
@@ -46,7 +41,7 @@ export function MetricCharts({ metrics, studioId }: Props) {
               key={label}
               onClick={() => setWeeks(w)}
               title={desc}
-              className="text-xs font-semibold px-3 py-1.5 rounded-md transition-all cursor-pointer"
+              className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-all cursor-pointer${weeks !== w ? " hover:text-[#4A638D] hover:ring-1 hover:ring-[#4A638D]" : ""}`}
               style={weeks === w
                 ? { background: "#4A638D", color: "#fff", boxShadow: "0 1px 4px rgba(74,99,141,0.25)" }
                 : { color: "#9CA3AF" }

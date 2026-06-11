@@ -90,6 +90,7 @@ export default async function StudioPage({
     ? []
     : [
         { href: `/studios/${studio.id}/classes`,    label: "Classes",    desc: "Schedule, booking mix, slot performance, reviews by instructor" },
+        { href: `/studios/${studio.id}/members`,    label: "Members",    desc: "Member roster, activity, retention risk, and tier breakdown"    },
         { href: `/studios/${studio.id}/sales`,      label: "Sales",      desc: "Revenue by product, monthly & category trends"                 },
         { href: `/studios/${studio.id}/operations`, label: "Operations", desc: "Lease, alarm, HVAC, technician, internet"                      },
         { href: `/studios/${studio.id}/inventory`,  label: "Inventory",  desc: "End-of-month stock levels, reorder alerts"                     },
@@ -107,9 +108,21 @@ export default async function StudioPage({
       </header>
 
       <div className="max-w-[1340px] mx-auto px-6 py-8">
-        {/* Studio title */}
-        <div className="flex items-start justify-between mb-8 pb-6" style={{ borderBottom: "1px solid #C8D8EE" }}>
-          <div className="flex flex-col gap-1.5">
+        {/* Studio banner */}
+        <div className="w-full mb-6 rounded-xl overflow-hidden" style={{ height: 150 }}>
+          <Image
+            src="/jetset-reformer.jpg"
+            alt=""
+            width={1340}
+            height={180}
+            className="w-full h-full object-cover" style={{ objectPosition: "center 68%" }}
+            priority
+          />
+        </div>
+
+        {/* Studio title + KPIs */}
+        <div className="flex items-start gap-8 mb-8 pb-6" style={{ borderBottom: "1px solid #C8D8EE" }}>
+          <div className="flex flex-col gap-1.5 flex-shrink-0">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">{studio.name}</h1>
               <StatusBadge status={studio.status as StudioStatus} />
@@ -126,6 +139,58 @@ export default async function StudioPage({
             {studio.address && <p className="text-xs" style={{ color: "#6B7280" }}>{studio.address}</p>}
             {studio.phone   && <p className="text-xs" style={{ color: "#6B7280" }}>{studio.phone}</p>}
           </div>
+
+          {/* KPI bubbles inline */}
+          {!isPreLaunch && current && (
+            <div className="grid grid-cols-4 gap-3 flex-1">
+              <MetricBubble compact
+                label="Class Occupancy"
+                value={formatPercent(current.classFillRate)}
+                trend={trendDirection(current.classFillRate, prev?.classFillRate ?? current.classFillRate)}
+                trendStr={prev ? trendLabel(current.classFillRate, prev.classFillRate) : undefined}
+                description="Average seat fill rate across all classes this week."
+                details={[
+                  { label: "Member Bookings",    value: formatNumber(current.memberBookings) },
+                  { label: "Pack Bookings",      value: formatNumber(current.classPackBookings) },
+                  { label: "ClassPass Bookings", value: formatNumber(current.classPassBookings) },
+                ]}
+              />
+              <MetricBubble compact
+                label="Active Members"
+                value={formatNumber(current.activeMemberships)}
+                trend={trendDirection(current.activeMemberships, prev?.activeMemberships ?? current.activeMemberships)}
+                trendStr={prev ? trendLabel(current.activeMemberships, prev.activeMemberships) : undefined}
+                description="Total active memberships billed this week."
+                details={[
+                  { label: "Net Change",   value: prev ? `${current.activeMemberships - prev.activeMemberships > 0 ? "+" : ""}${current.activeMemberships - prev.activeMemberships}` : "—" },
+                  { label: "Rev / Member", value: formatCurrency(Math.round(current.weeklyRevenue / (current.activeMemberships || 1))) },
+                ]}
+              />
+              <MetricBubble compact
+                label="Weekly Revenue"
+                value={formatCurrency(current.weeklyRevenue)}
+                trend={trendDirection(current.weeklyRevenue, prev?.weeklyRevenue ?? current.weeklyRevenue)}
+                trendStr={prev ? trendLabel(current.weeklyRevenue, prev.weeklyRevenue) : undefined}
+                description="Gross revenue collected across all booking types this week."
+                details={[
+                  { label: "Rev / Member", value: formatCurrency(Math.round(current.weeklyRevenue / (current.activeMemberships || 1))) },
+                  { label: "vs Last Week",  value: prev ? formatCurrency(current.weeklyRevenue - prev.weeklyRevenue) : "—" },
+                ]}
+              />
+              <MetricBubble compact
+                label="Weekly Churn"
+                value={formatPercent(current.weeklyChurn)}
+                trend={trendDirection(current.weeklyChurn, prev?.weeklyChurn ?? current.weeklyChurn)}
+                trendStr={prev ? trendLabel(current.weeklyChurn, prev.weeklyChurn) : undefined}
+                reverse
+                description="Share of active members who cancelled this week."
+                details={[
+                  { label: "Est. Lost",    value: formatNumber(Math.round(current.weeklyChurn * current.activeMemberships)) },
+                  { label: "Still Active", value: formatNumber(Math.round((1 - current.weeklyChurn) * current.activeMemberships)) },
+                ]}
+              />
+            </div>
+          )}
         </div>
 
         {/* Sidebar + content */}
@@ -134,8 +199,8 @@ export default async function StudioPage({
 
           <div className="flex-1 min-w-0 flex flex-col gap-6">
 
-            {/* KPI CARDS */}
-            {isPreLaunch ? (
+            {/* KPI CARDS — pre-launch only (live studios show them in the header) */}
+            {isPreLaunch && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-xl border p-6" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
                   <p className="text-xs mb-2" style={{ color: "#9CA3AF" }}>Presales Pipeline</p>
@@ -147,56 +212,7 @@ export default async function StudioPage({
                   <TrendChart metrics={metrics} field="presalesPipelineCount" color="#C9A84C" label="" />
                 </div>
               </div>
-            ) : current ? (
-              <div className="grid grid-cols-4 gap-4">
-                <MetricBubble
-                  label="Class Occupancy"
-                  value={formatPercent(current.classFillRate)}
-                  trend={trendDirection(current.classFillRate, prev?.classFillRate ?? current.classFillRate)}
-                  trendStr={prev ? trendLabel(current.classFillRate, prev.classFillRate) : undefined}
-                  description="Average seat fill rate across all classes this week."
-                  details={[
-                    { label: "Member Bookings",    value: formatNumber(current.memberBookings) },
-                    { label: "Pack Bookings",      value: formatNumber(current.classPackBookings) },
-                    { label: "ClassPass Bookings", value: formatNumber(current.classPassBookings) },
-                  ]}
-                />
-                <MetricBubble
-                  label="Active Members"
-                  value={formatNumber(current.activeMemberships)}
-                  trend={trendDirection(current.activeMemberships, prev?.activeMemberships ?? current.activeMemberships)}
-                  trendStr={prev ? trendLabel(current.activeMemberships, prev.activeMemberships) : undefined}
-                  description="Total active memberships billed this week."
-                  details={[
-                    { label: "Net Change",   value: prev ? `${current.activeMemberships - prev.activeMemberships > 0 ? "+" : ""}${current.activeMemberships - prev.activeMemberships}` : "—" },
-                    { label: "Rev / Member", value: formatCurrency(Math.round(current.weeklyRevenue / (current.activeMemberships || 1))) },
-                  ]}
-                />
-                <MetricBubble
-                  label="Weekly Revenue"
-                  value={formatCurrency(current.weeklyRevenue)}
-                  trend={trendDirection(current.weeklyRevenue, prev?.weeklyRevenue ?? current.weeklyRevenue)}
-                  trendStr={prev ? trendLabel(current.weeklyRevenue, prev.weeklyRevenue) : undefined}
-                  description="Gross revenue collected across all booking types this week."
-                  details={[
-                    { label: "Rev / Member", value: formatCurrency(Math.round(current.weeklyRevenue / (current.activeMemberships || 1))) },
-                    { label: "vs Last Week",  value: prev ? formatCurrency(current.weeklyRevenue - prev.weeklyRevenue) : "—" },
-                  ]}
-                />
-                <MetricBubble
-                  label="Weekly Churn"
-                  value={formatPercent(current.weeklyChurn)}
-                  trend={trendDirection(current.weeklyChurn, prev?.weeklyChurn ?? current.weeklyChurn)}
-                  trendStr={prev ? trendLabel(current.weeklyChurn, prev.weeklyChurn) : undefined}
-                  reverse
-                  description="Share of active members who cancelled this week."
-                  details={[
-                    { label: "Est. Lost",     value: formatNumber(Math.round(current.weeklyChurn * current.activeMemberships)) },
-                    { label: "Still Active",  value: formatNumber(Math.round((1 - current.weeklyChurn) * current.activeMemberships)) },
-                  ]}
-                />
-              </div>
-            ) : null}
+            )}
 
             {/* TREND CHARTS */}
             {!isPreLaunch && metrics.length > 0 && (
@@ -210,8 +226,8 @@ export default async function StudioPage({
 
             {/* ACTIVE ALERTS */}
             {anomalies.length > 0 && (
-              <div>
-                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#4A638D" }}>Active Alerts</p>
+              <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+                <Link href="/alerts" className="text-xs font-bold tracking-widest uppercase mb-4 inline-block transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>Active Alerts →</Link>
                 <AnomalyFeed anomalies={anomalies} />
               </div>
             )}
@@ -226,7 +242,7 @@ export default async function StudioPage({
             {/* SUB-PAGE NAV CARDS */}
             {subPages.length > 0 && (
               <div>
-                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#9CA3AF" }}>Studio Sections</p>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "#4A638D" }}>Studio Sections</p>
                 <div className="grid grid-cols-1 gap-3">
                   {subPages.map(({ href, label, desc }) => (
                     <Link

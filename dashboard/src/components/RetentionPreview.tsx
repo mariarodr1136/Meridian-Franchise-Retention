@@ -7,13 +7,13 @@ import type { ChurnSummary, ChurnMember } from "@/types/churn";
 // ── Risk bar row ───────────────────────────────────────────────────────────────
 
 function RiskRow({
-  label, count, total, color, bg,
+  label, count, total, color, bg, desc,
 }: {
-  label: string; count: number; total: number; color: string; bg: string;
+  label: string; count: number; total: number; color: string; bg: string; desc: string;
 }) {
   const pct = total > 0 ? (count / total) * 100 : 0;
   return (
-    <div className="flex items-center gap-3">
+    <div className="relative group flex items-center gap-3">
       <p className="text-xs w-16 flex-shrink-0" style={{ color }}>{label}</p>
       <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "#F0F5FB" }}>
         <div
@@ -23,6 +23,12 @@ function RiskRow({
       </div>
       <p className="text-xs font-semibold w-6 text-right flex-shrink-0" style={{ color: "#1F2937" }}>{count}</p>
       <p className="text-xs w-8 flex-shrink-0" style={{ color: "#9CA3AF" }}>{Math.round(pct)}%</p>
+      <div
+        className="absolute bottom-full left-16 mb-2 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20"
+        style={{ background: "#F0F5FB", color: "#4A638D", border: "1px solid #C8D8EE", boxShadow: "0 2px 8px rgba(74,99,141,0.15)" }}
+      >
+        <span className="font-semibold" style={{ color }}>{count}</span> Members · {desc}
+      </div>
     </div>
   );
 }
@@ -70,9 +76,9 @@ export function RetentionPreview({ studioId, summary }: Props) {
 
         {/* Risk distribution bars */}
         <div className="flex flex-col gap-2.5 mb-5">
-          <RiskRow label="High"   count={highRisk}   total={totalAnalyzed} color="#DC2626" bg="#FEF2F2" />
-          <RiskRow label="Medium" count={mediumRisk}  total={totalAnalyzed} color="#D97706" bg="#FEF3C7" />
-          <RiskRow label="Low"    count={lowRisk}     total={totalAnalyzed} color="#4A638D" bg="#EEF3FB" />
+          <RiskRow label="High"   count={highRisk}   total={totalAnalyzed} color="#DC2626" bg="#FEF2F2" desc="Immediate Action Needed" />
+          <RiskRow label="Medium" count={mediumRisk}  total={totalAnalyzed} color="#D97706" bg="#FEF3C7" desc="Monitor Closely" />
+          <RiskRow label="Low"    count={lowRisk}     total={totalAnalyzed} color="#4A638D" bg="#EEF3FB" desc="Stable Retention" />
         </div>
 
         {/* Revenue + at-risk stat */}

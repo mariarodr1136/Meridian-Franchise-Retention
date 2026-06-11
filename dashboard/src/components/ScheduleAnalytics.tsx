@@ -119,9 +119,9 @@ export function ScheduleAnalytics({ slotStats, instructorStats }: Props) {
                           {isHov && (
                             <div
                               className={`absolute ${rowIdx <= 1 ? "top-full mt-2" : "bottom-full mb-2"} left-1/2 -translate-x-1/2 rounded-xl p-3 shadow-xl z-50 whitespace-nowrap pointer-events-none`}
-                              style={{ background: "#1c1c1c", color: "#fafafa", minWidth: "140px" }}
+                              style={{ background: "#F0F5FB", color: "#1F2937", border: "1px solid #C8D8EE", boxShadow: "0 4px 16px rgba(74,99,141,0.14)", minWidth: "140px" }}
                             >
-                              <p className="font-semibold text-xs mb-2">{DAY_LABELS[d]} · {slot}</p>
+                              <p className="font-semibold text-xs mb-2" style={{ color: "#4A638D" }}>{DAY_LABELS[d]} · {slot}</p>
                               {[
                                 { label: "Members",     pct: stat.avgMemberPct, color: "#4A638D" },
                                 { label: "Class Packs", pct: stat.avgPackPct,   color: "#C9A84C" },
@@ -130,9 +130,9 @@ export function ScheduleAnalytics({ slotStats, instructorStats }: Props) {
                                 <div key={label} className="flex items-center justify-between gap-4 text-[10px] mb-0.5">
                                   <div className="flex items-center gap-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-                                    <span style={{ color: "#a3a3a3" }}>{label}</span>
+                                    <span style={{ color: "#6B7280" }}>{label}</span>
                                   </div>
-                                  <span className="font-semibold">{Math.round(pct * 100)}%</span>
+                                  <span className="font-semibold" style={{ color: "#1F2937" }}>{Math.round(pct * 100)}%</span>
                                 </div>
                               ))}
                             </div>

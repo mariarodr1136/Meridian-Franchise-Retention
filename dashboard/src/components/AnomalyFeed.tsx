@@ -59,9 +59,10 @@ export function AnomalyFeed({ anomalies }: Props) {
             onClick={() => setSelected(isExpanded ? null : a)}
             onMouseEnter={() => setHoveredId(a.id)}
             onMouseLeave={() => setHoveredId(null)}
-            className="rounded-xl border bg-white text-left cursor-pointer w-full"
+            className="rounded-xl border text-left cursor-pointer w-full"
             style={{
-              borderColor: isExpanded ? sc.dot : hoveredId === a.id ? "#4A638D" : "#E5E7EB",
+              background: "#F8FAFD",
+              borderColor: isExpanded ? sc.dot : hoveredId === a.id ? "#4A638D" : "#C8D8EE",
               boxShadow: isExpanded
                 ? "0 4px 16px rgba(0,0,0,0.08)"
                 : hoveredId === a.id
