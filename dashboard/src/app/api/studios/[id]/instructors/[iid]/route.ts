@@ -6,13 +6,15 @@ export async function PUT(
   ctx: RouteContext<"/api/studios/[id]/instructors/[iid]">
 ) {
   const { iid } = await ctx.params;
-  const body = await req.json() as { name?: string; role?: string; lastEvalDate?: string | null };
+  const body = await req.json() as { name?: string; role?: string; email?: string | null; phone?: string | null; lastEvalDate?: string | null };
 
   const updated = await db.instructor.update({
     where: { id: iid },
     data: {
-      ...(body.name    !== undefined && { name: body.name.trim() }),
-      ...(body.role    !== undefined && { role: body.role }),
+      ...(body.name  !== undefined && { name: body.name.trim() }),
+      ...(body.role  !== undefined && { role: body.role }),
+      ...("email" in body && { email: body.email ?? null }),
+      ...("phone" in body && { phone: body.phone ?? null }),
       ...("lastEvalDate" in body && {
         lastEvalDate: body.lastEvalDate ? new Date(body.lastEvalDate) : null,
       }),

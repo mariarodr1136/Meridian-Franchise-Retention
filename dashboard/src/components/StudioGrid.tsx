@@ -31,6 +31,7 @@ export function StudioGrid({ studios }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [tab, setTab]             = useState<"open" | "coming-soon">("open");
   const [statusFilter, setStatusFilter] = useState<StudioStatus | "all">("all");
+  const [hoveredTab, setHoveredTab] = useState<"open" | "coming-soon" | null>(null);
 
   const tabFiltered = useMemo(() =>
     studios.filter((s) => tab === "open" ? s.status !== "pre-launch" : s.status === "pre-launch"),
@@ -121,11 +122,15 @@ export function StudioGrid({ studios }: Props) {
             <button
               key={t}
               onClick={() => { setTab(t); setStatusFilter("all"); }}
-              className="pb-2 text-sm font-bold tracking-widest uppercase transition-colors cursor-pointer"
+              onMouseEnter={() => setHoveredTab(t)}
+              onMouseLeave={() => setHoveredTab(null)}
+              className="pb-2 text-sm font-bold tracking-widest uppercase cursor-pointer"
               style={{
                 fontFamily: "var(--font-montserrat), Montserrat, sans-serif",
-                color: active ? "#4A638D" : "#9CA3AF",
-                borderBottom: active ? "2px solid #4A638D" : "2px solid #E5E7EB",
+                color: active ? "#4A638D" : hoveredTab === t ? "#4A638D" : "#9CA3AF",
+                borderBottom: active ? "2px solid #4A638D" : hoveredTab === t ? "2px solid #C8D8EE" : "2px solid #E5E7EB",
+                transform: !active && hoveredTab === t ? "translateY(-1px)" : "translateY(0)",
+                transition: "color 0.15s ease, border-color 0.15s ease, transform 0.15s ease",
               }}
             >
               {label}

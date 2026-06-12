@@ -19,6 +19,60 @@ const ROLE_LABELS: Record<StaffRole, string> = {
   instructor:             "Instructor",
 };
 
+function EditButton({ onClick }: { onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        fontSize: 12,
+        padding: "5px 12px",
+        borderRadius: 8,
+        fontWeight: 500,
+        border: `1px solid ${hovered ? "#4A638D" : "#C8D8EE"}`,
+        color: hovered ? "#fff" : "#4A638D",
+        background: hovered ? "#4A638D" : "#EEF3FB",
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+        transition: "all 0.15s ease",
+        cursor: "pointer",
+        boxShadow: hovered ? "0 2px 8px rgba(74,99,141,0.18)" : "none",
+      }}
+    >
+      Edit
+    </button>
+  );
+}
+
+function SaveChangesButton({ onClick, disabled, saving }: { onClick: () => void; disabled: boolean; saving: boolean }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        fontSize: 12,
+        padding: "5px 14px",
+        borderRadius: 8,
+        fontWeight: 500,
+        border: `1px solid ${hovered && !disabled ? "#4A638D" : "#C8D8EE"}`,
+        color: hovered && !disabled ? "#fff" : "#4A638D",
+        background: hovered && !disabled ? "#4A638D" : "#EEF3FB",
+        transform: hovered && !disabled ? "translateY(-2px)" : "translateY(0)",
+        transition: "all 0.15s ease",
+        cursor: disabled ? "not-allowed" : "pointer",
+        boxShadow: hovered && !disabled ? "0 2px 8px rgba(74,99,141,0.18)" : "none",
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      {saving ? "Saving…" : "Save Changes"}
+    </button>
+  );
+}
+
 function Field({
   label, value, onChange, type = "text", hint,
 }: {
@@ -35,8 +89,8 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="text-sm rounded-lg px-3 py-2.5 outline-none"
-        style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
+        className="text-sm rounded-lg px-3 py-2.5 outline-none border border-[#C8D8EE] hover:border-[#4A638D] focus:border-[#4A638D] transition-colors"
+        style={{ color: "#1F2937", background: "#F8FAFD" }}
       />
       {hint && <p className="text-[11px]" style={{ color: "#9CA3AF" }}>{hint}</p>}
     </div>
@@ -46,6 +100,7 @@ function Field({
 type DraftMember = Omit<Instructor, "studioId" | "certificationStatus" | "performanceScore"> & {
   _new?: boolean;
 };
+
 
 export function StudioSettingsForm({ studio, instructors }: Props) {
   const [info, setInfo] = useState({
@@ -84,6 +139,8 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
       id:           s.id,
       name:         s.name,
       role:         s.role,
+      email:        s.email,
+      phone:        s.phone,
       lastEvalDate: s.lastEvalDate,
     })));
     setRemoved(new Set());
@@ -111,7 +168,7 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
 
   function addMember() {
     const tempId = `new-${Date.now()}`;
-    setDraft((prev) => [...prev, { id: tempId, name: "", role: "instructor", lastEvalDate: null, _new: true }]);
+    setDraft((prev) => [...prev, { id: tempId, name: "", role: "instructor", email: null, phone: null, lastEvalDate: null, _new: true }]);
   }
 
   async function saveStaff() {
@@ -132,7 +189,7 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
           fetch(`/api/studios/${studio.id}/instructors`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: m.name, role: m.role, lastEvalDate: m.lastEvalDate }),
+            body: JSON.stringify({ name: m.name, role: m.role, email: m.email, phone: m.phone, lastEvalDate: m.lastEvalDate }),
           }).then((r) => r.json())
         );
       } else {
@@ -141,13 +198,15 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
         const changed =
           m.name !== original.name ||
           m.role !== original.role ||
+          m.email !== original.email ||
+          m.phone !== original.phone ||
           m.lastEvalDate !== original.lastEvalDate;
         if (changed) {
           ops.push(
             fetch(`/api/studios/${studio.id}/instructors/${m.id}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: m.name, role: m.role, lastEvalDate: m.lastEvalDate }),
+              body: JSON.stringify({ name: m.name, role: m.role, email: m.email, phone: m.phone, lastEvalDate: m.lastEvalDate }),
             })
           );
         }
@@ -175,14 +234,7 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
           <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Studio Information</p>
           <div className="flex items-center gap-3">
             {infoSaved && <p className="text-xs" style={{ color: "#16A34A" }}>Saved.</p>}
-            <button
-              onClick={saveInfo}
-              disabled={infoSaving}
-              className="text-xs px-4 py-2 rounded-lg font-semibold text-white"
-              style={{ background: "#4A638D" }}
-            >
-              {infoSaving ? "Saving…" : "Save Changes"}
-            </button>
+            <SaveChangesButton onClick={saveInfo} disabled={infoSaving} saving={infoSaving} />
           </div>
         </div>
 
@@ -197,8 +249,8 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
             <select
               value={info.status}
               onChange={(e) => setInfo((p) => ({ ...p, status: e.target.value as typeof STATUSES[number] }))}
-              className="text-sm rounded-lg px-3 py-2.5 outline-none cursor-pointer"
-              style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
+              className="text-sm rounded-lg px-3 py-2.5 outline-none cursor-pointer border border-[#C8D8EE] hover:border-[#4A638D] focus:border-[#4A638D] transition-colors"
+              style={{ color: "#1F2937", background: "#F8FAFD" }}
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace("-", " ")}</option>
@@ -233,13 +285,7 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
                 </button>
               </>
             ) : (
-              <button
-                onClick={openEdit}
-                className="text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer"
-                style={{ border: "1px solid #C8D8EE", color: "#4A638D", background: "#EEF3FB" }}
-              >
-                Edit
-              </button>
+              <EditButton onClick={openEdit} />
             )}
           </div>
         </div>
@@ -250,52 +296,66 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
             {draft.map((m) => {
               const isInstructor = m.role === "instructor";
               return (
-                <div
-                  key={m.id}
-                  className="grid gap-2 items-center py-2 border-b"
-                  style={{ gridTemplateColumns: "1fr 160px 130px 28px", borderColor: "#EEF3FB" }}
-                >
-                  {/* Name */}
-                  <input
-                    type="text"
-                    value={m.name}
-                    placeholder="Full name"
-                    onChange={(e) => updateDraft(m.id, "name", e.target.value)}
-                    className="text-sm rounded-lg px-3 py-1.5 outline-none"
-                    style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
-                  />
-                  {/* Role */}
-                  <select
-                    value={m.role}
-                    onChange={(e) => updateDraft(m.id, "role", e.target.value)}
-                    className="text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer"
-                    style={{ border: "1px solid #C8D8EE", color: "#4A638D", background: "#EEF3FB" }}
-                  >
-                    {(Object.entries(ROLE_LABELS) as [StaffRole, string][]).map(([val, lbl]) => (
-                      <option key={val} value={val}>{lbl}</option>
-                    ))}
-                  </select>
-                  {/* Last eval (instructors only) */}
-                  {isInstructor ? (
+                <div key={m.id} className="py-3 border-b" style={{ borderColor: "#EEF3FB" }}>
+                  {/* Row 1: Name · Role · Remove */}
+                  <div className="grid gap-2 items-center mb-2" style={{ gridTemplateColumns: "1fr 170px 28px" }}>
                     <input
-                      type="date"
-                      value={m.lastEvalDate ? m.lastEvalDate.slice(0, 10) : ""}
-                      onChange={(e) => updateDraft(m.id, "lastEvalDate", e.target.value || null as unknown as string)}
-                      className="text-xs rounded-lg px-2 py-1.5 outline-none"
-                      style={{ border: "1px solid #C8D8EE", color: "#6B7280", background: "#F8FAFD" }}
+                      type="text"
+                      value={m.name}
+                      placeholder="Full name"
+                      onChange={(e) => updateDraft(m.id, "name", e.target.value)}
+                      className="text-sm rounded-lg px-3 py-1.5 outline-none"
+                      style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
                     />
-                  ) : (
-                    <span />
-                  )}
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeDraft(m.id, !!m._new)}
-                    className="flex items-center justify-center rounded-full text-xs font-bold leading-none"
-                    style={{ width: 22, height: 22, background: "#FEF2F2", color: "#DC2626" }}
-                    title="Remove"
-                  >
-                    ×
-                  </button>
+                    <select
+                      value={m.role}
+                      onChange={(e) => updateDraft(m.id, "role", e.target.value)}
+                      className="text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer"
+                      style={{ border: "1px solid #C8D8EE", color: "#4A638D", background: "#EEF3FB" }}
+                    >
+                      {(Object.entries(ROLE_LABELS) as [StaffRole, string][]).map(([val, lbl]) => (
+                        <option key={val} value={val}>{lbl}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => removeDraft(m.id, !!m._new)}
+                      className="flex items-center justify-center rounded-full text-xs font-bold leading-none"
+                      style={{ width: 22, height: 22, background: "#FEF2F2", color: "#DC2626" }}
+                      title="Remove"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  {/* Row 2: Email · Phone · Last Eval */}
+                  <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "1fr 1fr 140px" }}>
+                    <input
+                      type="email"
+                      value={m.email ?? ""}
+                      placeholder="Email"
+                      onChange={(e) => updateDraft(m.id, "email", e.target.value || null as unknown as string)}
+                      className="text-xs rounded-lg px-3 py-1.5 outline-none"
+                      style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
+                    />
+                    <input
+                      type="tel"
+                      value={m.phone ?? ""}
+                      placeholder="Phone"
+                      onChange={(e) => updateDraft(m.id, "phone", e.target.value || null as unknown as string)}
+                      className="text-xs rounded-lg px-3 py-1.5 outline-none"
+                      style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
+                    />
+                    {isInstructor ? (
+                      <input
+                        type="date"
+                        value={m.lastEvalDate ? m.lastEvalDate.slice(0, 10) : ""}
+                        onChange={(e) => updateDraft(m.id, "lastEvalDate", e.target.value || null as unknown as string)}
+                        className="text-xs rounded-lg px-2 py-1.5 outline-none"
+                        style={{ border: "1px solid #C8D8EE", color: "#6B7280", background: "#F8FAFD" }}
+                      />
+                    ) : (
+                      <span />
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -316,7 +376,7 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: "#F8FAFD" }}>
-                    {["Name", "Role", "Last Eval"].map((h) => (
+                    {["Name", "Role", "Email", "Phone", "Last Eval"].map((h) => (
                       <th key={h} className="px-5 py-3 text-left text-xs font-semibold" style={{ color: "#9CA3AF" }}>{h}</th>
                     ))}
                   </tr>
@@ -329,7 +389,7 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
                       : "—";
                     const photo = photoMap.get(s.name);
                     return (
-                      <tr key={s.id} style={{ borderTop: i > 0 ? "1px solid #F0F5FB" : undefined }}>
+                      <tr key={s.id} className="hover:bg-[#EEF3FB] transition-colors" style={{ borderTop: i > 0 ? "1px solid #F0F5FB" : undefined }}>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border" style={{ borderColor: "#C8D8EE" }}>
@@ -345,6 +405,8 @@ export function StudioSettingsForm({ studio, instructors }: Props) {
                           </div>
                         </td>
                         <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>{ROLE_LABELS[s.role]}</td>
+                        <td className="px-5 py-3 text-xs" style={{ color: s.email ? "#6B7280" : "#D1D5DB" }}>{s.email ?? "—"}</td>
+                        <td className="px-5 py-3 text-xs" style={{ color: s.phone ? "#6B7280" : "#D1D5DB" }}>{s.phone ?? "—"}</td>
                         <td className="px-5 py-3 text-xs" style={{ color: "#6B7280" }}>
                           {isInstructor ? evalDate : ""}
                         </td>

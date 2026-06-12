@@ -57,14 +57,15 @@ export default async function RetentionPage({
       </header>
 
       <div className="max-w-[1200px] mx-auto px-6 py-8">
+        {/* Page header */}
         {/* Banner */}
         <div className="mb-8 rounded-xl overflow-hidden relative" style={{ height: 160 }}>
           <Image src="/jetset-class-wide.jpg" alt="" width={1400} height={160} priority
             className="w-full h-full object-cover" style={{ objectPosition: "center 78%" }} />
           <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.38)" }} />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Retention AI</h1>
-            <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 16, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
+            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 38, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, marginBottom: 4, textTransform: "uppercase" }}>Retention AI</h1>
+            <p style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 14, color: "#fff", fontWeight: 500 }}>{studio.name} · {locationLine}</p>
           </div>
         </div>
 

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { StudioOperations } from "@/types";
 
+type Section = "lease" | "alarm" | "hvac" | "electrician" | "internet" | "notes";
+
 interface Props {
   studioId: string;
   ops: StudioOperations | null;
@@ -18,18 +20,6 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function LeaseStatus({ expiresAt }: { expiresAt: string | null }) {
-  const days = daysUntil(expiresAt);
-  if (days === null) return <span style={{ color: "#9CA3AF" }}>—</span>;
-
-  let color = "#16A34A";
-  let label = `${days} days`;
-  if (days < 90) { color = "#DC2626"; label = `${days} days — urgent`; }
-  else if (days < 180) { color = "#D97706"; label = `${days} days — renew soon`; }
-
-  return <span className="font-semibold text-sm" style={{ color }}>{label}</span>;
-}
-
 function InfoRow({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="flex justify-between items-start py-3" style={{ borderBottom: "1px solid #F0F5FB" }}>
@@ -41,11 +31,75 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function EditButton({ onClick }: { onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        fontSize: 12,
+        padding: "5px 12px",
+        borderRadius: 8,
+        fontWeight: 500,
+        border: `1px solid ${hovered ? "#4A638D" : "#C8D8EE"}`,
+        color: hovered ? "#fff" : "#4A638D",
+        background: hovered ? "#4A638D" : "#EEF3FB",
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+        transition: "all 0.15s ease",
+        cursor: "pointer",
+        boxShadow: hovered ? "0 2px 8px rgba(74,99,141,0.18)" : "none",
+      }}
+    >
+      Edit
+    </button>
+  );
+}
+
+function SectionCard({
+  title,
+  section,
+  editingSection,
+  onEdit,
+  onSave,
+  onCancel,
+  saving,
+  children,
+}: {
+  title: string;
+  section: Section;
+  editingSection: Section | null;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+  children: React.ReactNode;
+}) {
+  const isEditing = editingSection === section;
   return (
     <div className="rounded-xl border overflow-hidden" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
-      <div className="px-5 py-4" style={{ borderBottom: "1px solid #EEF3FB" }}>
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid #EEF3FB" }}>
         <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>{title}</p>
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onCancel}
+              style={{ fontSize: 12, padding: "5px 12px", borderRadius: 8, border: "1px solid #C8D8EE", color: "#6B7280", background: "#fff", cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onSave}
+              disabled={saving}
+              style={{ fontSize: 12, padding: "5px 12px", borderRadius: 8, fontWeight: 600, color: "#fff", background: "#4A638D", border: "none", cursor: "pointer" }}
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        ) : (
+          <EditButton onClick={onEdit} />
+        )}
       </div>
       <div className="px-5">{children}</div>
     </div>
@@ -53,12 +107,12 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export function OperationsPanel({ studioId, ops }: Props) {
-  const [editing, setEditing] = useState(false);
+  const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [form, setForm] = useState<Partial<StudioOperations>>(ops ?? {});
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [savedSection, setSavedSection] = useState<Section | null>(null);
 
-  async function save() {
+  async function save(section: Section) {
     setSaving(true);
     await fetch(`/api/studios/${studioId}/operations`, {
       method: "PUT",
@@ -66,9 +120,9 @@ export function OperationsPanel({ studioId, ops }: Props) {
       body: JSON.stringify(form),
     });
     setSaving(false);
-    setSaved(true);
-    setEditing(false);
-    setTimeout(() => setSaved(false), 3000);
+    setSavedSection(section);
+    setEditingSection(null);
+    setTimeout(() => setSavedSection(null), 3000);
   }
 
   function field(key: keyof StudioOperations, label: string, type = "text", placeholder = "") {
@@ -90,6 +144,15 @@ export function OperationsPanel({ studioId, ops }: Props) {
   }
 
   const leaseDays = daysUntil(ops?.leaseExpiresAt ?? null);
+
+  const sectionProps = (section: Section) => ({
+    section,
+    editingSection,
+    onEdit: () => setEditingSection(section),
+    onSave: () => save(section),
+    onCancel: () => setEditingSection(null),
+    saving,
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -114,114 +177,121 @@ export function OperationsPanel({ studioId, ops }: Props) {
         </div>
       )}
 
-      {/* Edit / Save bar */}
-      <div className="flex justify-end gap-2">
-        {saved && <p className="text-xs self-center" style={{ color: "#16A34A" }}>Saved.</p>}
-        {editing ? (
-          <>
-            <button onClick={() => setEditing(false)} className="text-xs px-4 py-2 rounded-lg" style={{ border: "1px solid #C8D8EE", color: "#6B7280" }}>Cancel</button>
-            <button onClick={save} disabled={saving} className="text-xs px-4 py-2 rounded-lg font-semibold text-white" style={{ background: "#4A638D" }}>
-              {saving ? "Saving…" : "Save Changes"}
-            </button>
-          </>
-        ) : (
-          <button onClick={() => setEditing(true)} className="text-xs px-4 py-2 rounded-lg font-medium" style={{ border: "1px solid #C8D8EE", color: "#4A638D", background: "#EEF3FB" }}>
-            Edit
-          </button>
-        )}
-      </div>
-
-      {editing ? (
-        <div className="rounded-xl border p-5 flex flex-col gap-4" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
-          <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Lease</p>
-          <div className="grid grid-cols-2 gap-4">
+      {/* Lease */}
+      <SectionCard title="Lease" {...sectionProps("lease")}>
+        {editingSection === "lease" ? (
+          <div className="grid grid-cols-2 gap-4 py-4">
             {field("leaseExpiresAt", "Lease Expiration", "date")}
             {field("landlordName",   "Landlord / Property Mgmt")}
             {field("landlordPhone",  "Landlord Phone")}
             {field("landlordEmail",  "Landlord Email", "email")}
           </div>
+        ) : (
+          <>
+            <InfoRow label="Expiration" value={formatDate(ops?.leaseExpiresAt ?? null)} />
+            <InfoRow label="Time Left"  value={leaseDays !== null ? `${leaseDays} days` : null} />
+            <InfoRow label="Landlord"   value={ops?.landlordName ?? null} />
+            <InfoRow label="Phone"      value={ops?.landlordPhone ?? null} />
+            <InfoRow label="Email"      value={ops?.landlordEmail ?? null} />
+            <div className="py-1" />
+          </>
+        )}
+      </SectionCard>
 
-          <p className="text-xs font-bold tracking-widest uppercase pt-2" style={{ color: "#4A638D", borderTop: "1px solid #EEF3FB" }}>Alarm System</p>
-          <div className="grid grid-cols-2 gap-4">
+      {/* Alarm System */}
+      <SectionCard title="Alarm System" {...sectionProps("alarm")}>
+        {editingSection === "alarm" ? (
+          <div className="grid grid-cols-2 gap-4 py-4">
             {field("alarmCompany", "Alarm Company")}
             {field("alarmCode",    "Alarm Code")}
             {field("alarmPhone",   "24/7 Support Line")}
           </div>
-
-          <p className="text-xs font-bold tracking-widest uppercase pt-2" style={{ color: "#4A638D", borderTop: "1px solid #EEF3FB" }}>HVAC / Maintenance</p>
-          <div className="grid grid-cols-2 gap-4">
-            {field("hvacCompany",           "HVAC Company")}
-            {field("hvacPhone",             "HVAC Phone")}
-            {field("hvacContractExpiresAt", "Service Contract Expires", "date")}
-          </div>
-
-          <p className="text-xs font-bold tracking-widest uppercase pt-2" style={{ color: "#4A638D", borderTop: "1px solid #EEF3FB" }}>Electrician</p>
-          <div className="grid grid-cols-2 gap-4">
-            {field("electricianName",  "Electrician / Company")}
-            {field("electricianPhone", "Electrician Phone")}
-          </div>
-
-          <p className="text-xs font-bold tracking-widest uppercase pt-2" style={{ color: "#4A638D", borderTop: "1px solid #EEF3FB" }}>Internet</p>
-          <div className="grid grid-cols-2 gap-4">
-            {field("internetProvider", "ISP")}
-            {field("wifiPassword",     "Wi-Fi Password")}
-          </div>
-
-          <p className="text-xs font-bold tracking-widest uppercase pt-2" style={{ color: "#4A638D", borderTop: "1px solid #EEF3FB" }}>Notes</p>
-          <textarea
-            value={(form.notes as string) ?? ""}
-            onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value || null }))}
-            rows={3}
-            placeholder="After-hours access, special instructions, etc."
-            className="text-sm rounded-lg px-3 py-2 outline-none resize-none"
-            style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
-          />
-        </div>
-      ) : (
-        <>
-          <Card title="Lease">
-            <InfoRow label="Expiration"   value={formatDate(ops?.leaseExpiresAt ?? null)} />
-            <InfoRow label="Time Left"    value={leaseDays !== null ? `${leaseDays} days` : null} />
-            <InfoRow label="Landlord"     value={ops?.landlordName ?? null} />
-            <InfoRow label="Phone"        value={ops?.landlordPhone ?? null} />
-            <InfoRow label="Email"        value={ops?.landlordEmail ?? null} />
-            <div className="py-1" />
-          </Card>
-
-          <Card title="Alarm System">
+        ) : (
+          <>
             <InfoRow label="Company"      value={ops?.alarmCompany ?? null} />
             <InfoRow label="Code"         value={ops?.alarmCode ?? null} />
             <InfoRow label="Support Line" value={ops?.alarmPhone ?? null} />
             <div className="py-1" />
-          </Card>
+          </>
+        )}
+      </SectionCard>
 
-          <Card title="HVAC / Maintenance">
+      {/* HVAC */}
+      <SectionCard title="HVAC / Maintenance" {...sectionProps("hvac")}>
+        {editingSection === "hvac" ? (
+          <div className="grid grid-cols-2 gap-4 py-4">
+            {field("hvacCompany",           "HVAC Company")}
+            {field("hvacPhone",             "HVAC Phone")}
+            {field("hvacContractExpiresAt", "Service Contract Expires", "date")}
+          </div>
+        ) : (
+          <>
             <InfoRow label="Company"          value={ops?.hvacCompany ?? null} />
             <InfoRow label="Phone"            value={ops?.hvacPhone ?? null} />
             <InfoRow label="Contract Expires" value={formatDate(ops?.hvacContractExpiresAt ?? null)} />
             <div className="py-1" />
-          </Card>
+          </>
+        )}
+      </SectionCard>
 
-          <div className="grid grid-cols-2 gap-5">
-            <Card title="Electrician">
+      {/* Electrician + Internet */}
+      <div className="grid grid-cols-2 gap-5">
+        <SectionCard title="Electrician" {...sectionProps("electrician")}>
+          {editingSection === "electrician" ? (
+            <div className="flex flex-col gap-4 py-4">
+              {field("electricianName",  "Electrician / Company")}
+              {field("electricianPhone", "Electrician Phone")}
+            </div>
+          ) : (
+            <>
               <InfoRow label="Name / Company" value={ops?.electricianName ?? null} />
               <InfoRow label="Phone"          value={ops?.electricianPhone ?? null} />
               <div className="py-1" />
-            </Card>
-            <Card title="Internet">
-              <InfoRow label="Provider"     value={ops?.internetProvider ?? null} />
-              <InfoRow label="Wi-Fi Pass"   value={ops?.wifiPassword ?? null} />
-              <div className="py-1" />
-            </Card>
-          </div>
-
-          {ops?.notes && (
-            <div className="rounded-xl border px-5 py-4" style={{ background: "#FFFBEB", borderColor: "#FDE68A" }}>
-              <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: "#92400E" }}>Notes</p>
-              <p className="text-sm" style={{ color: "#78350F" }}>{ops.notes}</p>
-            </div>
+            </>
           )}
-        </>
+        </SectionCard>
+
+        <SectionCard title="Internet" {...sectionProps("internet")}>
+          {editingSection === "internet" ? (
+            <div className="flex flex-col gap-4 py-4">
+              {field("internetProvider", "ISP")}
+              {field("wifiPassword",     "Wi-Fi Password")}
+            </div>
+          ) : (
+            <>
+              <InfoRow label="Provider"   value={ops?.internetProvider ?? null} />
+              <InfoRow label="Wi-Fi Pass" value={ops?.wifiPassword ?? null} />
+              <div className="py-1" />
+            </>
+          )}
+        </SectionCard>
+      </div>
+
+      {/* Notes */}
+      <SectionCard title="Notes" {...sectionProps("notes")}>
+        {editingSection === "notes" ? (
+          <div className="py-4">
+            <textarea
+              value={(form.notes as string) ?? ""}
+              onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value || null }))}
+              rows={3}
+              placeholder="After-hours access, special instructions, etc."
+              className="text-sm rounded-lg px-3 py-2 outline-none resize-none w-full"
+              style={{ border: "1px solid #C8D8EE", color: "#1F2937", background: "#F8FAFD" }}
+            />
+          </div>
+        ) : (
+          <div className="py-3">
+            {ops?.notes
+              ? <p className="text-sm" style={{ color: "#78350F" }}>{ops.notes}</p>
+              : <p className="text-sm" style={{ color: "#D1D5DB" }}>Not set</p>
+            }
+          </div>
+        )}
+      </SectionCard>
+
+      {savedSection && (
+        <p className="text-xs text-right" style={{ color: "#16A34A" }}>Saved.</p>
       )}
     </div>
   );

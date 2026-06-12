@@ -6,7 +6,7 @@ export async function POST(
   ctx: RouteContext<"/api/studios/[id]/instructors">
 ) {
   const { id } = await ctx.params;
-  const body = await req.json() as { name: string; role: string; lastEvalDate?: string | null };
+  const body = await req.json() as { name: string; role: string; email?: string | null; phone?: string | null; lastEvalDate?: string | null };
 
   const instructor = await db.instructor.create({
     data: {
@@ -14,6 +14,8 @@ export async function POST(
       name: body.name.trim(),
       role: body.role,
       certificationStatus: "certified",
+      email: body.email ?? null,
+      phone: body.phone ?? null,
       lastEvalDate: body.lastEvalDate ? new Date(body.lastEvalDate) : null,
     },
   });

@@ -81,7 +81,7 @@ const CITY_COORDS: Record<string, [number, number]> = {
   "Austin":              [-97.743, 30.267],
   "Dallas":              [-96.797, 32.777],
   "Houston":             [-95.370, 29.760],
-  "Flower Mound":        [-97.097, 33.014],
+  "Flower Mound":        [-97.097, 32.814],
   "McKinney":            [-96.640, 33.197],
   "Cypress":             [-95.697, 29.970],
   "Sugar Land":          [-95.635, 29.620],
@@ -136,7 +136,7 @@ function riskReasons(s: StudioWithLatestMetric): string[] {
 
 export function NetworkMap({ studios }: Props) {
   const [hovered, setHovered] = useState<HoveredStudio | null>(null);
-  const [zoom, setZoom] = useState(2.2);
+  const [zoom, setZoom] = useState(2.8);
   const [center, setCenter] = useState<[number, number]>([-96, 38]);
   const MIN_ZOOM = 1;
   const MAX_ZOOM = 8;
@@ -144,6 +144,25 @@ export function NetworkMap({ studios }: Props) {
   const isDragging = useRef(false);
   const wrapperRef  = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const zoomRef = useRef(2.8);
+
+  function animateZoom(target: number) {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    const start = zoomRef.current;
+    const startTime = performance.now();
+    const duration = 350;
+    function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
+    function tick(now: number) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const z = start + (target - start) * easeOutCubic(t);
+      zoomRef.current = z;
+      setZoom(+z.toFixed(3));
+      if (t < 1) { animFrameRef.current = requestAnimationFrame(tick); }
+      else { zoomRef.current = target; setZoom(target); animFrameRef.current = null; }
+    }
+    animFrameRef.current = requestAnimationFrame(tick);
+  }
 
   const scheduleHide = useCallback(() => {
     hideTimerRef.current = setTimeout(() => setHovered(null), 120);
@@ -212,17 +231,17 @@ export function NetworkMap({ studios }: Props) {
           ref={containerRef}
           className="relative"
           style={{ height: "340px" }}
-          onDoubleClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.8).toFixed(1)))}
+          onDoubleClick={() => animateZoom(Math.min(MAX_ZOOM, zoomRef.current + 0.8))}
         >
           {/* Zoom controls — onDoubleClick stops here so double-clicking buttons doesn't trigger map zoom-in */}
           <div className="absolute top-3 right-3 z-10 flex flex-col gap-1" onDoubleClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.4).toFixed(1)))}
+              onClick={() => animateZoom(Math.min(MAX_ZOOM, zoomRef.current + 1.0))}
               className="w-7 h-7 rounded-md border flex items-center justify-center text-sm font-bold transition-colors hover:bg-blue-50"
               style={{ background: "#FFFFFF", borderColor: "#C8D8EE", color: "#4A638D" }}
             >+</button>
             <button
-              onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - 0.4).toFixed(1)))}
+              onClick={() => animateZoom(Math.max(MIN_ZOOM, zoomRef.current - 1.0))}
               className="w-7 h-7 rounded-md border flex items-center justify-center text-sm font-bold transition-colors hover:bg-blue-50"
               style={{ background: "#FFFFFF", borderColor: "#C8D8EE", color: "#4A638D" }}
             >−</button>
@@ -240,8 +259,11 @@ export function NetworkMap({ studios }: Props) {
               onMoveStart={() => { isDragging.current = true; }}
               onMoveEnd={({ coordinates, zoom: z }) => {
                 isDragging.current = false;
+                if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
+                const snapped = +z.toFixed(1);
+                zoomRef.current = snapped;
                 setCenter(coordinates as [number, number]);
-                setZoom(+z.toFixed(1));
+                setZoom(snapped);
               }}
               filterZoomEvent={(e) => (e as unknown as Event).type !== "wheel"}
             >

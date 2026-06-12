@@ -38,6 +38,8 @@ export interface Instructor {
   name: string;
   role: StaffRole;
   certificationStatus: CertificationStatus;
+  email: string | null;
+  phone: string | null;
   lastEvalDate: string | null;
   performanceScore: number | null;
 }

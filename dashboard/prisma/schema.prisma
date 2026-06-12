@@ -110,6 +110,8 @@ model Instructor {
   name                String
   role                String    @default("instructor")
   certificationStatus String    @default("certified")
+  email               String?
+  phone               String?
   lastEvalDate        DateTime?
   performanceScore    Float?
   createdAt           DateTime  @default(now())
