@@ -31,7 +31,6 @@ Live Application: https://jetset-franchise-intelligence.onrender.com/
 
 ---
 
-https://github.com/user-attachments/assets/c3223171-da8d-4156-af18-0e0c81c7b5fb
 
 ---
 
@@ -174,11 +173,12 @@ A `/digest` page that generates a printable weekly performance report for the en
 
 ---
 
-<img width="1466" height="799" alt="Screenshot 2026-06-09 at 3 06 56 PM" src="https://github.com/user-attachments/assets/3ee6734f-8733-4174-a3d6-f3ff2f9d8cc9" />
+<img width="1469" height="801" alt="Screenshot 2026-06-12 at 2 42 59 PM" src="https://github.com/user-attachments/assets/7c651ba2-fa20-411a-9473-120aae90191d" />
+
 
 ---
 
-<img width="1466" height="796" alt="Screenshot 2026-06-09 at 3 07 33 PM" src="https://github.com/user-attachments/assets/278e2c7f-f259-47f7-b904-7959c1f45cc0" />
+<img width="1467" height="802" alt="Screenshot 2026-06-12 at 2 38 28 PM" src="https://github.com/user-attachments/assets/8e9c9e38-8064-45a7-bc0e-07f27d3573d2" />
 
 
 ---
@@ -299,9 +299,7 @@ Or trigger it from the Scan button on the network overview page.
 
 ---
 
-<img width="1451" height="791" alt="Screenshot 2026-06-09 at 3 07 21 PM" src="https://github.com/user-attachments/assets/05f20162-d5e0-4970-b778-b1df094c9803" />
-
-
+<img width="1470" height="801" alt="Screenshot 2026-06-12 at 2 38 49 PM" src="https://github.com/user-attachments/assets/c2be7d53-c702-413a-aae3-fa8a5f193b2f" />
 
 ---
 
