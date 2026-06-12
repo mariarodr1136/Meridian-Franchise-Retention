@@ -31,6 +31,7 @@ Live Application: https://jetset-franchise-intelligence.onrender.com/
 
 ---
 
+https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
 
 ---
 
