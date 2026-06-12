@@ -1029,16 +1029,26 @@ async function main() {
     return d;
   }
 
-  type ProductDef = { product: string; category: string; unitPrice: number };
+  type ProductDef = { product: string; category: string; unitPrice: number; baseUnits: number };
   const PRODUCTS: ProductDef[] = [
-    { product: "Grip Socks – Small",  category: "retail",      unitPrice: 20 },
-    { product: "Grip Socks – Medium", category: "retail",      unitPrice: 20 },
-    { product: "Grip Socks – Large",  category: "retail",      unitPrice: 20 },
-    { product: "Water Bottle",        category: "retail",      unitPrice: 35 },
-    { product: "Resistance Band",     category: "retail",      unitPrice: 25 },
-    { product: "Gift Card $25",       category: "gift_cards",  unitPrice: 25 },
-    { product: "Gift Card $50",       category: "gift_cards",  unitPrice: 50 },
-    { product: "Gift Card $100",      category: "gift_cards",  unitPrice: 100 },
+    { product: "Grip Socks – Small",    category: "grip_socks",     unitPrice: 20,  baseUnits: 32 },
+    { product: "Grip Socks – Medium",   category: "grip_socks",     unitPrice: 20,  baseUnits: 45 },
+    { product: "Grip Socks – Large",    category: "grip_socks",     unitPrice: 20,  baseUnits: 25 },
+    { product: "BODYARMOR Sport Water", category: "water",          unitPrice: 4,   baseUnits: 28 },
+    { product: "Water Bottle",          category: "water",          unitPrice: 35,  baseUnits: 12 },
+    { product: "Liquid IV Energy",      category: "energy_drinks",  unitPrice: 5,   baseUnits: 20 },
+    { product: "PRIME Energy Drink",    category: "energy_drinks",  unitPrice: 4,   baseUnits: 24 },
+    { product: "JETSET Tote Bag",       category: "merch",          unitPrice: 45,  baseUnits: 8  },
+    { product: "JETSET Leggings",       category: "merch",          unitPrice: 95,  baseUnits: 5  },
+    { product: "JETSET Sports Bra",     category: "merch",          unitPrice: 65,  baseUnits: 7  },
+    { product: "Single Class",          category: "class_packages", unitPrice: 32,  baseUnits: 22 },
+    { product: "10-Class Pack",         category: "class_packages", unitPrice: 280, baseUnits: 8  },
+    { product: "20-Class Pack",         category: "class_packages", unitPrice: 520, baseUnits: 3  },
+    { product: "Monthly Unlimited",     category: "memberships",    unitPrice: 199, baseUnits: 30 },
+    { product: "Founding Membership",   category: "memberships",    unitPrice: 149, baseUnits: 20 },
+    { product: "Gift Card $25",         category: "gift_cards",     unitPrice: 25,  baseUnits: 10 },
+    { product: "Gift Card $50",         category: "gift_cards",     unitPrice: 50,  baseUnits: 8  },
+    { product: "Gift Card $100",        category: "gift_cards",     unitPrice: 100, baseUnits: 4  },
   ];
 
   const salesData: object[] = [];
@@ -1055,12 +1065,10 @@ async function main() {
       const month = monthStart(mo);
       const seasonFactor = [1.05, 1.03, 1.10, 1.08, 1.06, 0.92, 0.85, 0.88, 1.02, 1.08, 1.12, 1.15][month.getMonth()];
 
-      PRODUCTS.forEach((p, pi) => {
-        const baseUnits = p.category === "retail"
-          ? Math.round((40 + pi * 3) * healthMultiplier * seasonFactor)
-          : Math.round((8 + pi * 2) * healthMultiplier * seasonFactor);
-        const jitter = () => Math.round((Math.random() - 0.5) * baseUnits * 0.3);
-        const units = Math.max(0, baseUnits + jitter());
+      PRODUCTS.forEach((p) => {
+        const base = Math.round(p.baseUnits * healthMultiplier * seasonFactor);
+        const jitter = () => Math.round((Math.random() - 0.5) * base * 0.3);
+        const units = Math.max(0, base + jitter());
         salesData.push({
           studioId: id,
           month,
@@ -1079,14 +1087,38 @@ async function main() {
 
   type InventoryDef = { name: string; category: string; reorderPoint: number; baseQty: number };
   const INVENTORY_ITEMS: InventoryDef[] = [
-    { name: "Grip Socks – Small",   category: "retail",    reorderPoint: 20,  baseQty: 80  },
-    { name: "Grip Socks – Medium",  category: "retail",    reorderPoint: 20,  baseQty: 100 },
-    { name: "Grip Socks – Large",   category: "retail",    reorderPoint: 20,  baseQty: 60  },
-    { name: "Water Bottles",        category: "retail",    reorderPoint: 10,  baseQty: 30  },
-    { name: "Resistance Bands",     category: "retail",    reorderPoint: 10,  baseQty: 25  },
-    { name: "Paper Towels (rolls)", category: "supplies",  reorderPoint: 12,  baseQty: 48  },
-    { name: "Hand Sanitizer (L)",   category: "supplies",  reorderPoint: 6,   baseQty: 24  },
-    { name: "Cleaning Solution (L)",category: "supplies",  reorderPoint: 4,   baseQty: 12  },
+    // ── Retail ─────────────────────────────────────────────────────────────────
+    { name: "Grip Socks – Small",       category: "retail",   reorderPoint: 20,  baseQty: 80  },
+    { name: "Grip Socks – Medium",      category: "retail",   reorderPoint: 20,  baseQty: 100 },
+    { name: "Grip Socks – Large",       category: "retail",   reorderPoint: 20,  baseQty: 60  },
+    { name: "Water Bottles",            category: "retail",   reorderPoint: 10,  baseQty: 30  },
+    { name: "Resistance Bands",         category: "retail",   reorderPoint: 10,  baseQty: 25  },
+    { name: "BODYARMOR Sport Water",    category: "retail",   reorderPoint: 24,  baseQty: 72  },
+    { name: "Liquid IV Packets",        category: "retail",   reorderPoint: 20,  baseQty: 60  },
+    { name: "PRIME Energy Drink",       category: "retail",   reorderPoint: 24,  baseQty: 72  },
+    { name: "JETSET Tote Bag",          category: "retail",   reorderPoint: 8,   baseQty: 20  },
+    { name: "JETSET Leggings",          category: "retail",   reorderPoint: 6,   baseQty: 18  },
+    { name: "JETSET Sports Bra",        category: "retail",   reorderPoint: 6,   baseQty: 16  },
+    { name: "JETSET Tank Top",          category: "retail",   reorderPoint: 8,   baseQty: 22  },
+    { name: "JETSET Zip Hoodie",        category: "retail",   reorderPoint: 5,   baseQty: 14  },
+    { name: "JETSET Headband",          category: "retail",   reorderPoint: 10,  baseQty: 30  },
+    { name: "Foam Roller",              category: "retail",   reorderPoint: 4,   baseQty: 10  },
+    // ── Supplies ───────────────────────────────────────────────────────────────
+    { name: "Paper Towels (rolls)",     category: "supplies", reorderPoint: 12,  baseQty: 48  },
+    { name: "Hand Sanitizer (L)",       category: "supplies", reorderPoint: 6,   baseQty: 24  },
+    { name: "Cleaning Solution (L)",    category: "supplies", reorderPoint: 4,   baseQty: 12  },
+    { name: "Disinfectant Wipes",       category: "supplies", reorderPoint: 8,   baseQty: 30  },
+    { name: "Microfiber Cloths",        category: "supplies", reorderPoint: 10,  baseQty: 40  },
+    { name: "Reformer Springs – Light", category: "supplies", reorderPoint: 4,   baseQty: 12  },
+    { name: "Reformer Springs – Heavy", category: "supplies", reorderPoint: 4,   baseQty: 12  },
+    { name: "Reformer Box Pads",        category: "supplies", reorderPoint: 3,   baseQty: 8   },
+    { name: "Foot Strap Velcro",        category: "supplies", reorderPoint: 5,   baseQty: 15  },
+    { name: "Disposable Cups",          category: "supplies", reorderPoint: 50,  baseQty: 200 },
+    { name: "Trash Bags (box)",         category: "supplies", reorderPoint: 3,   baseQty: 10  },
+    { name: "Laundry Detergent (L)",    category: "supplies", reorderPoint: 2,   baseQty: 6   },
+    { name: "Air Freshener",            category: "supplies", reorderPoint: 4,   baseQty: 12  },
+    { name: "Latex Gloves (box)",       category: "supplies", reorderPoint: 3,   baseQty: 10  },
+    { name: "Printer Paper (ream)",     category: "supplies", reorderPoint: 2,   baseQty: 8   },
   ];
 
   const inventoryData: object[] = [];

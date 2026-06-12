@@ -66,7 +66,7 @@ export default async function SalesPage({
                 <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Sales records will appear once connected to MindBody.</p>
               </div>
             ) : (
-              <SalesPageContent records={records} />
+              <SalesPageContent records={records} studioName={studio.name} />
             )}
           </div>
         </div>

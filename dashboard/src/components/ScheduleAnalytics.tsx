@@ -192,11 +192,9 @@ function InstructorCard({ instr, photo }: { instr: InstructorStat; photo?: strin
   const [hovered, setHovered]   = useState(false);
   const detailRef = useRef<HTMLDivElement>(null);
   const pct        = Math.round(instr.avgFillRate * 100);
-  const isHigh     = pct >= 75;
-  const isMid      = pct >= 55 && pct < 75;
-  const fillColor  = isHigh ? "#16a34a" : isMid ? "#d97706" : "#dc2626";
-  const fillBg     = isHigh ? "#F0FDF4" : isMid ? "#FFFBEB" : "#FEF2F2";
-  const fillBorder = isHigh ? "#BBF7D0" : isMid ? "#FDE68A" : "#FECACA";
+  const fillColor  = "#4A638D";
+  const fillBg     = "#EEF3FB";
+  const fillBorder = "#C8D8EE";
 
   return (
     <div
@@ -445,9 +443,9 @@ export function ScheduleAnalytics({ slotStats, instructorStats, hideBookingMix =
 
         const pills: { key: FilterTier; label: string; color: string; bg: string; activeBg: string }[] = [
           { key: "all",      label: "All",      color: "#4A638D", bg: "#F0F5FB", activeBg: "#4A638D" },
-          { key: "strong",   label: "Strong",   color: "#16a34a", bg: "#F0FDF4", activeBg: "#16a34a" },
-          { key: "moderate", label: "Moderate", color: "#d97706", bg: "#FFFBEB", activeBg: "#d97706" },
-          { key: "low",      label: "Low",      color: "#dc2626", bg: "#FEF2F2", activeBg: "#dc2626" },
+          { key: "strong",   label: "Strong",   color: "#4A638D", bg: "#F0F5FB", activeBg: "#4A638D" },
+          { key: "moderate", label: "Moderate", color: "#4A638D", bg: "#F0F5FB", activeBg: "#4A638D" },
+          { key: "low",      label: "Low",      color: "#4A638D", bg: "#F0F5FB", activeBg: "#4A638D" },
         ];
 
         return (
@@ -513,7 +511,7 @@ export function ScheduleAnalytics({ slotStats, instructorStats, hideBookingMix =
       <div id="slot-performance" className="grid grid-cols-2 gap-4 scroll-mt-24">
         {lowSlots.length > 0 && (
           <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
-            <h3 className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: "#DC2626" }}>Needs Attention</h3>
+            <h3 className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: "#4A638D" }}>Needs Attention</h3>
             <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>Slots consistently below 60% fill</p>
             <div className="relative">
               {lowSlots.length > 4 && (
@@ -525,9 +523,25 @@ export function ScheduleAnalytics({ slotStats, instructorStats, hideBookingMix =
                 style={{ maxHeight: "160px", overflowY: "auto", scrollbarWidth: "none" } as React.CSSProperties}
               >
                 {lowSlots.slice(0, 10).map((s) => (
-                  <div key={`${s.dayOfWeek}-${s.timeSlot}`} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: "#FEF2F2" }}>
+                  <div
+                    key={`${s.dayOfWeek}-${s.timeSlot}`}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg cursor-default"
+                    style={{ background: "#EEF3FB", transition: "background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease" }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget;
+                      el.style.background = "#C8D8EE";
+                      el.style.transform = "translateX(3px)";
+                      el.style.boxShadow = "0 2px 8px rgba(74,99,141,0.12)";
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget;
+                      el.style.background = "#EEF3FB";
+                      el.style.transform = "translateX(0)";
+                      el.style.boxShadow = "none";
+                    }}
+                  >
                     <span className="text-xs font-medium" style={{ color: "#374151" }}>{DAY_LABELS[s.dayOfWeek]} · {s.timeSlot}</span>
-                    <span className="text-xs font-bold" style={{ color: "#DC2626" }}>{Math.round(s.avgFillRate * 100)}%</span>
+                    <span className="text-xs font-bold" style={{ color: "#4A638D" }}>{Math.round(s.avgFillRate * 100)}%</span>
                   </div>
                 ))}
               </div>
@@ -537,7 +551,7 @@ export function ScheduleAnalytics({ slotStats, instructorStats, hideBookingMix =
 
         {highSlots.length > 0 && (
           <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
-            <h3 className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: "#16a34a" }}>Top Performers</h3>
+            <h3 className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: "#1B3352" }}>Top Performers</h3>
             <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>Slots consistently at 80%+ fill</p>
             <div className="relative">
               {highSlots.length > 4 && (
@@ -549,9 +563,25 @@ export function ScheduleAnalytics({ slotStats, instructorStats, hideBookingMix =
                 style={{ maxHeight: "160px", overflowY: "auto", scrollbarWidth: "none" } as React.CSSProperties}
               >
                 {highSlots.slice(0, 10).map((s) => (
-                  <div key={`${s.dayOfWeek}-${s.timeSlot}`} className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: "#F0FDF4" }}>
+                  <div
+                    key={`${s.dayOfWeek}-${s.timeSlot}`}
+                    className="flex items-center justify-between px-3 py-2 rounded-lg cursor-default"
+                    style={{ background: "#EEF3FB", transition: "background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease" }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget;
+                      el.style.background = "#C8D8EE";
+                      el.style.transform = "translateX(3px)";
+                      el.style.boxShadow = "0 2px 8px rgba(74,99,141,0.12)";
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget;
+                      el.style.background = "#EEF3FB";
+                      el.style.transform = "translateX(0)";
+                      el.style.boxShadow = "none";
+                    }}
+                  >
                     <span className="text-xs font-medium" style={{ color: "#374151" }}>{DAY_LABELS[s.dayOfWeek]} · {s.timeSlot}</span>
-                    <span className="text-xs font-bold" style={{ color: "#16a34a" }}>{Math.round(s.avgFillRate * 100)}%</span>
+                    <span className="text-xs font-bold" style={{ color: "#1B3352" }}>{Math.round(s.avgFillRate * 100)}%</span>
                   </div>
                 ))}
               </div>

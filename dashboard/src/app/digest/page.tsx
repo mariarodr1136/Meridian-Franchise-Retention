@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { DigestClient } from "@/components/DigestClient";
+import { DigestSections } from "@/components/DigestSections";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 
 async function getDigestData() {
@@ -39,9 +40,6 @@ export default async function DigestPage() {
   const memberDelta   = prevMembers  ? ((totalMembers  - prevMembers)  / prevMembers  * 100).toFixed(1) : null;
   const occupancyDelta = prevOccupancy ? ((avgOccupancy - prevOccupancy) / prevOccupancy * 100).toFixed(1) : null;
   const revenueDelta  = prevRevenue  ? ((totalRevenue  - prevRevenue)  / prevRevenue  * 100).toFixed(1) : null;
-
-  const highAlerts   = anomalies.filter((a) => a.severity === "high");
-  const mediumAlerts = anomalies.filter((a) => a.severity === "medium");
 
   const topStudios = [...openStudios]
     .filter((s) => s.metrics[0])
@@ -98,7 +96,11 @@ export default async function DigestPage() {
               { label: "Network Occupancy", value: formatPercent(avgOccupancy),   delta: occupancyDelta, good: true },
               { label: "Weekly Revenue",    value: formatCurrency(totalRevenue),  delta: revenueDelta,  good: true },
             ].map(({ label, value, delta, good }) => (
-              <div key={label} className="rounded-xl border p-4" style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}>
+              <div
+                key={label}
+                className="rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}
+              >
                 <p className="text-xs mb-1" style={{ color: "#9CA3AF" }}>{label}</p>
                 <p className="text-2xl font-bold" style={{ color: "#1F2937" }}>{value}</p>
                 {delta && (
@@ -114,162 +116,70 @@ export default async function DigestPage() {
           {/* Studio counts row */}
           <div className="grid grid-cols-4 gap-3 mb-6">
             {[
-              { label: "Total Studios",     value: studios.length,           color: "#4A638D" },
-              { label: "Open & Healthy",    value: openStudios.filter(s => s.status === "healthy").length, color: "#16A34A" },
-              { label: "At Risk",           value: atRiskStudios.length,     color: "#EA580C" },
-              { label: "In Presales",       value: preLaunch.length,         color: "#9CA3AF" },
+              { label: "Total Studios",  value: studios.length,           color: "#4A638D" },
+              { label: "Open & Healthy", value: openStudios.filter(s => s.status === "healthy").length, color: "#16A34A" },
+              { label: "At Risk",        value: atRiskStudios.length,     color: "#EA580C" },
+              { label: "In Presales",    value: preLaunch.length,         color: "#9CA3AF" },
             ].map(({ label, value, color }) => (
-              <div key={label} className="rounded-xl border p-4 text-center" style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}>
+              <div
+                key={label}
+                className="rounded-xl border p-4 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}
+              >
                 <p className="text-3xl font-bold" style={{ color }}>{value}</p>
                 <p className="text-xs mt-1" style={{ color: "#6B7280" }}>{label}</p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            {/* Top studios by revenue */}
-            <div className="rounded-xl border overflow-hidden" style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}>
-              <div className="px-4 py-3 border-b" style={{ borderColor: "#E4EDF8" }}>
-                <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Top Studios · Weekly Revenue</p>
-              </div>
-              <table className="w-full text-sm">
-                <tbody>
-                  {topStudios.map((s, i) => (
-                    <tr key={s.id} className="border-b last:border-0" style={{ borderColor: "#E4EDF8" }}>
-                      <td className="px-4 py-2.5 text-xs text-center w-8" style={{ color: "#9CA3AF" }}>{i + 1}</td>
-                      <td className="py-2.5 pr-4">
-                        <p className="text-sm font-medium" style={{ color: "#1F2937" }}>{s.name}</p>
-                        <p className="text-xs" style={{ color: "#9CA3AF" }}>{s.city}, {s.state}</p>
-                      </td>
-                      <td className="py-2.5 pr-4 text-right">
-                        <p className="text-sm font-semibold" style={{ color: "#1F2937" }}>
-                          {formatCurrency(s.metrics[0]?.weeklyRevenue ?? 0)}
-                        </p>
-                        <p className="text-xs" style={{ color: "#9CA3AF" }}>
-                          {formatPercent(s.metrics[0]?.classFillRate ?? 0)} fill
-                        </p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Active alerts */}
-            <div className="rounded-xl border overflow-hidden" style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}>
-              <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "#E4EDF8" }}>
-                <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>Active Alerts</p>
-                <div className="flex items-center gap-2">
-                  {highAlerts.length > 0 && (
-                    <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ background: "#DC2626" }}>
-                      {highAlerts.length} critical
-                    </span>
-                  )}
-                  {mediumAlerts.length > 0 && (
-                    <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ background: "#D97706" }}>
-                      {mediumAlerts.length} warning
-                    </span>
-                  )}
-                </div>
-              </div>
-              {anomalies.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-sm" style={{ color: "#9CA3AF" }}>No active alerts</p>
-                </div>
-              ) : (
-                <div className="divide-y" style={{ borderColor: "#E4EDF8" }}>
-                  {anomalies.slice(0, 5).map((a) => (
-                    <div key={a.id} className="px-4 py-3">
-                      <div className="flex items-start gap-2">
-                        <span
-                          className="flex-shrink-0 mt-0.5 text-xs font-bold uppercase px-1.5 py-0.5 rounded"
-                          style={{
-                            background: a.severity === "high" ? "#FEE2E2" : a.severity === "medium" ? "#FEF3C7" : "#EEF3FB",
-                            color:      a.severity === "high" ? "#DC2626" : a.severity === "medium" ? "#D97706" : "#4A638D",
-                          }}
-                        >{a.severity}</span>
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium truncate" style={{ color: "#1F2937" }}>
-                            {a.studio ? `${a.studio.name} · ${a.studio.city}` : "Network"}
-                          </p>
-                          <p className="text-xs mt-0.5 line-clamp-2" style={{ color: "#6B7280" }}>{a.summary}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {anomalies.length > 5 && (
-                    <p className="px-4 py-2 text-xs text-center" style={{ color: "#9CA3AF" }}>
-                      +{anomalies.length - 5} more alerts
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* At-risk studios detail */}
-          {atRiskStudios.length > 0 && (
-            <div className="rounded-xl border overflow-hidden mb-6" style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}>
-              <div className="px-4 py-3 border-b" style={{ borderColor: "#E4EDF8", background: "#FFF5F5" }}>
-                <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#DC2626" }}>
-                  At-Risk Studios — Requires Attention
-                </p>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b" style={{ borderColor: "#E4EDF8" }}>
-                    {["Studio", "Fill Rate", "Members", "Weekly Rev", "Churn Rate"].map((h) => (
-                      <th key={h} className="px-4 py-2 text-xs text-left font-medium" style={{ color: "#9CA3AF" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {atRiskStudios.map((s) => (
-                    <tr key={s.id} className="border-b last:border-0" style={{ borderColor: "#E4EDF8" }}>
-                      <td className="px-4 py-3">
-                        <p className="font-medium" style={{ color: "#1F2937" }}>{s.name}</p>
-                        <p className="text-xs" style={{ color: "#9CA3AF" }}>{s.city}, {s.state}</p>
-                      </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: "#EA580C" }}>
-                        {formatPercent(s.metrics[0]?.classFillRate ?? 0)}
-                      </td>
-                      <td className="px-4 py-3 text-sm">{formatNumber(s.metrics[0]?.activeMemberships ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm">{formatCurrency(s.metrics[0]?.weeklyRevenue ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm" style={{ color: "#EA580C" }}>
-                        {formatPercent(s.metrics[0]?.weeklyChurn ?? 0)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* New studio ramp */}
-          {newStudios.length > 0 && (
-            <div className="rounded-xl border overflow-hidden" style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}>
-              <div className="px-4 py-3 border-b" style={{ borderColor: "#E4EDF8" }}>
-                <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>New Studios — Ramp Progress</p>
-              </div>
-              <div className="grid grid-cols-3 gap-0 divide-x" style={{ borderColor: "#E4EDF8" }}>
-                {newStudios.map((s) => (
-                  <div key={s.id} className="px-4 py-3">
-                    <p className="text-sm font-medium" style={{ color: "#1F2937" }}>{s.name}</p>
-                    <p className="text-xs mb-2" style={{ color: "#9CA3AF" }}>{s.city}, {s.state}</p>
-                    <div className="w-full h-1.5 rounded-full" style={{ background: "#E4EDF8" }}>
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: formatPercent(s.metrics[0]?.classFillRate ?? 0), background: "#4A638D" }}
-                      />
-                    </div>
-                    <p className="text-xs mt-1" style={{ color: "#6B7280" }}>
-                      {formatPercent(s.metrics[0]?.classFillRate ?? 0)} fill · {formatNumber(s.metrics[0]?.activeMemberships ?? 0)} members
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <DigestSections
+            topStudios={topStudios.map((s) => ({
+              id: s.id,
+              name: s.name,
+              city: s.city,
+              state: s.state,
+              metrics: s.metrics.slice(0, 2).map((m) => ({
+                weeklyRevenue: m.weeklyRevenue,
+                classFillRate: m.classFillRate,
+                activeMemberships: m.activeMemberships,
+                weeklyChurn: m.weeklyChurn,
+              })),
+            }))}
+            anomalies={anomalies.map((a) => ({
+              id: a.id,
+              severity: a.severity as "high" | "medium" | "low",
+              summary: a.summary,
+              generatedAt: a.generatedAt.toISOString(),
+              category: a.category,
+              studioId: a.studioId,
+              studioName: a.studio?.name ?? null,
+              studioCity: a.studio?.city ?? null,
+            }))}
+            atRiskStudios={atRiskStudios.map((s) => ({
+              id: s.id,
+              name: s.name,
+              city: s.city,
+              state: s.state,
+              metrics: s.metrics.slice(0, 2).map((m) => ({
+                weeklyRevenue: m.weeklyRevenue,
+                classFillRate: m.classFillRate,
+                activeMemberships: m.activeMemberships,
+                weeklyChurn: m.weeklyChurn,
+              })),
+            }))}
+            newStudios={newStudios.map((s) => ({
+              id: s.id,
+              name: s.name,
+              city: s.city,
+              state: s.state,
+              metrics: s.metrics.slice(0, 1).map((m) => ({
+                weeklyRevenue: m.weeklyRevenue,
+                classFillRate: m.classFillRate,
+                activeMemberships: m.activeMemberships,
+                weeklyChurn: m.weeklyChurn,
+              })),
+            }))}
+          />
 
           {/* Print footer */}
           <div className="mt-8 pt-4 border-t hidden print:block" style={{ borderColor: "#C8D8EE" }}>

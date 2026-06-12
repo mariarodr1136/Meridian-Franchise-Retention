@@ -168,8 +168,8 @@ export function ClassesPageContent({
               label: `${DAY_LABELS[s.dayOfWeek]} · ${s.timeSlot}`,
               value: `${Math.round(s.avgFillRate * 100)}%`,
             }))}
-            accent="#16a34a"
-            borderColor="#BBF7D0"
+            accent="#1B3352"
+            borderColor="#C8D8EE"
           />
           <StatBubble
             label="Needs Attention"
@@ -180,8 +180,8 @@ export function ClassesPageContent({
               label: `${DAY_LABELS[s.dayOfWeek]} · ${s.timeSlot}`,
               value: `${Math.round(s.avgFillRate * 100)}%`,
             }))}
-            accent={lowSlots.length > 0 ? "#DC2626" : "#1F2937"}
-            borderColor={lowSlots.length > 0 ? "#FECACA" : "#C8D8EE"}
+            accent="#4A638D"
+            borderColor="#C8D8EE"
           />
         </div>
       )}

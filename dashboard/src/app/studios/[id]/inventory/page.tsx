@@ -70,7 +70,7 @@ export default async function InventoryPage({
                 <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Add inventory records at the end of each month.</p>
               </div>
             ) : (
-              <InventoryPanel studioId={id} items={items} />
+              <InventoryPanel studioId={id} studioName={studio.name} items={items} />
             )}
           </div>
         </div>

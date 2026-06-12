@@ -45,6 +45,7 @@ https://github.com/user-attachments/assets/c3223171-da8d-4156-af18-0e0c81c7b5fb
   - [Rule-Based Alert Engine](#rule-based-alert-engine)
   - [Churn Prediction Model](#churn-prediction-model)
   - [Network-Wide Retention Intelligence](#network-wide-retention-intelligence)
+  - [Per-Studio Retention](#per-studio-retention)
   - [Weekly Schedule Intelligence](#weekly-schedule-intelligence)
   - [Instructor Analytics](#instructor-analytics)
   - [Reviews System](#reviews-system)
@@ -111,10 +112,16 @@ A deterministic, seeded probabilistic model that generates per-member churn pred
 ### Network-Wide Retention Intelligence
 A standalone `/churn` dashboard that aggregates churn predictions across every studio into a single actionable view — distinct from the per-studio retention page.
 
-- **Studio risk rankings** — all studios sorted by high-risk member count, each with a visual risk bar and % at-risk indicator
+- **Studio risk rankings** — all studios sorted by high-risk member count; each card shows a visual risk bar, high-risk count badge, and at-risk percentage with hover lift interactions
 - **Member table** — per-studio member list sorted by churn probability, with inline expand showing risk factors and a plain-language suggested action; filterable by risk tier (all / high / medium / low)
-- **Network summary stats** — total members analyzed, high/medium risk counts, and aggregate annual revenue at risk
+- **Network summary stats** — total members analyzed, high/medium risk counts, and aggregate annual revenue at risk; stat cards with colored top accent strips and hover animations
 - **Retention ROI Calculator** — interactive slider: set a retention rate target and instantly see how much annual revenue would be protected across the studio's high-risk members
+
+### Per-Studio Retention
+The per-studio `/retention` page shares the same churn model but scoped to one location:
+
+- **At-risk by membership tier** — breakdown panel showing high/medium risk counts and annual revenue at risk separately for Unlimited, 12-Class Monthly, 8-Class Monthly, and 4-Class Monthly members, each with a fill-rate bar
+- **Redesigned stat cards** — hover lift, colored top accent strips, and uppercase tracking labels consistent with the network churn page
 
 ### Weekly Schedule Intelligence
 - **7-day calendar grid** — live class schedule per studio, color-coded by historical fill rate (green ≥ 80%, amber 55–79%, red < 55%)
@@ -140,15 +147,17 @@ A standalone `/churn` dashboard that aggregates churn predictions across every s
 Every live studio has a full suite of operational pages accessible via the persistent sidebar:
 
 - **Classes** — booking mix, weekly schedule, slot analytics, period comparison, reviews
-- **Sales** — revenue by product and category, monthly trends
+- **Sales** — KPI stat cards with hover tooltips (total revenue, units sold, top product, avg order value); revenue trend area chart with month-over-month delta in the tooltip; stacked bar chart by product category; paginated product-level table; **PDF export** of the full product breakdown for any selected month
 - **Operations** — lease expiry, landlord contacts, alarm company, HVAC contract, electrician, internet/Wi-Fi
-- **Inventory** — month-by-month stock levels with opening/closing quantities and reorder alerts
+- **Inventory** — month-by-month stock levels for retail and supplies; mini stock-level bars per item; status pills with colored dots (OK / Low Stock / Out of Stock); alert-colored stat cards for low and out-of-stock counts; inline quantity editing; **PDF export** of the full inventory snapshot
 - **Settings** — studio info, staff roster with certification status and performance scores
 
 ### Franchise Pipeline
 A `/pipeline` page for tracking prospective franchise locations from first contact through pre-sales.
 
 - **Kanban board** — draggable cards organized across five stages: Discovery, Agreement Signed, Site Selected, Permits & Construction, and Pre-Sales; each card shows franchisee name, market, territory type, expected open date, and checklist progress (docs, lease, training)
+- **New lead modal** — "+ Add Lead" button per column opens an in-page modal with fields for franchisee name, assigned HQ contact, market/city, state, pipeline stage, territory type (suburban / urban / rural / resort), expected open date, and free-text notes; creates the lead via `POST /api/pipeline` and inserts it into the board without a page reload
+- **Stage progress dots** — each card shows a 5-dot progress strip with the current stage highlighted, so stage position is visible at a glance
 - **Pipeline summary bar** — count of leads per stage plus a stalled lead indicator (flagging any lead inactive for 14+ days)
 - **Stage entry timestamps** — each lead tracks when it entered its current stage, enabling stall detection
 
@@ -229,8 +238,20 @@ Studio
   ├── Review[]            Google & ClassPass reviews with ratings
   ├── ClassMetric[]       per-slot historical fill data (day × time × week)
   ├── SalesRecord[]       monthly revenue by product and category
+  │                         products: grip socks, water, energy drinks, JETSET merch,
+  │                         class packages, memberships, gift cards
   ├── InventoryItem[]     monthly stock levels with reorder thresholds
+  │                         categories: retail (apparel, accessories, drinks) + supplies
+  │                         (reformer parts, cleaning, disposables)
   └── StudioOperations    lease, alarm, HVAC, utilities, contacts (1:1)
+
+FranchiseLead
+  ├── stage               Discovery → Agreement Signed → Site Selected →
+  │                         Permits & Construction → Pre-Sales
+  ├── territoryType       suburban / urban / rural / resort
+  ├── stageEnteredAt      timestamp for stall detection
+  ├── assignedTo          HQ contact name
+  └── checklist fields    docsComplete, leaseComplete, trainingBooked
 ```
 
 ---
@@ -311,6 +332,7 @@ dashboard/
 │   │           ├── page.tsx   full reviews page
 │   │           └── instructors/[iid]/  per-instructor reviews
 │   ├── components/            all UI components
+│   │   ├── DigestSections.tsx  printable digest client component
 │   ├── lib/
 │   │   ├── churn.ts           churn prediction model
 │   │   ├── schedule.ts        schedule fetching + dedup

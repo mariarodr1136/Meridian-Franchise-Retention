@@ -4,14 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ALL_PAGES = [
-  { id: "overview",   label: "Overview"   },
-  { id: "members",    label: "Members"    },
-  { id: "classes",    label: "Classes"    },
-  { id: "sales",      label: "Sales"      },
-  { id: "operations", label: "Operations" },
-  { id: "inventory",  label: "Inventory"  },
-  { id: "reviews",    label: "Reviews"    },
-  { id: "settings",   label: "Settings"   },
+  { id: "overview",   label: "Overview"    },
+  { id: "members",    label: "Members"     },
+  { id: "classes",    label: "Classes"     },
+  { id: "retention",  label: "Retention AI" },
+  { id: "sales",      label: "Sales"       },
+  { id: "operations", label: "Operations"  },
+  { id: "inventory",  label: "Inventory"   },
+  { id: "reviews",    label: "Reviews"     },
+  { id: "settings",   label: "Settings"    },
 ] as const;
 
 const PRE_LAUNCH_PAGE_IDS = new Set(["overview", "sales", "operations", "settings", "members"]);
@@ -32,6 +33,7 @@ export function StudioSidebar({ studioId, studioStatus }: Props) {
     if (pathname.endsWith("/sales"))      return "sales";
     if (pathname.endsWith("/operations")) return "operations";
     if (pathname.endsWith("/inventory"))  return "inventory";
+    if (pathname.endsWith("/retention"))  return "retention";
     if (pathname.endsWith("/reviews"))    return "reviews";
     if (pathname.endsWith("/settings"))   return "settings";
     return "overview";
