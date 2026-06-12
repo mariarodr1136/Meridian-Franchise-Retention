@@ -89,7 +89,7 @@ export default async function StudioReviewsPage({
         {/* Page header */}
         {/* Banner */}
         <div className="mb-8 rounded-xl overflow-hidden relative" style={{ height: 160 }}>
-          <Image src="/jetset-class-wide.jpg" alt="" width={1400} height={160} priority
+          <Image src="/jetset-banner.webp" alt="" width={1400} height={160} priority
             className="w-full h-full object-cover" style={{ objectPosition: "center 78%" }} />
           <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.38)" }} />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">

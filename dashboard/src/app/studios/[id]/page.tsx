@@ -121,7 +121,7 @@ export default async function StudioPage({
           />
           <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.15)" }} />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 44, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, textTransform: "uppercase" }}>Studio Overview</h1>
+            <h1 style={{ fontFamily: "var(--font-montserrat), Montserrat, sans-serif", fontSize: 38, fontWeight: 800, color: "#fff", letterSpacing: "0.08em", lineHeight: 1.1, textTransform: "uppercase" }}>Studio Overview</h1>
           </div>
         </div>
 
