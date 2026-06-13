@@ -286,10 +286,13 @@ function RoiCalculator({ highRisk, revenueAtRisk }: { highRisk: number; revenueA
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+const PER_PAGE = 15;
+
 export default function ChurnPage() {
   const [data, setData]               = useState<ChurnPredictions | null>(null);
   const [selectedStudio, setSelected] = useState<string | null>(null);
   const [filterLevel, setFilter]      = useState<RiskLevel | "all">("all");
+  const [memberPage, setMemberPage]   = useState(0);
 
   useEffect(() => {
     fetch("/api/churn")
@@ -311,6 +314,22 @@ export default function ChurnPage() {
       .filter((m) => filterLevel === "all" || m.riskLevel === filterLevel)
       .sort((a, b) => b.churnProbability - a.churnProbability);
   }, [data, selectedStudio, filterLevel]);
+
+  const totalMemberPages = Math.max(1, Math.ceil(selectedMembers.length / PER_PAGE));
+  const paginatedMembers = selectedMembers.slice(memberPage * PER_PAGE, (memberPage + 1) * PER_PAGE);
+  const memberStart      = memberPage * PER_PAGE + 1;
+  const memberEnd        = Math.min((memberPage + 1) * PER_PAGE, selectedMembers.length);
+
+  function selectStudio(key: string) {
+    setSelected(key);
+    setFilter("all");
+    setMemberPage(0);
+  }
+
+  function changeFilter(level: RiskLevel | "all") {
+    setFilter(level);
+    setMemberPage(0);
+  }
 
   const selectedProfile = studioProfiles.find(
     (p) => `${p.studioName}__${p.studioCity}` === selectedStudio
@@ -388,7 +407,7 @@ export default function ChurnPage() {
                       key={key}
                       profile={p}
                       selected={selectedStudio === key}
-                      onClick={() => { setSelected(key); setFilter("all"); }}
+                      onClick={() => selectStudio(key)}
                     />
                   );
                 })}
@@ -422,7 +441,7 @@ export default function ChurnPage() {
                     {(["all", "high", "medium", "low"] as const).map((level) => (
                       <button
                         key={level}
-                        onClick={() => setFilter(level)}
+                        onClick={() => changeFilter(level)}
                         className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all capitalize cursor-pointer"
                         style={filterLevel === level
                           ? { background: "#fff", color: NAVY, boxShadow: "0 1px 3px rgba(74,99,141,0.15)" }
@@ -439,9 +458,17 @@ export default function ChurnPage() {
 
                 {/* Member table */}
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: BORDER }}>
+                  <div className="flex items-center justify-between px-5 py-3.5 border-b" style={{ borderColor: BORDER_INNER, background: BG }}>
+                    <p className="text-[10px] font-semibold tracking-widest uppercase" style={{ color: NAVY }}>
+                      Member Risk Table
+                    </p>
+                    <p className="text-xs" style={{ color: "#9CA3AF" }}>
+                      {selectedMembers.length} member{selectedMembers.length !== 1 ? "s" : ""} · sorted by churn probability
+                    </p>
+                  </div>
                   <table className="w-full text-sm">
                     <thead>
-                      <tr style={{ background: BG, borderBottom: `1px solid ${BORDER_INNER}` }}>
+                      <tr style={{ background: "#F8FAFD", borderBottom: `1px solid ${BORDER_INNER}` }}>
                         {["#", "Member", "Risk", "Last Visit", "Visits (30d)", "Annual Value", ""].map((h) => (
                           <th key={h} className={`px-4 py-3 text-[10px] font-semibold tracking-wide uppercase ${h === "#" ? "text-center" : "text-left"}`}
                             style={{ color: NAVY }}>
@@ -458,10 +485,42 @@ export default function ChurnPage() {
                           </td>
                         </tr>
                       ) : (
-                        selectedMembers.map((m, i) => <MemberRow key={m.id} member={m} rank={i + 1} />)
+                        paginatedMembers.map((m, i) => <MemberRow key={m.id} member={m} rank={memberStart + i} />)
                       )}
                     </tbody>
                   </table>
+
+                  {/* Pagination footer */}
+                  {selectedMembers.length > PER_PAGE && (
+                    <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: BORDER_INNER, background: BG }}>
+                      <span className="text-xs" style={{ color: "#9CA3AF" }}>
+                        Showing {memberStart}–{memberEnd} of {selectedMembers.length}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={memberPage === 0}
+                          onClick={() => setMemberPage((p) => Math.max(0, p - 1))}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                          style={memberPage === 0
+                            ? { background: "#E5ECF7", color: "#C0CEDF", cursor: "not-allowed" }
+                            : { background: "#fff", color: NAVY, border: `1px solid ${BORDER}`, cursor: "pointer" }
+                          }
+                        >← Prev</button>
+                        <span className="text-xs font-semibold" style={{ color: NAVY }}>
+                          {memberPage + 1} / {totalMemberPages}
+                        </span>
+                        <button
+                          disabled={memberPage === totalMemberPages - 1}
+                          onClick={() => setMemberPage((p) => Math.min(totalMemberPages - 1, p + 1))}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                          style={memberPage === totalMemberPages - 1
+                            ? { background: "#E5ECF7", color: "#C0CEDF", cursor: "not-allowed" }
+                            : { background: NAVY, color: "#fff", cursor: "pointer" }
+                          }
+                        >Next →</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* ROI Calculator */}

@@ -1,4 +1,4 @@
-import type { ChurnPredictions, ChurnMember } from "@/types/churn";
+import type { ChurnPredictions, ChurnMember, FeatureImportance } from "@/types/churn";
 
 // ── Seeded PRNG (deterministic per studio) ─────────────────────────────────────
 
@@ -16,6 +16,71 @@ function prng(seed: number) {
   };
 }
 
+// ── Weighted scoring model ─────────────────────────────────────────────────────
+
+const WEIGHTS = { recency: 0.35, frequency: 0.28, noShow: 0.20, tenure: 0.10, tier: 0.07 };
+
+// Sigmoid helper (maps any real to 0-1)
+function sigmoid(x: number) { return 1 / (1 + Math.exp(-x)); }
+
+type Tier = "unlimited" | "12-class monthly" | "8-class monthly" | "4-class monthly";
+
+function recencyScore(days: number) { return Math.min(0.98, sigmoid((days - 12) / 9) + 0.02); }
+
+function frequencyScore(last30: number, prev30: number) {
+  if (prev30 === 0) return 0.50;
+  return Math.min(1.0, Math.max(0.0, ((prev30 - last30) / prev30) * 1.15 + 0.05));
+}
+
+function tenureScore(days: number) {
+  if (days < 60)  return 0.80;
+  if (days < 120) return 0.55;
+  if (days < 365) return 0.30;
+  return 0.15;
+}
+
+const TIER_RISK: Record<Tier, number> = {
+  "unlimited": 0.12,
+  "12-class monthly": 0.28,
+  "8-class monthly": 0.52,
+  "4-class monthly": 0.72,
+};
+
+function scoreMember(m: {
+  daysSinceLastVisit: number;
+  visitsLast30d: number;
+  visitsPrev30d: number;
+  noShowRate: number;
+  membershipAgeDays: number;
+  membershipTier: Tier;
+}): { probability: number; featureImportances: FeatureImportance[] } {
+  const f = {
+    recency:   recencyScore(m.daysSinceLastVisit),
+    frequency: frequencyScore(m.visitsLast30d, m.visitsPrev30d),
+    noShow:    m.noShowRate,
+    tenure:    tenureScore(m.membershipAgeDays),
+    tier:      TIER_RISK[m.membershipTier],
+  };
+
+  const probability = Math.min(0.98, Math.max(0.02,
+    WEIGHTS.recency   * f.recency   +
+    WEIGHTS.frequency * f.frequency +
+    WEIGHTS.noShow    * f.noShow    +
+    WEIGHTS.tenure    * f.tenure    +
+    WEIGHTS.tier      * f.tier
+  ));
+
+  const featureImportances: FeatureImportance[] = [
+    { label: "Visit recency",     rawScore: f.recency,   contribution: WEIGHTS.recency   * f.recency   / probability },
+    { label: "Frequency drop",    rawScore: f.frequency, contribution: WEIGHTS.frequency * f.frequency / probability },
+    { label: "No-show rate",      rawScore: f.noShow,    contribution: WEIGHTS.noShow    * f.noShow    / probability },
+    { label: "Membership tenure", rawScore: f.tenure,    contribution: WEIGHTS.tenure    * f.tenure    / probability },
+    { label: "Membership tier",   rawScore: f.tier,      contribution: WEIGHTS.tier      * f.tier      / probability },
+  ].sort((a, b) => b.contribution - a.contribution);
+
+  return { probability, featureImportances };
+}
+
 // ── Content pools ──────────────────────────────────────────────────────────────
 
 const FIRST = [
@@ -31,7 +96,6 @@ const LAST = [
   "Nguyen","Hill","Flores","Green",
 ];
 
-type Tier = "unlimited" | "12-class monthly" | "8-class monthly" | "4-class monthly";
 const TIERS: Tier[] = ["unlimited","12-class monthly","8-class monthly","4-class monthly"];
 const TIER_VALUE: Record<Tier, number> = { unlimited: 185, "12-class monthly": 145, "8-class monthly": 95, "4-class monthly": 65 };
 
@@ -97,7 +161,6 @@ export function generateStudioChurn({
 
   const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-  // Risk distribution scales with actual churn rate and studio status
   const baseHigh = studioStatus === "at-risk" ? 0.22 : studioStatus === "new" ? 0.12 : 0.07;
   const baseMed  = studioStatus === "at-risk" ? 0.32 : 0.22;
   const highPct  = clamp(baseHigh + weeklyChurnRate * 4, 0.04, 0.35);
@@ -115,27 +178,33 @@ export function generateStudioChurn({
   function mkName() { return `${pick(FIRST)} ${pick(LAST)}`; }
   function mkId() { return `mbr_${studioId.slice(-5)}_${String(++idx).padStart(3, "0")}`; }
 
-  // High risk members
+  // High risk members — generate features then score with model
   for (let i = 0; i < highCount; i++) {
     const tier = pick(TIERS);
     const mv   = TIER_VALUE[tier] + Math.round((rand() - 0.5) * 20);
-    const cp   = clamp(0.70 + rand() * 0.30, 0.70, 1.0);
-    const rs   = Math.round(cp * 100);
     const days = Math.round(20 + rand() * 45);
+    const visitsLast30d = Math.floor(rand() * 2);
+    const visitsPrev30d = 4 + Math.floor(rand() * 5);
+    const noShowRate = clamp(0.5 + rand() * 0.5, 0, 1);
+    const membershipAgeDays = Math.round(30 + rand() * 700);
+
+    const { probability: cp, featureImportances } = scoreMember({
+      daysSinceLastVisit: days, visitsLast30d, visitsPrev30d, noShowRate, membershipAgeDays, membershipTier: tier,
+    });
+
     revenueAtRisk += mv * 12 * cp;
     members.push({
       id: mkId(), name: mkName(),
       studioName, studioCity, studioStatus,
       membershipTier: tier,
-      membershipAgeDays: Math.round(30 + rand() * 700),
+      membershipAgeDays,
       daysSinceLastVisit: days,
-      visitsLast30d: Math.floor(rand() * 2),
-      visitsPrev30d: 4 + Math.floor(rand() * 5),
-      noShowRate: clamp(0.5 + rand() * 0.5, 0, 1),
-      churnProbability: cp, riskScore: rs, riskLevel: "high",
+      visitsLast30d, visitsPrev30d, noShowRate,
+      churnProbability: cp, riskScore: Math.round(cp * 100), riskLevel: "high",
       monthlyValue: mv,
       topFactors: pick(HIGH_FACTORS),
       suggestedAction: pick(HIGH_ACTIONS),
+      featureImportances,
     });
   }
 
@@ -143,23 +212,29 @@ export function generateStudioChurn({
   for (let i = 0; i < medCount; i++) {
     const tier = pick(TIERS);
     const mv   = TIER_VALUE[tier] + Math.round((rand() - 0.5) * 20);
-    const cp   = clamp(0.35 + rand() * 0.35, 0.35, 0.70);
-    const rs   = Math.round(cp * 100);
     const days = Math.round(8 + rand() * 18);
+    const visitsLast30d = 2 + Math.floor(rand() * 4);
+    const visitsPrev30d = 5 + Math.floor(rand() * 4);
+    const noShowRate = clamp(0.15 + rand() * 0.35, 0, 1);
+    const membershipAgeDays = Math.round(60 + rand() * 600);
+
+    const { probability: cp, featureImportances } = scoreMember({
+      daysSinceLastVisit: days, visitsLast30d, visitsPrev30d, noShowRate, membershipAgeDays, membershipTier: tier,
+    });
+
     revenueAtRisk += mv * 12 * cp * 0.5;
     members.push({
       id: mkId(), name: mkName(),
       studioName, studioCity, studioStatus,
       membershipTier: tier,
-      membershipAgeDays: Math.round(60 + rand() * 600),
+      membershipAgeDays,
       daysSinceLastVisit: days,
-      visitsLast30d: 2 + Math.floor(rand() * 4),
-      visitsPrev30d: 5 + Math.floor(rand() * 4),
-      noShowRate: clamp(0.15 + rand() * 0.35, 0, 1),
-      churnProbability: cp, riskScore: rs, riskLevel: "medium",
+      visitsLast30d, visitsPrev30d, noShowRate,
+      churnProbability: cp, riskScore: Math.round(cp * 100), riskLevel: "medium",
       monthlyValue: mv,
       topFactors: pick(MED_FACTORS),
       suggestedAction: pick(MED_ACTIONS),
+      featureImportances,
     });
   }
 
@@ -167,27 +242,34 @@ export function generateStudioChurn({
   for (let i = 0; i < lowCount; i++) {
     const tier = pick(TIERS);
     const mv   = TIER_VALUE[tier] + Math.round((rand() - 0.5) * 20);
-    const cp   = clamp(0.05 + rand() * 0.30, 0.05, 0.35);
-    const rs   = Math.round(cp * 100);
+    const days = Math.round(1 + rand() * 12);
+    const visitsLast30d = 5 + Math.floor(rand() * 7);
+    const visitsPrev30d = 5 + Math.floor(rand() * 5);
+    const noShowRate = clamp(rand() * 0.15, 0, 1);
+    const membershipAgeDays = Math.round(90 + rand() * 900);
+
+    const { probability: cp, featureImportances } = scoreMember({
+      daysSinceLastVisit: days, visitsLast30d, visitsPrev30d, noShowRate, membershipAgeDays, membershipTier: tier,
+    });
+
     members.push({
       id: mkId(), name: mkName(),
       studioName, studioCity, studioStatus,
       membershipTier: tier,
-      membershipAgeDays: Math.round(90 + rand() * 900),
-      daysSinceLastVisit: Math.round(1 + rand() * 12),
-      visitsLast30d: 5 + Math.floor(rand() * 7),
-      visitsPrev30d: 5 + Math.floor(rand() * 5),
-      noShowRate: clamp(rand() * 0.15, 0, 1),
-      churnProbability: cp, riskScore: rs, riskLevel: "low",
+      membershipAgeDays,
+      daysSinceLastVisit: days,
+      visitsLast30d, visitsPrev30d, noShowRate,
+      churnProbability: cp, riskScore: Math.round(cp * 100), riskLevel: "low",
       monthlyValue: mv,
       topFactors: pick(LOW_FACTORS),
       suggestedAction: pick(LOW_ACTIONS),
+      featureImportances,
     });
   }
 
   return {
     generatedAt: new Date().toISOString(),
-    modelAUC: 0.977,
+    modelAUC: 0.841,
     summary: {
       totalAnalyzed: memberCount,
       highRisk: highCount,

@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-
-type Phase = "idle" | "scanning" | "briefing" | "done";
+import { useState, useEffect } from "react";
 
 function CountUp({ target }: { target: number }) {
   const [n, setN] = useState(0);
@@ -21,129 +19,57 @@ function CountUp({ target }: { target: number }) {
 }
 
 export function ScanButton() {
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [scanning, setScanning] = useState(false);
   const [count, setCount] = useState<number | null>(null);
-  const [brief, setBrief] = useState("");
-  const [open, setOpen] = useState(false);
-  const readerRef = useRef<ReadableStreamDefaultReader<string> | null>(null);
-
-  const isActive = phase === "scanning" || phase === "briefing";
 
   async function scan() {
-    if (isActive) return;
-    setPhase("scanning");
+    if (scanning) return;
+    setScanning(true);
     setCount(null);
-    setBrief("");
-    setOpen(false);
 
-    // Step 1: rule-based scan
     const res = await fetch("/api/anomalies/generate", { method: "POST" });
     const data = await res.json() as { created: number };
     setCount(data.created);
-
-    // Step 2: streaming AI brief
-    setPhase("briefing");
-    setOpen(true);
-    const briefRes = await fetch("/api/anomalies/brief", { method: "POST" });
-
-    if (!briefRes.ok || !briefRes.body) {
-      setPhase("done");
-      return;
-    }
-
-    const reader = briefRes.body.pipeThrough(new TextDecoderStream()).getReader();
-    readerRef.current = reader;
-
-    let text = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      text += value;
-      setBrief(text);
-    }
-
-    setPhase("done");
+    setScanning(false);
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex items-center gap-3">
-        {/* Result pill — fades in once scan finishes */}
-        {count !== null && !isActive && (
-          <div
-            className="flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full"
-            style={{
-              animation: "fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-              background: "#FFFFFF",
-              border: "1px solid #C8D8EE",
-              boxShadow: "0 1px 6px rgba(74,99,141,0.10)",
-            }}
-          >
-            <div
-              className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "#16A34A" }}
-            >
-              <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                <path d="M1.5 4.5l2 2L7.5 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <p className="text-xs" style={{ color: "#6B7280" }}>
-              <span className="font-bold tabular-nums" style={{ color: "#1F2937" }}>
-                <CountUp target={count} />
-              </span>
-              {" "}alert{count !== 1 ? "s" : ""} found
-            </p>
-          </div>
-        )}
-
-        <button
-          onClick={scan}
-          className="text-xs font-semibold px-4 py-2 rounded-lg text-white"
-          style={{ background: "#4A638D", cursor: "pointer" }}
-        >
-          Scan Network
-        </button>
-      </div>
-
-      {/* Streaming brief panel */}
-      {(brief || phase === "briefing") && open && (
+    <div className="flex items-center gap-3">
+      {/* Result pill — fades in once scan finishes */}
+      {count !== null && !scanning && (
         <div
-          className="w-[520px] rounded-xl border p-4 text-xs leading-relaxed"
+          className="flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full"
           style={{
-            background: "#F0F5FB", borderColor: "#C8D8EE", color: "#374151",
-            animation: "popupEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-            transformOrigin: "top right",
-            willChange: "transform, opacity",
+            animation: "fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            background: "#FFFFFF",
+            border: "1px solid #C8D8EE",
+            boxShadow: "0 1px 6px rgba(74,99,141,0.10)",
           }}
         >
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>
-              Network Intelligence Brief
-            </p>
-            <button
-              onClick={() => setOpen(false)}
-              className="text-xs opacity-40 hover:opacity-70 transition-opacity"
-              style={{ color: "#4A638D" }}
-            >
-              ✕
-            </button>
+          <div
+            className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "#16A34A" }}
+          >
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+              <path d="M1.5 4.5l2 2L7.5 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
-          <p style={{ whiteSpace: "pre-wrap" }}>
-            {brief}
-            {phase === "briefing" && (
-              <span
-                className="inline-block w-1.5 h-3 ml-0.5 rounded-sm animate-pulse"
-                style={{ background: "#4A638D", verticalAlign: "text-bottom" }}
-              />
-            )}
+          <p className="text-xs" style={{ color: "#6B7280" }}>
+            <span className="font-bold tabular-nums" style={{ color: "#1F2937" }}>
+              <CountUp target={count} />
+            </span>
+            {" "}alert{count !== 1 ? "s" : ""} found
           </p>
-          {phase === "done" && brief && (
-            <p className="mt-3 pt-2 border-t text-xs opacity-50" style={{ borderColor: "#C8D8EE" }}>
-              Generated by GPT-4o · {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            </p>
-          )}
         </div>
       )}
+
+      <button
+        onClick={scan}
+        className="text-xs font-semibold px-4 py-2 rounded-lg text-white cursor-pointer"
+        style={{ background: "#4A638D" }}
+      >
+        {scanning ? "Scanning…" : "Scan Network"}
+      </button>
     </div>
   );
 }

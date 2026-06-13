@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { DigestClient } from "@/components/DigestClient";
 import { DigestSections } from "@/components/DigestSections";
+import { DigestAISummary } from "@/components/DigestAISummary";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 
 async function getDigestData() {
@@ -19,6 +20,7 @@ async function getDigestData() {
   ]);
   return { studios, anomalies };
 }
+
 
 export default async function DigestPage() {
   const { studios, anomalies } = await getDigestData();
@@ -75,6 +77,34 @@ export default async function DigestPage() {
           </div>
           <DigestClient />
         </div>
+
+        {/* AI executive summary */}
+        <DigestAISummary
+          payload={{
+            weekLabel,
+            totalStudios: studios.length,
+            openStudios: openStudios.length,
+            healthyStudios: openStudios.filter((s) => s.status === "healthy").length,
+            atRiskStudios: atRiskStudios.length,
+            newStudios: newStudios.length,
+            preLaunchStudios: preLaunch.length,
+            totalMembers,
+            memberDelta,
+            avgOccupancy,
+            occupancyDelta,
+            totalRevenue,
+            revenueDelta,
+            topStudios: topStudios.map((s) => ({
+              name: s.name,
+              city: s.city,
+              revenue: s.metrics[0]?.weeklyRevenue ?? 0,
+            })),
+            atRiskNames: atRiskStudios.map((s) => `${s.name} (${s.city})`),
+            activeAlerts: anomalies.length,
+            criticalAlerts: anomalies.filter((a) => a.severity === "high").length,
+            alertSummaries: anomalies.slice(0, 4).map((a) => a.summary),
+          }}
+        />
 
         {/* ── Report content (printed + screen) ── */}
         <div id="digest-report">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Anomaly } from "@/types";
 import { cn } from "@/lib/utils";
 import { ScanButton } from "@/components/ScanButton";
@@ -21,6 +21,11 @@ interface Props {
   resolvedAnomalies: Anomaly[];
 }
 
+interface LiveUpdate {
+  added: Anomaly[];
+  delta: number;
+}
+
 export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
   const [tab, setTab] = useState<"active" | "resolved">("active");
   const [active, setActive] = useState<Anomaly[]>(anomalies);
@@ -29,6 +34,48 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
   const [resolving, setResolving] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<"high" | "medium" | "low" | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [liveStatus, setLiveStatus] = useState<"connecting" | "live" | "offline">("connecting");
+  const [incomingUpdate, setIncomingUpdate] = useState<LiveUpdate | null>(null);
+  const esRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    const es = new EventSource("/api/alerts/stream");
+    esRef.current = es;
+
+    es.addEventListener("heartbeat", () => setLiveStatus("live"));
+    es.addEventListener("init",      () => setLiveStatus("live"));
+
+    es.addEventListener("update", (e) => {
+      try {
+        const data = JSON.parse(e.data) as {
+          count: number;
+          delta: number;
+          added: Anomaly[];
+          removedIds: string[];
+        };
+
+        if (data.added?.length > 0) {
+          setActive((prev) => {
+            const existingIds = new Set(prev.map((a) => a.id));
+            const truly_new = data.added.filter((a) => !existingIds.has(a.id));
+            return truly_new.length > 0 ? [...truly_new, ...prev] : prev;
+          });
+          setIncomingUpdate({ added: data.added, delta: data.delta });
+          setTimeout(() => setIncomingUpdate(null), 5000);
+        }
+
+        if (data.removedIds?.length > 0) {
+          const removed = new Set(data.removedIds);
+          setActive((prev) => prev.filter((a) => !removed.has(a.id)));
+        }
+      } catch { /* ignore parse errors */ }
+    });
+
+    es.onerror = () => setLiveStatus("offline");
+
+    return () => { es.close(); esRef.current = null; };
+  }, []);
+
 
   async function handleResolve(anomaly: Anomaly) {
     setResolving(true);
@@ -132,10 +179,60 @@ export function AlertsGrid({ anomalies, resolvedAnomalies }: Props) {
           </>
         )}
 
+        {/* Live status badge */}
+        <div className="flex items-center gap-1.5 ml-3">
+          <div
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{
+              background: liveStatus === "live" ? "#16A34A" : liveStatus === "connecting" ? "#D97706" : "#9CA3AF",
+              boxShadow: liveStatus === "live" ? "0 0 0 3px rgba(22,163,74,0.2)" : "none",
+              animation: liveStatus === "live" ? "livePulse 2s ease-in-out infinite" : "none",
+            }}
+          />
+          <span className="text-[10px] font-semibold uppercase tracking-wide" style={{
+            color: liveStatus === "live" ? "#16A34A" : "#9CA3AF",
+          }}>
+            {liveStatus === "live" ? "Live" : liveStatus === "connecting" ? "…" : "Offline"}
+          </span>
+        </div>
+
         <div className="ml-auto">
           <ScanButton />
         </div>
       </div>
+
+      {/* Incoming alert toast */}
+      {incomingUpdate && incomingUpdate.delta > 0 && (
+        <div
+          className="mb-4 px-4 py-3 rounded-xl border flex items-center gap-3"
+          style={{
+            background: "#FEF3C7",
+            borderColor: "#FDE68A",
+            animation: "fadeSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+          }}
+        >
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#D97706" }} />
+          <p className="text-xs font-semibold" style={{ color: "#92400E" }}>
+            {incomingUpdate.delta} new alert{incomingUpdate.delta !== 1 ? "s" : ""} detected — scroll up to review
+          </p>
+          <button
+            onClick={() => setIncomingUpdate(null)}
+            className="ml-auto text-xs opacity-50 hover:opacity-80 transition-opacity"
+            style={{ color: "#92400E" }}
+          >✕</button>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes livePulse {
+          0%, 100% { box-shadow: 0 0 0 2px rgba(22,163,74,0.15); }
+          50%       { box-shadow: 0 0 0 5px rgba(22,163,74,0.08); }
+        }
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
       {/* Grid */}
       {list.length === 0 ? (

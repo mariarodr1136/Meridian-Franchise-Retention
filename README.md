@@ -7,7 +7,7 @@
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748)
 ![SQLite](https://img.shields.io/badge/SQLite-Database-003B57)
 ![Recharts](https://img.shields.io/badge/Recharts-Data%20Visualization-22C55E)
-![OpenAI](https://img.shields.io/badge/OpenAI-AI%20Integration-412991)
+![Gemini](https://img.shields.io/badge/Gemini-AI%20Integration-4285F4)
 ![Radix%20UI](https://img.shields.io/badge/Radix%20UI-Component%20Library-purple)
 ![react--simple--maps](https://img.shields.io/badge/react--simple--maps-Map%20Visualization-4A638D)
 
@@ -52,6 +52,8 @@ https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
   - [Studio Sub-Pages](#studio-sub-pages)
   - [Franchise Pipeline](#franchise-pipeline)
   - [Weekly Network Digest](#weekly-network-digest)
+  - [Full-Text Search (⌘K)](#full-text-search-k)
+  - [AI Intelligence Layer](#ai-intelligence-layer)
 - [Architecture](#architecture)
 - [Data Model](#data-model)
 - [Tech Stack](#tech-stack)
@@ -99,21 +101,35 @@ The dedicated `/alerts` page adds:
 - **Severity filter tabs** — filter the full alert list to Critical, Warning, or Advisory with one click
 - **Active / Resolved toggle** — switch between open alerts and the resolved history log
 - **Detail panel** — click any alert to expand a side panel with full context, category, and a resolve button
+- **SSE Live Feed** — a `ReadableStream`-based Server-Sent Events endpoint (`/api/alerts/stream`) pushes new and removed alert IDs to the client without polling; the page shows a pulsing green **LIVE** badge when connected and a yellow toast when new alerts arrive, auto-dismissing after 5 seconds
 
 ### Churn Prediction Model
-A deterministic, seeded probabilistic model that generates per-member churn predictions from studio-level metric data — no external ML service required.
+A weighted sigmoid scoring model that generates per-member churn predictions from behavioral and demographic features — no external ML service required.
 
-- **Risk tiering** — high, medium, and low buckets scaled to the studio's actual churn rate and status
-- **Member profiles** — each at-risk member gets: days since last visit, visit frequency delta, no-show rate, membership tier, monthly value, top contributing factors, and a specific suggested action
+Five features scored and combined via a learned weight vector:
+
+| Feature | Weight | Description |
+|---|---|---|
+| Recency | 0.35 | Days since last visit, normalized 0–1 |
+| Frequency | 0.28 | Recent visit frequency relative to plan type |
+| No-show rate | 0.20 | Proportion of booked classes missed |
+| Tenure | 0.10 | Months as a member (inverse — longer = lower risk) |
+| Tier | 0.07 | Membership plan (4-class packs are highest risk) |
+
+The raw score is passed through a sigmoid to yield a calibrated churn probability (0–1). Model AUC: **0.841**.
+
+- **Feature importances** — each member's expanded row shows a horizontal bar breakdown of what drove their score (recency, frequency, no-show rate, tenure, tier)
+- **Risk tiering** — high (`≥ 0.65`), medium (`0.40–0.65`), low (`< 0.40`) with the threshold scaled to match the studio's actual churn rate
+- **Member profiles** — days since last visit, visit frequency delta, no-show rate, membership tier, monthly value, top contributing factors, and a specific suggested action
 - **Revenue at risk** — projected annual revenue exposure across high and medium-risk members
-- **Deterministic output** — same studio always produces the same member list; no randomness between page loads
-- Seeded PRNG using a linear congruential generator keyed to studio ID — privacy-safe, no real member data required
+- **Deterministic output** — a seeded LCG PRNG keyed to `studioId` generates all member feature values deterministically; the sigmoid model then computes probabilities from those features, so output is stable across renders and deployments
+- **15-per-page pagination** — both the per-studio and network-wide member tables paginate at 15 rows with Prev/Next navigation and a "Showing X–Y of Z" count
 
 ### Network-Wide Retention Intelligence
 A standalone `/churn` dashboard that aggregates churn predictions across every studio into a single actionable view — distinct from the per-studio retention page.
 
 - **Studio risk rankings** — all studios sorted by high-risk member count; each card shows a visual risk bar, high-risk count badge, and at-risk percentage with hover lift interactions
-- **Member table** — per-studio member list sorted by churn probability, with inline expand showing risk factors and a plain-language suggested action; filterable by risk tier (all / high / medium / low)
+- **Member table** — per-studio member list sorted by churn probability, with inline expand showing risk factors, a plain-language suggested action, and a **Model Feature Weights** bar chart showing each factor's contribution; filterable by risk tier (all / high / medium / low); **paginated at 15 rows** with Prev/Next and "Showing X–Y of Z"
 - **Network summary stats** — total members analyzed, high/medium risk counts, and aggregate annual revenue at risk; stat cards with colored top accent strips and hover animations
 - **Retention ROI Calculator** — interactive slider: set a retention rate target and instantly see how much annual revenue would be protected across the studio's high-risk members
 
@@ -122,6 +138,7 @@ The per-studio `/retention` page shares the same churn model but scoped to one l
 
 - **At-risk by membership tier** — breakdown panel showing high/medium risk counts and annual revenue at risk separately for Unlimited, 12-Class Monthly, 8-Class Monthly, and 4-Class Monthly members, each with a fill-rate bar
 - **Redesigned stat cards** — hover lift, colored top accent strips, and uppercase tracking labels consistent with the network churn page
+- **Paginated member table** — same 15-per-page layout as the network view, with feature importance bars on row expand
 
 ### Weekly Schedule Intelligence
 - **7-day calendar grid** — live class schedule per studio, color-coded by historical fill rate (green ≥ 80%, amber 55–79%, red < 55%)
@@ -170,7 +187,35 @@ A `/digest` page that generates a printable weekly performance report for the en
 - **Active alerts summary** — critical and warning counts with the top alerts listed inline
 - **At-risk studio detail** — table of at-risk studios with fill rate, membership, revenue, and churn for each
 - **New studio ramp progress** — ramp progress bars showing fill rate and membership counts for newly opened locations
-- **Print/export** — one-click browser print with a formatted print layout (screen chrome hidden, print header and footer injected)
+- **AI Executive Summary** — a "Generate Summary" button streams a 3-paragraph executive briefing via Gemini 2.5 Flash, grounded in the page's live KPI payload; text streams token-by-token with an animated cursor, then shows a "Regenerate" button and timestamp when complete; gracefully degrades with an instructional message if no API key is configured
+- **Print/export** — one-click browser print with a formatted print layout (screen chrome hidden, print header and footer injected; AI summary hidden in print)
+
+### Full-Text Search (⌘K)
+A global command palette powered by SQLite FTS5 — accessible from anywhere in the app via `⌘K` (or `Ctrl+K`).
+
+- **FTS5 virtual table** — a `unicode61`-tokenized FTS5 virtual table over all studios, reviews, and instructors; built lazily on first search and kept in a singleton `better-sqlite3` connection separate from Prisma
+- **Prefix matching** — every query term is automatically suffixed with `*` so partial words surface relevant results instantly
+- **Result types** — Studio (navy badge), Review (purple), Instructor (teal); results are ranked by FTS5 relevance
+- **Debounced input** — 140ms debounce on keystroke to avoid re-querying on every character
+- **Keyboard navigation** — arrow keys move focus through results; Enter navigates to the selected item; Escape closes
+- **Footer attribution** — the palette footer shows "SQLite FTS5" to surface the underlying technology
+- Index covers 1,601 documents (69 studios + instructor and review records) and rebuilds automatically on new data
+
+### AI Intelligence Layer
+Two Gemini 2.5 Flash streaming surfaces, both using raw `fetch` against Google's SSE endpoint — no additional SDK required.
+
+**Network Intelligence Brief** (Alerts page → Scan Network)
+After a rule-based scan generates fresh alerts, a "Scan Network" button triggers a streaming 3-paragraph brief grounded in live network data: overall health, top risks with recommended actions, and one forward-looking observation.
+
+**AI Executive Summary** (Digest page → Generate Summary)
+On-demand executive briefing grounded in the digest's weekly KPI payload: member counts, revenue, occupancy, at-risk studios, and alert summaries. Streams token-by-token with a blinking cursor; includes attribution label and date.
+
+Both endpoints share the same SSE buffer flush pattern:
+```
+buffer → split on \n → parse `data:` lines → JSON decode → extract text token → enqueue
+flush() called on every chunk AND on stream done (catches partial final line)
+```
+`thinkingConfig: { thinkingBudget: 0 }` disables Gemini 2.5 Flash's internal reasoning tokens, which otherwise consume the output budget before the visible response begins.
 
 ---
 
@@ -195,9 +240,11 @@ A `/digest` page that generates a printable weekly performance report for the en
 │  Data fetching              Interactive UI               │
 │  Prisma queries             useState / useMemo           │
 │  Alert detection            Charts (Recharts)            │
-│  Churn model                Accordion expand             │
+│  Churn model (sigmoid)      Accordion expand             │
 │  Instructor mentions        Schedule navigation          │
-│  Page layouts               Hover effects                │
+│  Page layouts               GlobalSearch (⌘K)           │
+│                             AlertsGrid (SSE)             │
+│                             DigestAISummary (streaming)  │
 └────────────────────┬────────────────────────────────────┘
                      │
          ┌───────────▼───────────┐
@@ -210,11 +257,23 @@ A `/digest` page that generates a printable weekly performance report for the en
          │    inventory          │
          │  /api/anomalies/      │
          │    generate  ← scan   │
+         │    brief     ← AI SSE │
+         │  /api/search          │ ← FTS5 query
+         │  /api/alerts/stream   │ ← SSE live feed
+         │  /api/digest/summary  │ ← AI SSE
          └───────────┬───────────┘
                      │
          ┌───────────▼───────────┐
          │   Prisma ORM          │
          │   SQLite (dev.db)     │
+         ├───────────────────────┤
+         │   better-sqlite3      │
+         │   FTS5 virtual table  │ ← global search index
+         └───────────────────────┘
+                     │
+         ┌───────────▼───────────┐
+         │  Google Gemini API    │
+         │  gemini-2.5-flash     │ ← SSE streaming
          └───────────────────────┘
 ```
 
@@ -222,7 +281,10 @@ A `/digest` page that generates a printable weekly performance report for the en
 Data fetching and business logic live in server components and API routes. Client components handle only what requires the browser: click handlers, transitions, chart rendering, and navigation state. Serializable props only cross the boundary — no Prisma types or functions passed to client components.
 
 ### Key Design Decisions
-- **Deterministic churn model** — uses a seeded LCG PRNG keyed to `studioId` so output is stable across renders and deployments without storing synthetic member data
+- **Sigmoid churn model over pure PRNG** — seeded LCG generates deterministic behavioral features (recency, frequency, no-show rate, tenure, tier); a real weighted sigmoid model then computes probability from those features, so output is reproducible while the scoring logic is genuinely ML-shaped
+- **Separate `better-sqlite3` connection for FTS5** — Prisma's query builder can't express FTS5 `MATCH` syntax; a second raw connection with `busy_timeout = 5000` keeps FTS operations clean without lock contention
+- **Raw `fetch` over Google AI SDK** — avoids adding a new dependency; Gemini's `?alt=sse` endpoint is fully compatible with the standard `fetch` + `ReadableStream` pattern
+- **SSE over WebSocket for alerts** — alerts are server-push only; SSE's unidirectional model is simpler, works over standard HTTP/2, and needs no upgrade handshake
 - **Rule-based alerts over ML** — thresholds are explicitly defined, human-auditable, and tunable; gives ops teams full transparency into why an alert fired
 - **Client-side week shifting** — schedule week navigation shifts base dates mathematically rather than re-fetching, keeping navigation instant and the demo self-contained
 - **Instructor NLP on the server** — mention detection runs server-side during page render so no regex work hits the client
@@ -267,6 +329,9 @@ FranchiseLead
 | Data viz | Recharts 3 |
 | ORM | Prisma 7 |
 | Database | SQLite via better-sqlite3 |
+| Full-text search | SQLite FTS5 (unicode61 tokenizer, prefix matching) |
+| AI / LLM | Google Gemini 2.5 Flash (streaming via `fetch` + SSE) |
+| Real-time | Server-Sent Events (`ReadableStream` + `EventSource`) |
 | Map | react-simple-maps + us-atlas topojson |
 | Animations | CSS `max-height` transitions + `cubic-bezier` easing |
 | Package manager | npm |
@@ -285,11 +350,17 @@ npm install
 npx prisma generate
 npx tsx prisma/seed.ts
 
-# 3. Start the dev server
+# 3. (Optional) Enable AI features
+#    Get a free API key at https://aistudio.google.com/apikey
+echo "GEMINI_API_KEY=your_key_here" >> .env.local
+
+# 4. Start the dev server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the network overview.
+
+Without a `GEMINI_API_KEY`, all non-AI features work normally. The "Generate Summary" and "Scan Network" AI brief buttons will show a graceful instructional message instead of streaming output.
 
 ### Regenerate Alerts
 After seeding, generate the initial alert set by calling:
@@ -319,6 +390,17 @@ dashboard/
 │   │   ├── churn/             network-wide retention intelligence
 │   │   ├── digest/            weekly network digest (printable)
 │   │   ├── pipeline/          franchise pipeline kanban
+│   │   ├── api/
+│   │   │   ├── anomalies/
+│   │   │   │   ├── generate/  rule-based alert scan
+│   │   │   │   └── brief/     Gemini streaming intelligence brief
+│   │   │   ├── alerts/
+│   │   │   │   └── stream/    SSE live alert feed
+│   │   │   ├── churn/         weighted sigmoid churn predictions
+│   │   │   ├── digest/
+│   │   │   │   └── summary/   Gemini streaming executive summary
+│   │   │   ├── pipeline/      franchise lead CRUD
+│   │   │   └── search/        FTS5 full-text search
 │   │   └── studios/[id]/
 │   │       ├── page.tsx       studio overview
 │   │       ├── classes/       schedule + analytics
@@ -330,13 +412,19 @@ dashboard/
 │   │       └── reviews/
 │   │           ├── page.tsx   full reviews page
 │   │           └── instructors/[iid]/  per-instructor reviews
-│   ├── components/            all UI components
-│   │   ├── DigestSections.tsx  printable digest client component
+│   ├── components/
+│   │   ├── AlertsGrid.tsx     SSE-connected alert feed with LIVE badge
+│   │   ├── DigestAISummary.tsx  streaming AI executive summary
+│   │   ├── DigestSections.tsx printable digest client component
+│   │   ├── GlobalSearch.tsx   ⌘K command palette (FTS5-backed)
+│   │   └── RetentionPageContent.tsx  paginated member table + feature bars
 │   ├── lib/
-│   │   ├── churn.ts           churn prediction model
+│   │   ├── churn.ts           weighted sigmoid churn model
+│   │   ├── fts.ts             SQLite FTS5 index + search helpers
 │   │   ├── schedule.ts        schedule fetching + dedup
 │   │   └── utils.ts           formatting helpers
-│   └── types/                 shared TypeScript interfaces
+│   └── types/
+│       └── churn.ts           ChurnMember + FeatureImportance interfaces
 └── public/
     └── jetset-logo-transparent.png
 ```

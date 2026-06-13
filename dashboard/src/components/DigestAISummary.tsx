@@ -1,0 +1,152 @@
+"use client";
+
+import { useState } from "react";
+
+interface DigestPayload {
+  weekLabel: string;
+  totalStudios: number;
+  openStudios: number;
+  healthyStudios: number;
+  atRiskStudios: number;
+  newStudios: number;
+  preLaunchStudios: number;
+  totalMembers: number;
+  memberDelta: string | null;
+  avgOccupancy: number;
+  occupancyDelta: string | null;
+  totalRevenue: number;
+  revenueDelta: string | null;
+  topStudios: { name: string; city: string; revenue: number }[];
+  atRiskNames: string[];
+  activeAlerts: number;
+  criticalAlerts: number;
+  alertSummaries: string[];
+}
+
+interface Props {
+  payload: DigestPayload;
+}
+
+type Phase = "idle" | "streaming" | "done" | "unavailable";
+
+export function DigestAISummary({ payload }: Props) {
+  const [phase, setPhase]   = useState<Phase>("idle");
+  const [text, setText]     = useState("");
+
+  async function generate() {
+    if (phase === "streaming") return;
+    setPhase("streaming");
+    setText("");
+
+    const res = await fetch("/api/digest/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok || !res.body) {
+      setPhase(res.status === 501 ? "unavailable" : "idle");
+      return;
+    }
+
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let accumulated = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      accumulated += value;
+      setText(accumulated);
+    }
+    setPhase("done");
+  }
+
+  return (
+    <div
+      className="rounded-xl border mb-6 overflow-hidden print:hidden"
+      style={{ background: "#FFFFFF", borderColor: "#C8D8EE" }}
+    >
+      {/* Header */}
+      <div
+        className="px-5 py-3.5 flex items-center justify-between border-b"
+        style={{ borderColor: "#E4EDF8", background: "linear-gradient(135deg, #4A638D 0%, #3D5580 100%)" }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1.5L8.5 5H12L9 7.5L10.5 11L7 8.5L3.5 11L5 7.5L2 5H5.5L7 1.5Z" stroke="white" strokeWidth="1.2" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <p className="text-xs font-bold tracking-widest uppercase text-white">AI Executive Summary</p>
+          {phase === "done" && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)" }}>
+              Gemini 2.5 Flash
+            </span>
+          )}
+        </div>
+
+        {phase === "idle" && (
+          <button
+            onClick={generate}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] cursor-pointer"
+            style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}
+          >
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+              <path d="M5.5 1v2M5.5 8v2M1 5.5h2M8 5.5h2M2.5 2.5l1.5 1.5M7 7l1.5 1.5M2.5 8.5L4 7M7 4l1.5-1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            </svg>
+            Generate Summary
+          </button>
+        )}
+
+        {phase === "streaming" && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "rgba(255,255,255,0.4)", borderTopColor: "transparent" }} />
+            <span className="text-xs text-white opacity-70">Generating…</span>
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      {phase === "unavailable" && (
+        <div className="px-5 py-5 text-sm" style={{ color: "#9CA3AF" }}>
+          AI summary requires a <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#F0F5FB" }}>GEMINI_API_KEY</code> in <code className="text-xs px-1 py-0.5 rounded" style={{ background: "#F0F5FB" }}>.env.local</code> — get one free at aistudio.google.com
+        </div>
+      )}
+
+      {(phase === "streaming" || phase === "done") && (
+        <div className="px-5 py-5">
+          <p className="text-sm leading-relaxed" style={{ color: "#374151", whiteSpace: "pre-wrap" }}>
+            {text}
+            {phase === "streaming" && (
+              <span
+                className="inline-block w-1.5 h-4 ml-0.5 rounded-sm animate-pulse"
+                style={{ background: "#4A638D", verticalAlign: "text-bottom" }}
+              />
+            )}
+          </p>
+          {phase === "done" && (
+            <div className="mt-4 pt-3 border-t flex items-center justify-between" style={{ borderColor: "#E4EDF8" }}>
+              <p className="text-[10px]" style={{ color: "#9CA3AF" }}>
+                Generated by Gemini 2.5 Flash · {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </p>
+              <button
+                onClick={generate}
+                className="text-[10px] font-semibold transition-opacity hover:opacity-70 cursor-pointer"
+                style={{ color: "#4A638D" }}
+              >
+                Regenerate
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {phase === "idle" && (
+        <div className="px-5 py-4">
+          <p className="text-xs" style={{ color: "#9CA3AF" }}>
+            Click <span className="font-semibold" style={{ color: "#4A638D" }}>Generate Summary</span>{" "}to produce a streaming AI executive briefing based on this week&apos;s network data.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

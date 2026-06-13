@@ -200,7 +200,7 @@ function MemberRow({ member, rank }: { member: ChurnMember; rank: number }) {
         <td colSpan={7} style={{ padding: 0, borderBottom: expanded ? `1px solid ${BORDER_INNER}` : "none" }}>
           <div style={{
             overflow: "hidden",
-            maxHeight: expanded ? 360 : 0,
+            maxHeight: expanded ? 440 : 0,
             transition: "max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1)",
           }}>
             {/* Stats banner */}
@@ -228,7 +228,7 @@ function MemberRow({ member, rank }: { member: ChurnMember; rank: number }) {
             </div>
 
             {/* Detail columns */}
-            <div className="px-6 py-4 grid grid-cols-2 gap-8" style={{ background: "#F8FAFD" }}>
+            <div className="px-6 py-4 grid grid-cols-3 gap-6" style={{ background: "#F8FAFD" }}>
               <div>
                 <p className="text-[10px] font-semibold tracking-widest uppercase mb-2.5" style={{ color: NAVY }}>
                   Risk Factors
@@ -243,6 +243,36 @@ function MemberRow({ member, rank }: { member: ChurnMember; rank: number }) {
                   ))}
                 </ul>
               </div>
+
+              {/* Feature importances from weighted scoring model */}
+              <div>
+                <p className="text-[10px] font-semibold tracking-widest uppercase mb-2.5" style={{ color: NAVY }}>
+                  Model Feature Weights
+                </p>
+                <div className="flex flex-col gap-2">
+                  {member.featureImportances.map((fi) => (
+                    <div key={fi.label}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px]" style={{ color: "#6B7280" }}>{fi.label}</span>
+                        <span className="text-[10px] font-semibold tabular-nums" style={{ color: churnPct >= 70 ? RED : churnPct >= 40 ? AMBER : NAVY }}>
+                          {Math.round(fi.contribution * 100)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#E4EDF8" }}>
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.round(fi.contribution * 100)}%`,
+                            background: churnPct >= 70 ? RED : churnPct >= 40 ? AMBER : NAVY,
+                            transition: "width 0.5s ease",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <p className="text-[10px] font-semibold tracking-widest uppercase mb-2.5" style={{ color: NAVY }}>
                   Suggested Action
@@ -409,7 +439,7 @@ function PaginationBtn({ children, disabled, onClick, variant }: {
 
 // ── Main ─────────────────────────────────────────────────────────────────────────
 
-const PER_PAGE = 10;
+const PER_PAGE = 15;
 
 interface Props { data: ChurnPredictions; studioLabel?: string }
 

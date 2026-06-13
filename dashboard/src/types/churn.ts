@@ -1,5 +1,11 @@
 export type RiskLevel = "high" | "medium" | "low";
 
+export interface FeatureImportance {
+  label: string;
+  rawScore: number;
+  contribution: number;
+}
+
 export interface ChurnMember {
   id: string;
   name: string;
@@ -18,6 +24,7 @@ export interface ChurnMember {
   monthlyValue: number;
   topFactors: string[];
   suggestedAction: string;
+  featureImportances: FeatureImportance[];
 }
 
 export interface ChurnSummary {
