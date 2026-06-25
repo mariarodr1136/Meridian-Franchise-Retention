@@ -1,12 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
-import { StudioGrid } from "@/components/StudioGrid";
-import { AnomalyFeed } from "@/components/AnomalyFeed";
-import { StatusBadge } from "@/components/StatusBadge";
-import { NetworkMapSection } from "@/components/NetworkMapSection";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
-import type { StudioStatus, StudioWithLatestMetric, Anomaly } from "@/types";
+import HubContent from "./HubContent";
 
 async function getNetworkData() {
   const [studios, anomalies] = await Promise.all([
@@ -53,7 +49,7 @@ function NetworkStat({ label, value, sub, wow }: {
   );
 }
 
-export default async function DashboardPage() {
+export default async function HubPage() {
   const { studios, anomalies } = await getNetworkData();
 
   const openStudios = studios.filter((s) => s.status !== "pre-launch");
@@ -69,49 +65,10 @@ export default async function DashboardPage() {
   const totalRevenue = openStudios.reduce((sum, s) => sum + (s.metrics[0]?.weeklyRevenue ?? 0), 0);
   const prevRevenue  = openStudios.reduce((sum, s) => sum + (s.metrics[1]?.weeklyRevenue ?? 0), 0);
 
-  const studioList: StudioWithLatestMetric[] = studios.map((s) => ({
-    id: s.id,
-    name: s.name,
-    city: s.city,
-    state: s.state,
-    country: s.country,
-    region: s.region,
-    status: s.status as StudioStatus,
-    openedAt: s.openedAt?.toISOString() ?? null,
-    franchiseeName: s.franchiseeName,
-    address: s.address ?? null,
-    phone: s.phone ?? null,
-    latestMetric: s.metrics[0]
-      ? {
-          id: s.metrics[0].id,
-          studioId: s.metrics[0].studioId,
-          weekOf: s.metrics[0].weekOf.toISOString(),
-          classFillRate: s.metrics[0].classFillRate,
-          activeMemberships: s.metrics[0].activeMemberships,
-          weeklyChurn: s.metrics[0].weeklyChurn,
-          weeklyRevenue: s.metrics[0].weeklyRevenue,
-          presalesPipelineCount: s.metrics[0].presalesPipelineCount,
-          memberBookings: s.metrics[0].memberBookings,
-          classPackBookings: s.metrics[0].classPackBookings,
-          classPassBookings: s.metrics[0].classPassBookings,
-        }
-      : null,
-  }));
-
-  const anomalyList: Anomaly[] = anomalies.map((a) => ({
-    id: a.id,
-    studioId: a.studioId,
-    studioName: a.studio ? `${a.studio.name} · ${a.studio.city}` : null,
-    generatedAt: a.generatedAt.toISOString(),
-    summary: a.summary,
-    severity: a.severity as "high" | "medium" | "low",
-    category: a.category,
-    resolved: a.resolved,
-  }));
-
   return (
-    <div className="min-h-screen w-full" style={{ background: "#F0F5FB" }}>
-      {/* Hero + stat bar */}
+    <div className="min-h-screen flex flex-col" style={{ background: "#F0F5FB" }}>
+
+      {/* Hero + stat bar — same structure as main page */}
       <div className="relative overflow-hidden" style={{ width: "100vw", height: "280px" }}>
         <video
           src="/jetset-banner.mp4"
@@ -123,20 +80,22 @@ export default async function DashboardPage() {
         />
         <div className="absolute inset-0" style={{ background: "rgba(15,28,52,0.42)" }} />
 
-        {/* Franchise Intelligence title */}
+        {/* Knowledge Hub title */}
         <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: "88px" }}>
-          <h1 className="text-white uppercase"
+          <h1
+            className="text-white uppercase"
             style={{
               fontFamily: "var(--font-montserrat), Montserrat, sans-serif",
               fontSize: "58.64px",
               fontWeight: 700,
               letterSpacing: "0.05em",
-            }}>
-            Franchise Intelligence
+            }}
+          >
+            Knowledge Hub
           </h1>
         </div>
 
-        {/* Stat bar — logo left · stats center · Retention AI right */}
+        {/* Stat bar — absolute at top, same as main page */}
         <div className="absolute top-0 left-0 right-0" style={{ background: "#4A638D" }}>
           <div className="max-w-[1400px] mx-auto px-6 flex items-center">
             {/* Logo */}
@@ -170,64 +129,22 @@ export default async function DashboardPage() {
               ))}
             </div>
 
-            {/* Knowledge Hub link */}
+            {/* Right: back to network */}
             <div className="flex-none flex justify-end" style={{ width: 160 }}>
               <Link
-                href="/hub"
+                href="/"
                 className="flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all hover:brightness-95"
                 style={{ background: "#F0F5FB", color: "#4A638D", border: "1.5px solid #4A638D" }}
               >
-                HUB →
+                ← Network
               </Link>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="max-w-[1400px] mx-auto px-6 py-8">
-        <NetworkMapSection studios={studioList} />
-        <div className="flex gap-8">
-          <StudioGrid studios={studioList} />
-
-          {/* Anomaly feed sidebar */}
-          <div className="w-80 flex-shrink-0">
-            <div className="sticky top-4">
-              {/* Status legend */}
-              <div className="mb-4 rounded-xl border p-4"
-                style={{ borderColor: "#C8D8EE", background: "#FFFFFF" }}>
-                <p className="text-xs font-medium mb-3" style={{ color: "#4A638D" }}>Studio Status</p>
-                <div className="flex flex-col gap-2">
-                  {(["healthy", "at-risk", "new", "pre-launch"] as StudioStatus[]).map((s) => (
-                    <div key={s} className="flex items-center justify-between">
-                      <StatusBadge status={s} size="sm" />
-                      <span className="text-xs" style={{ color: "#6B7280" }}>
-                        {studios.filter((st) => st.status === s).length}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mb-4">
-                <Link href="/alerts" className="text-xs font-bold tracking-widest uppercase transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>
-                  Network Alerts →
-                </Link>
-                {anomalies.length > 0 && (
-                  <span className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: "#C8D8EE", color: "#4A638D" }}>
-                    {anomalies.length} active
-                  </span>
-                )}
-              </div>
-              <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 220px)", paddingTop: "4px" }}>
-                <AnomalyFeed anomalies={anomalyList} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Body */}
+      <HubContent />
     </div>
   );
 }

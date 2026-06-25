@@ -54,6 +54,7 @@ https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
   - [Weekly Network Digest](#weekly-network-digest)
   - [Full-Text Search (⌘K)](#full-text-search-k)
   - [AI Intelligence Layer](#ai-intelligence-layer)
+  - [Studio Knowledge Hub](#studio-knowledge-hub)
 - [Architecture](#architecture)
 - [Data Model](#data-model)
 - [Tech Stack](#tech-stack)
@@ -209,6 +210,16 @@ After a rule-based scan generates fresh alerts, a "Scan Network" button triggers
 
 **AI Executive Summary** (Digest page → Generate Summary)
 On-demand executive briefing grounded in the digest's weekly KPI payload: member counts, revenue, occupancy, at-risk studios, and alert summaries. Streams token-by-token with a blinking cursor; includes attribution label and date.
+
+### Studio Knowledge Hub
+A `/hub` page serving as the internal content library for franchise operators and studio staff — accessible from the network overview via the **HUB →** pill in the stat bar.
+
+- **Video banner** — same full-bleed banner video and stat bar as the network overview, with live network KPIs (total studios, active members, occupancy, revenue, at-risk count, open anomalies) so operators always have network context visible
+- **Category sidebar** — six content categories (Announcements, Operations Manual, Training & Development, Brand Standards, HR & Policies, Resources & Templates), each with a doc count and a green "New" badge when new items are present; active category highlighted with blue accent
+- **Document cards** — each doc shows title, status badge (Pinned / New / Updated), description, author, date, read time, and tag chips; cards lift on hover with a blue border and shadow
+- **In-category search** — debounced search input filters docs by title, description, or tag within the active category; empty-state message when no results match
+- **Server-rendered** — the page is a React Server Component that fetches live network data from the database for the stat bar, while the interactive sidebar and search are isolated in a client component (`HubContent.tsx`)
+- **← Network pill** — matching pill button navigates back to the franchise intelligence overview
 
 Both endpoints share the same SSE buffer flush pattern:
 ```
@@ -386,6 +397,9 @@ dashboard/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx           network overview (home)
+│   │   ├── hub/               studio knowledge hub
+│   │   │   ├── page.tsx       server component — stat bar + banner + layout
+│   │   │   └── HubContent.tsx client component — sidebar, search, doc cards
 │   │   ├── alerts/            network-wide alert center
 │   │   ├── churn/             network-wide retention intelligence
 │   │   ├── digest/            weekly network digest (printable)
