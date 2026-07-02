@@ -95,9 +95,6 @@ export function StudioCard({ studio }: Props) {
           <p className="text-xs" style={{ color: "#9CA3AF" }}>No data yet</p>
         )}
 
-        <p className="text-xs mt-auto pt-3 border-t truncate" style={{ borderColor: "#E4EDF8", color: "#9CA3AF" }}>
-          {studio.franchiseeName}
-        </p>
       </div>
     </Link>
   );

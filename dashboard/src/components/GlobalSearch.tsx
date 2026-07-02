@@ -27,7 +27,7 @@ export function GlobalSearch() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
-  // Cmd+K / Ctrl+K to open
+  // Cmd+K / Ctrl+K to open, plus custom event from SearchButton
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -36,8 +36,13 @@ export function GlobalSearch() {
       }
       if (e.key === "Escape") setOpen(false);
     }
+    function onCustom() { setOpen(true); }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("jetset:search", onCustom);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("jetset:search", onCustom);
+    };
   }, []);
 
   useEffect(() => {

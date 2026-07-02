@@ -305,9 +305,9 @@ function LeadCard({ lead, onAdvance, onBack, isPending, onToggleCheck }: {
         </div>
 
         {/* Name + location */}
-        <p className="text-sm font-semibold leading-snug" style={{ color: "#1F2937" }}>{lead.franchiseeName}</p>
+        <p className="text-sm font-semibold leading-snug" style={{ color: "#1F2937" }}>{lead.market}{lead.state ? `, ${lead.state}` : ""}</p>
         <p className="text-xs mt-0.5 mb-2.5" style={{ color: "#6B7280" }}>
-          {lead.market}{lead.state ? `, ${lead.state}` : ""}
+          {lead.assignedTo}
           <span style={{ color: "#D1DBE8" }}> · </span>
           <span className="capitalize">{lead.territoryType}</span>
         </p>
@@ -574,8 +574,8 @@ export function PipelineBoard({ leads: initial }: { leads: Lead[] }) {
                 style={{ background: "#F0FDF4", borderColor: "#BBF7D0" }}>
                 <span style={{ color: "#16A34A" }}>✓</span>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium truncate" style={{ color: "#1F2937" }}>{lead.franchiseeName}</p>
-                  <p className="text-xs truncate" style={{ color: "#6B7280" }}>{lead.market}{lead.state ? `, ${lead.state}` : ""}</p>
+                  <p className="text-xs font-medium truncate" style={{ color: "#1F2937" }}>{lead.market}{lead.state ? `, ${lead.state}` : ""}</p>
+                  <p className="text-xs truncate" style={{ color: "#6B7280" }}>{lead.assignedTo}</p>
                 </div>
               </div>
             ))}

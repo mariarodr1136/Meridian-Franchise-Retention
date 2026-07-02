@@ -31,9 +31,10 @@ model Studio {
   reviews        Review[]
   classMetrics   ClassMetric[]
   operations     StudioOperations?
-  salesRecords   SalesRecord[]
-  inventoryItems InventoryItem[]
-  createdAt      DateTime          @default(now())
+  salesRecords        SalesRecord[]
+  inventoryItems      InventoryItem[]
+  maintenanceItems    MaintenanceItem[]
+  createdAt           DateTime          @default(now())
 }
 
 model StudioOperations {
@@ -153,6 +154,22 @@ model Anomaly {
   severity    String   @default("medium")
   category    String
   resolved    Boolean  @default(false)
+}
+
+model MaintenanceItem {
+  id          String    @id @default(cuid())
+  studioId    String
+  studio      Studio    @relation(fields: [studioId], references: [id])
+  reportedAt  DateTime  @default(now())
+  category    String    // "reformer" | "mirror" | "sound" | "facility" | "straps" | "springs"
+  equipment   String?   // "Reformer #4", "Mirror – East Wall", "Bluetooth Speaker"
+  description String
+  priority    String    @default("medium") // "urgent" | "medium" | "low"
+  status      String    @default("open")   // "open" | "resolved"
+  resolvedAt  DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model FranchiseLead {

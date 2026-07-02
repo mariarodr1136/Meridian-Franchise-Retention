@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SentimentTrendChart } from "./SentimentTrendChart";
 import type { Review } from "@/types";
 
 const SOURCE_LABEL: Record<string, string> = { google: "Google", classpass: "ClassPass" };
@@ -196,6 +197,9 @@ export function ReviewsPageContent({ reviews }: Props) {
 
   return (
     <div>
+      {/* Sentiment trend chart */}
+      <SentimentTrendChart reviews={reviews} />
+
       {/* Sort control */}
       <div className="flex items-center justify-between mb-6">
         <p className="text-xs font-bold tracking-widest uppercase" style={{ color: "#4A638D" }}>

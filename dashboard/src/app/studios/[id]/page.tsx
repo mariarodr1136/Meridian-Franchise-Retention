@@ -12,15 +12,17 @@ import { ReviewsScroll } from "@/components/ReviewsScroll";
 import { generateStudioChurn } from "@/lib/churn";
 import { formatPercent, formatNumber, formatCurrency, trendDirection, trendLabel } from "@/lib/utils";
 import { MetricBubble } from "@/components/MetricBubble";
+import { MaintenanceFeed } from "@/components/MaintenanceFeed";
 import type { StudioStatus, StudioMetric, Anomaly, Review } from "@/types";
 
 async function getStudio(id: string) {
   return db.studio.findUnique({
     where: { id },
     include: {
-      metrics:   { orderBy: { weekOf: "desc" } },
-      anomalies: { where: { resolved: false }, orderBy: { generatedAt: "desc" } },
-      reviews:   { orderBy: { reviewDate: "desc" }, take: 20 },
+      metrics:          { orderBy: { weekOf: "desc" } },
+      anomalies:        { where: { resolved: false }, orderBy: { generatedAt: "desc" } },
+      reviews:          { orderBy: { reviewDate: "desc" }, take: 20 },
+      maintenanceItems: { orderBy: [{ status: "asc" }, { reportedAt: "desc" }] },
     },
   });
 }
@@ -64,6 +66,19 @@ export default async function StudioPage({
     severity: a.severity as "high" | "medium" | "low",
     category: a.category,
     resolved: a.resolved,
+  }));
+
+  const maintenanceItems = studio.maintenanceItems.map((m) => ({
+    id:          m.id,
+    studioId:    m.studioId,
+    reportedAt:  m.reportedAt.toISOString(),
+    category:    m.category,
+    equipment:   m.equipment,
+    description: m.description,
+    priority:    m.priority,
+    status:      m.status,
+    resolvedAt:  m.resolvedAt?.toISOString() ?? null,
+    notes:       m.notes,
   }));
 
   const current     = metrics[0];
@@ -137,10 +152,9 @@ export default async function StudioPage({
               {studio.country !== "US" ? ` · ${studio.country}` : ""}
               {" · "}<span style={{ color: "#4A638D" }}>{studio.region}</span>
             </p>
-            <p className="text-xs" style={{ color: "#4A638D" }}>
-              Franchisee: {studio.franchiseeName}
-              {openedLabel && <> · Opened {openedLabel}</>}
-            </p>
+            {openedLabel && (
+              <p className="text-xs" style={{ color: "#4A638D" }}>Opened {openedLabel}</p>
+            )}
             {studio.address && <p className="text-xs" style={{ color: "#6B7280" }}>{studio.address}</p>}
             {studio.phone   && <p className="text-xs" style={{ color: "#6B7280" }}>{studio.phone}</p>}
           </div>
@@ -232,7 +246,10 @@ export default async function StudioPage({
             {/* ACTIVE ALERTS */}
             {anomalies.length > 0 && (
               <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
-                <Link href="/alerts" className="text-xs font-bold tracking-widest uppercase mb-4 inline-block transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>Active Alerts →</Link>
+                <div className="flex items-center gap-2 mb-4">
+                  <Link href="/alerts" className="text-xs font-bold tracking-widest uppercase transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>Active Alerts →</Link>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#DC2626", color: "#fff" }}>{anomalies.length}</span>
+                </div>
                 <AnomalyFeed anomalies={anomalies} />
               </div>
             )}
@@ -241,6 +258,14 @@ export default async function StudioPage({
             {reviews.length > 0 && (
               <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
                 <ReviewsScroll reviews={reviews} studioId={studio.id} studioName={studio.name} />
+              </div>
+            )}
+
+            {/* MAINTENANCE LOG */}
+            {!isPreLaunch && (
+              <div className="rounded-xl border p-5" style={{ background: "#fff", borderColor: "#C8D8EE" }}>
+                <Link href={`/studios/${studio.id}/maintenance`} className="text-xs font-bold tracking-widest uppercase mb-4 inline-block transition-opacity hover:opacity-70" style={{ color: "#4A638D" }}>Maintenance Log →</Link>
+                <MaintenanceFeed studioId={studio.id} items={maintenanceItems} />
               </div>
             )}
 

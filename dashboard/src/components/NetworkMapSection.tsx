@@ -8,13 +8,27 @@ import type { StudioWithLatestMetric } from "@/types";
 const NetworkMap = dynamic(() => import("./NetworkMap").then((m) => m.NetworkMap), { ssr: false });
 
 const NAV_LINKS = [
-  { href: "/digest",   label: "Weekly Digest" },
-  { href: "/pipeline", label: "Franchise Pipeline" },
-  { href: "/churn",    label: "Retention AI" },
+  { href: "/digest",      label: "Weekly Digest" },
+  { href: "/pipeline",    label: "Franchise Pipeline" },
+  { href: "/churn",       label: "Retention AI" },
+  { href: "/compare",     label: "Benchmarking" },
+  { href: "/instructors", label: "Instructor IP" },
+  { href: "/hub",         label: "Knowledge Hub" },
 ];
+
+const PILL = "text-[13px] font-semibold px-4 py-2 rounded-lg whitespace-nowrap transition-all cursor-pointer";
 
 export function NetworkMapSection({ studios }: { studios: StudioWithLatestMetric[] }) {
   const [open, setOpen] = useState(true);
+
+  function onEnter(e: React.MouseEvent<HTMLElement>) {
+    (e.currentTarget as HTMLElement).style.background = "#4A638D";
+    (e.currentTarget as HTMLElement).style.color = "#fff";
+  }
+  function onLeave(e: React.MouseEvent<HTMLElement>) {
+    (e.currentTarget as HTMLElement).style.background = "transparent";
+    (e.currentTarget as HTMLElement).style.color = "#4A638D";
+  }
 
   return (
     <div className="mb-8">
@@ -37,21 +51,49 @@ export function NetworkMapSection({ studios }: { studios: StudioWithLatestMetric
           </span>
         </button>
 
-        {/* Page nav links */}
-        <div className="flex items-center gap-1">
-          {NAV_LINKS.map(({ href, label }, i) => (
-            <span key={href} className="flex items-center gap-1">
-              {i > 0 && <span className="text-xs" style={{ color: "#C8D8EE" }}>·</span>}
-              <Link
-                href={href}
-                className="text-sm font-medium transition-opacity hover:opacity-70"
-                style={{ color: "#4A638D" }}
-              >
-                {label} →
-              </Link>
-            </span>
+        {/* Nav bar + search */}
+        <nav
+          className="flex items-center gap-1 rounded-xl p-1"
+          style={{ background: "#fff", border: "1.5px solid #C8D8EE" }}
+        >
+          {NAV_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={PILL}
+              style={{ color: "#4A638D" }}
+              onMouseEnter={onEnter}
+              onMouseLeave={onLeave}
+            >
+              {label}
+            </Link>
           ))}
-        </div>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 20, background: "#C8D8EE", flexShrink: 0, margin: "0 4px" }} />
+
+          {/* Search trigger */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("jetset:search"))}
+            className={`${PILL} flex items-center gap-2`}
+            style={{ color: "#4A638D" }}
+            onMouseEnter={onEnter}
+            onMouseLeave={onLeave}
+            aria-label="Search"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M10.5 10.5l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <span>Search</span>
+            <kbd
+              className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+              style={{ background: "#EEF3FB", border: "1px solid #C8D8EE", color: "#9CA3AF", lineHeight: 1.4 }}
+            >
+              ⌘K
+            </kbd>
+          </button>
+        </nav>
       </div>
 
       {open && <NetworkMap studios={studios} />}

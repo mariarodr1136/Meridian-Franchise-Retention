@@ -10,8 +10,9 @@ const ALL_PAGES = [
   { id: "retention",  label: "Retention AI" },
   { id: "sales",      label: "Sales"       },
   { id: "operations", label: "Operations"  },
-  { id: "inventory",  label: "Inventory"   },
-  { id: "reviews",    label: "Reviews"     },
+  { id: "inventory",    label: "Inventory"    },
+  { id: "maintenance", label: "Maintenance"  },
+  { id: "reviews",     label: "Reviews"      },
   { id: "settings",   label: "Settings"    },
 ] as const;
 
@@ -34,6 +35,7 @@ export function StudioSidebar({ studioId, studioStatus }: Props) {
     if (pathname.endsWith("/operations")) return "operations";
     if (pathname.endsWith("/inventory"))  return "inventory";
     if (pathname.endsWith("/retention"))  return "retention";
+    if (pathname.endsWith("/maintenance")) return "maintenance";
     if (pathname.endsWith("/reviews"))    return "reviews";
     if (pathname.endsWith("/settings"))   return "settings";
     return "overview";

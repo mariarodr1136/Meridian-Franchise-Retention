@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { generateStudioChurn } from "@/lib/churn";
 import { RetentionPageContent } from "@/components/RetentionPageContent";
+import { CohortRetentionChart } from "@/components/CohortRetentionChart";
 import { StudioSidebar } from "@/components/StudioSidebar";
 import type { StudioStatus } from "@/types";
 
@@ -18,6 +19,7 @@ export default async function RetentionPage({
     where: { id },
     select: {
       id: true, name: true, city: true, state: true, country: true, status: true,
+      openedAt: true,
       metrics: { orderBy: { weekOf: "desc" }, take: 1 },
     },
   });
@@ -72,7 +74,12 @@ export default async function RetentionPage({
 
         <div className="flex gap-8">
           <StudioSidebar studioId={id} studioStatus={studio.status} />
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col gap-6">
+            <CohortRetentionChart
+              studioId={studio.id}
+              weeklyChurnRate={weeklyChurnRate}
+              openedAt={studio.openedAt?.toISOString() ?? null}
+            />
             <RetentionPageContent data={data} />
           </div>
         </div>
