@@ -1,6 +1,5 @@
-import Image from "next/image";
-import Link from "next/link";
 import { db } from "@/lib/db";
+import { NetworkPageHero } from "@/components/NetworkPageHero";
 import { DigestClient } from "@/components/DigestClient";
 import { DigestSections } from "@/components/DigestSections";
 import { DigestAISummary } from "@/components/DigestAISummary";
@@ -54,21 +53,9 @@ export default async function DigestPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
-      {/* Screen-only header */}
-      <header className="sticky top-0 z-40 w-full print:hidden" style={{ background: "#4A638D" }}>
-        <div className="max-w-[960px] mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/">
-            <Image src="/jetset-logo-transparent.png" alt="JetSet Modern Pilates" width={130} height={68} priority className="object-contain" />
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-white">Weekly Network Digest</span>
-            <span style={{ color: "rgba(255,255,255,0.3)" }}>|</span>
-            <Link href="/" className="text-sm font-medium text-white transition-opacity hover:opacity-70">← Network</Link>
-          </div>
-        </div>
-      </header>
+      <NetworkPageHero title="Weekly Digest" className="print:hidden" />
 
-      <div className="max-w-[960px] mx-auto px-6 py-8">
+      <div className="max-w-[960px] mx-auto px-6 pt-4 pb-8">
         {/* Print button (screen only) */}
         <div className="flex items-center justify-between mb-6 print:hidden">
           <div>

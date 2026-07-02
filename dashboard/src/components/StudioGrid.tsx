@@ -28,7 +28,9 @@ interface Props {
 
 export function StudioGrid({ studios }: Props) {
   const [query, setQuery]         = useState("");
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(studios.map((s) => s.state ?? "Other"))
+  );
   const [tab, setTab]             = useState<"open" | "coming-soon">("open");
   const [statusFilter, setStatusFilter] = useState<StudioStatus | "all">("all");
   const [hoveredTab, setHoveredTab] = useState<"open" | "coming-soon" | null>(null);

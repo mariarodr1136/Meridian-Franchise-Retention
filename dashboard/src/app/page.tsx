@@ -125,10 +125,10 @@ export default async function DashboardPage() {
 
         {/* Franchise Intelligence title */}
         <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: "88px" }}>
-          <h1 className="text-white uppercase"
+          <h1 className="text-white uppercase text-center px-4"
             style={{
               fontFamily: "var(--font-montserrat), Montserrat, sans-serif",
-              fontSize: "58.64px",
+              fontSize: "clamp(28px, 5vw, 58.64px)",
               fontWeight: 700,
               letterSpacing: "0.05em",
             }}>
@@ -136,9 +136,9 @@ export default async function DashboardPage() {
           </h1>
         </div>
 
-        {/* Stat bar — logo left · stats center · Retention AI right */}
+        {/* Stat bar — logo left · stats center · actions right */}
         <div className="absolute top-0 left-0 right-0" style={{ background: "#4A638D" }}>
-          <div className="max-w-[1400px] mx-auto px-6 flex items-center">
+          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 flex items-center">
             {/* Logo */}
             <div className="flex-none">
               <Image
@@ -151,48 +151,42 @@ export default async function DashboardPage() {
               />
             </div>
 
-            {/* Stats centered */}
-            <div className="flex flex-1 items-center justify-center">
-              {[
-                { label: "Total Studios",     value: String(studios.length), sub: `${openStudios.length} open`, wow: null },
-                { label: "Active Members",    value: formatNumber(totalMembers), wow: delta(totalMembers, prevMembers) },
-                { label: "Network Occupancy", value: formatPercent(avgOccupancy), wow: delta(avgOccupancy, prevOccupancy) },
-                { label: "Weekly Revenue",    value: formatCurrency(totalRevenue), wow: delta(totalRevenue, prevRevenue) },
-                { label: "At-Risk Studios",   value: String(atRiskCount), wow: null },
-                { label: "Open Anomalies",    value: String(anomalies.length), wow: null },
-              ].map((stat, i, arr) => (
-                <div key={stat.label} className="flex items-center">
-                  <NetworkStat label={stat.label} value={stat.value} sub={stat.sub} wow={stat.wow} />
-                  {i < arr.length - 1 && (
-                    <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
-                  )}
-                </div>
-              ))}
+            {/* Stats — horizontally scrollable on small screens */}
+            <div className="flex flex-1 items-center justify-center overflow-x-auto">
+              <div className="flex items-center">
+                {[
+                  { label: "Total Studios",     value: String(studios.length), sub: `${openStudios.length} open`, wow: null },
+                  { label: "Active Members",    value: formatNumber(totalMembers), wow: delta(totalMembers, prevMembers) },
+                  { label: "Network Occupancy", value: formatPercent(avgOccupancy), wow: delta(avgOccupancy, prevOccupancy) },
+                  { label: "Weekly Revenue",    value: formatCurrency(totalRevenue), wow: delta(totalRevenue, prevRevenue) },
+                  { label: "At-Risk Studios",   value: String(atRiskCount), wow: null },
+                  { label: "Open Anomalies",    value: String(anomalies.length), wow: null },
+                ].map((stat, i, arr) => (
+                  <div key={stat.label} className="flex items-center">
+                    <NetworkStat label={stat.label} value={stat.value} sub={stat.sub} wow={stat.wow} />
+                    {i < arr.length - 1 && (
+                      <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Knowledge Hub link */}
-            <div className="flex-none flex justify-end" style={{ width: 160 }}>
-              <Link
-                href="/hub"
-                className="flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all hover:brightness-95"
-                style={{ background: "#F0F5FB", color: "#4A638D", border: "1.5px solid #4A638D" }}
-              >
-                HUB →
-              </Link>
-            </div>
+            {/* Right spacer — matches logo width so stats center against full width */}
+            <div className="flex-none" style={{ width: 130 }} />
 
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="max-w-[1400px] mx-auto px-6 py-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 pb-8">
         <NetworkMapSection studios={studioList} />
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           <StudioGrid studios={studioList} />
 
           {/* Anomaly feed sidebar */}
-          <div className="w-80 flex-shrink-0">
+          <div className="w-full lg:w-80 flex-shrink-0">
             <div className="sticky top-4">
               {/* Status legend */}
               <div className="mb-4 rounded-xl border p-4"

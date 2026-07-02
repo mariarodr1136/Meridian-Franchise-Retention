@@ -26,74 +26,151 @@ const CATEGORIES: Category[] = [
   {
     id: "announcements",
     label: "Announcements",
-    description: "Latest updates from JETSET HQ — promotions, network changes, and important notices.",
+    description: "Top-down updates from Premier Holdings leadership and JetSet HQ — rollouts, directives, and portfolio-wide decisions.",
     docs: [
       {
         id: "ann-1",
-        title: "Summer Surge Campaign — All Studios",
-        description: "HQ is launching a network-wide membership push for July–August. All studios should display the Summer Surge signage by June 30. Digital assets are available in Resources.",
-        date: "Jun 20, 2026",
-        author: "HQ Marketing",
+        title: "Pro50 Classes Rolling Out Across All Premier Holdings Studios",
+        description: "JetSet HQ has greenlighted the Pro50 format and Premier Holdings will be among the first franchisee groups to launch. Florida studios go first in August — Sunset Harbour, West Boca, and West Palm Beach are confirmed for the pilot week. NJ studios follow in September. Instructor training is mandatory before launch; schedule is in Training & Development. Reach out to Priya with any scheduling conflicts.",
+        date: "Jun 27, 2026",
+        author: "Marcus Chen",
         status: "pinned",
-        readTime: "3 min",
-        tags: ["Campaign", "Marketing"],
+        readTime: "4 min",
+        tags: ["Pro50", "Class Format", "All Studios"],
       },
       {
         id: "ann-2",
-        title: "New Studio Opening — Nashville West End (Jul 12)",
-        description: "We're proud to welcome our 47th studio location. Franchisees should coordinate with the Nashville team on sub requests and equipment transfers in the weeks leading up to opening.",
-        date: "Jun 18, 2026",
-        author: "HQ Operations",
+        title: "White Springs Upgrade — All Reformers, Q3 Rollout",
+        description: "Per JetSet HQ directive, all studios must upgrade to the white spring set on every reformer by end of Q3. Budget has been approved at the Premier Holdings level — no studio-level purchase needed. FL studio deliveries are scheduled for the week of July 14; NJ and SC the week of July 28. Your studio manager will receive a delivery confirmation email. Log any installation issues in the maintenance system immediately.",
+        date: "Jun 25, 2026",
+        author: "Priya Sharma",
         status: "new",
-        readTime: "2 min",
-        tags: ["Expansion", "Studios"],
+        readTime: "3 min",
+        tags: ["Equipment", "Reformers", "All Studios"],
       },
       {
         id: "ann-3",
-        title: "Mindbody Platform Update — June 28 Maintenance Window",
-        description: "Mindbody will be performing scheduled maintenance on June 28 from 2–5 AM ET. Booking integrations and the check-in kiosk may be unavailable during this window. Paper sign-in sheets are in your supply closet.",
-        date: "Jun 15, 2026",
-        author: "HQ Technology",
-        status: "updated",
+        title: "Nashville Midtown Pre-Sales at 118 Members — On Track",
+        description: "Midtown Nashville is tracking ahead of our pre-opening targets with 118 pre-sale members locked in. Marcus will be on-site for grand opening weekend. Studio managers in FL and NJ: if any of your members travel to Nashville, please brief them on the sister studio — we want to drive cross-location visits from day one.",
+        date: "Jun 22, 2026",
+        author: "Marcus Chen",
+        status: "new",
         readTime: "2 min",
-        tags: ["Technology", "Mindbody"],
+        tags: ["Nashville", "Pre-Sales", "Opening"],
       },
       {
         id: "ann-4",
-        title: "Q3 Franchise Calls — Schedule Released",
-        description: "The Q3 franchisee call schedule has been posted. All lead instructors and studio managers are expected to join the regional call for their market. Links and dial-in numbers are in the calendar invite sent June 10.",
-        date: "Jun 10, 2026",
-        author: "HQ Franchise Relations",
-        status: null,
-        readTime: "1 min",
-        tags: ["Franchise"],
+        title: "Montclair — Urgent Maintenance, All Managers Aware",
+        description: "Montclair currently has 5 open maintenance items including 3 urgent reformer issues. We are tracking this closely. All studio managers should use this as a reminder to log issues in the maintenance dashboard as they happen — do not let items stack. Vendors should be contacted within 48 hours of an urgent issue being logged. Montclair update expected by Friday.",
+        date: "Jun 20, 2026",
+        author: "Priya Sharma",
+        status: "pinned",
+        readTime: "2 min",
+        tags: ["Maintenance", "Montclair", "Action Required"],
       },
       {
         id: "ann-5",
-        title: "Updated Referral Bonus Structure — Effective July 1",
-        description: "Starting July 1, the member referral bonus increases from $20 to $30 credit. Update your front-desk scripts and any printed referral cards. The digital referral flow in Mindbody updates automatically.",
-        date: "Jun 5, 2026",
-        author: "HQ Sales",
+        title: "Summer Referral Credit — $40 for July & August, All Locations",
+        description: "We're running a network-wide referral push for summer. Effective July 1, the member referral credit at all Premier Holdings studios increases from $30 to $40. Front desk teams must update their scripts before July 1. Priya will send the updated language via email this week. The digital referral flow in Mindbody updates automatically — no action needed on the backend.",
+        date: "Jun 18, 2026",
+        author: "Priya Sharma",
         status: null,
         readTime: "2 min",
-        tags: ["Sales", "Members"],
+        tags: ["Referrals", "Members", "Summer"],
       },
       {
         id: "ann-6",
-        title: "Holiday Closures — July 4th Network Guidance",
-        description: "Studios may choose to close or run a reduced schedule on July 4. All closures and schedule changes must be entered in Mindbody by June 25 and communicated to members via the standard email template in Resources.",
-        date: "Jun 3, 2026",
-        author: "HQ Operations",
+        title: "Welcome Woodcliff Lake & Delray Beach — Both Now Fully Open",
+        description: "Both Woodcliff Lake (NJ) and Delray Beach (FL) are now fully operational and appearing in the network dashboard. Woodcliff Lake opened January 27 and Delray Beach opened April 10. Studio managers in neighboring locations — please connect with these teams as they ramp. Share what's working and help them avoid early mistakes. A strong opening month sets the tone for retention.",
+        date: "Jun 10, 2026",
+        author: "Marcus Chen",
+        status: null,
+        readTime: "2 min",
+        tags: ["New Studios", "Woodcliff Lake", "Delray Beach"],
+      },
+      {
+        id: "ann-7",
+        title: "July 4th — Reduced Schedules Must Be in Mindbody by June 28",
+        description: "Studios operating a reduced schedule on July 4 must have all changes entered in Mindbody by Saturday June 28. Members should receive an email notification no later than July 1. If you're closing for the full day, coordinate with your lead instructor on sub coverage for the following day — demand typically spikes on July 5.",
+        date: "Jun 8, 2026",
+        author: "Priya Sharma",
         status: null,
         readTime: "1 min",
-        tags: ["Operations"],
+        tags: ["Operations", "Holiday"],
+      },
+    ],
+  },
+  {
+    id: "studio-reports",
+    label: "Studio Reports",
+    description: "Updates from studio managers across the Premier Holdings portfolio — flagged issues, wins, and weekly notes to leadership.",
+    docs: [
+      {
+        id: "sr-1",
+        title: "Montclair — Balanced Body Vendor Confirmed for Friday Jul 3",
+        description: "Balanced Body technician will be on-site Friday July 3 to address reformers #2, #7, and #11. Estimated 4-hour window starting at 8am. All three reformers will be offline until cleared. Classes after 12pm should not be impacted. Parts have been pre-ordered. Will update Marcus and Priya after the appointment.",
+        date: "Jun 28, 2026",
+        author: "Montclair Studio Manager",
+        status: "new",
+        readTime: "2 min",
+        tags: ["Montclair", "Maintenance", "Reformers"],
+      },
+      {
+        id: "sr-2",
+        title: "Greenville West End — First Full Month Recap",
+        description: "June was our first full operational month in Greenville. We closed with 47 active members and an average class fill rate of 61%. First Pro Pilates class drew 9 out of 14 spots — strong for a new market. Member feedback has been overwhelmingly positive. One spring on reformer #6 is showing early wear and has been logged in maintenance. Overall: great start.",
+        date: "Jun 27, 2026",
+        author: "Greenville Studio Manager",
+        status: "new",
+        readTime: "3 min",
+        tags: ["Greenville", "Monthly Recap", "New Studio"],
+      },
+      {
+        id: "sr-3",
+        title: "West Palm Beach — 300 Active Members Milestone",
+        description: "West Palm hit 300 active members this week — a first for our portfolio. Average class fill rate is sitting at 87%. The 7am and 9am slots are consistently selling out 48 hours in advance. Considering adding a second early-morning slot on Tuesdays and Thursdays — wanted to flag before adjusting the schedule. Team morale is at an all-time high.",
+        date: "Jun 25, 2026",
+        author: "West Palm Beach Studio Manager",
+        status: null,
+        readTime: "2 min",
+        tags: ["West Palm Beach", "Milestone", "Members"],
+      },
+      {
+        id: "sr-4",
+        title: "Wayne — New Friday 6pm Slot Performing Well",
+        description: "Added a 6pm Friday class based on repeated member requests. First two weeks: 11/14 and 12/14 fill. Keeping it on the permanent schedule. Also wanted to flag that the sound system in studio A occasionally cuts out mid-class — it's logged in maintenance but wanted Priya and Marcus to know it's happened more than once.",
+        date: "Jun 24, 2026",
+        author: "Wayne Studio Manager",
+        status: null,
+        readTime: "2 min",
+        tags: ["Wayne", "Schedule", "Sound"],
+      },
+      {
+        id: "sr-5",
+        title: "Sunset Harbour — Mirror Replacement Complete, New Vendor Recommendation",
+        description: "The cracked mirror in studio B has been fully replaced. We used Miami Glass Co. instead of our usual vendor — they were faster (same-day measure, next-day install) and came in $220 cheaper. Recommending we add them to the preferred vendor list for all South Florida studios. Studio is back to full capacity.",
+        date: "Jun 22, 2026",
+        author: "Sunset Harbour Studio Manager",
+        status: null,
+        readTime: "2 min",
+        tags: ["Sunset Harbour", "Maintenance", "Resolved"],
+      },
+      {
+        id: "sr-6",
+        title: "Florham Park — Front Desk Opening, Two Candidates This Week",
+        description: "Our Monday/Wednesday afternoon front desk team member gave two weeks notice (last day July 5). We have two strong candidates lined up for interviews Wednesday and Thursday this week. In the interim, our lead instructor has agreed to cover the front for those shifts. Will keep Priya updated on the hire.",
+        date: "Jun 20, 2026",
+        author: "Florham Park Studio Manager",
+        status: null,
+        readTime: "2 min",
+        tags: ["Florham Park", "Staffing", "HR"],
       },
     ],
   },
   {
     id: "manuals",
     label: "Operations Manual",
-    description: "Standard operating procedures for running your studio — from opening through closing and everything in between.",
+    description: "Standard operating procedures shared across all Premier Holdings locations — from opening through closing and everything in between.",
     docs: [
       {
         id: "man-1",
@@ -459,7 +536,7 @@ export default function HubContent() {
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0">
         <div
-          className="sticky top-24 rounded-2xl overflow-hidden"
+          className="sticky top-6 rounded-2xl overflow-hidden"
           style={{ border: "1px solid #C8D8EE", background: "#fff", boxShadow: "0 1px 4px rgba(74,99,141,0.07)" }}
         >
           <div className="px-5 py-4" style={{ borderBottom: "1px solid #EEF3FB" }}>
@@ -504,8 +581,8 @@ export default function HubContent() {
           </nav>
 
           <div className="px-5 py-4" style={{ borderTop: "1px solid #EEF3FB" }}>
-            <p className="text-[10px]" style={{ color: "#9CA3AF" }}>Powered by JETSET HQ</p>
-            <p className="text-[10px] mt-0.5" style={{ color: "#C8D8EE" }}>Last updated Jun 20, 2026</p>
+            <p className="text-[10px]" style={{ color: "#9CA3AF" }}>Premier Holdings</p>
+            <p className="text-[10px] mt-0.5" style={{ color: "#C8D8EE" }}>Last updated Jun 28, 2026</p>
           </div>
         </div>
       </aside>
