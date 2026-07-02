@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { SubpageNav } from "./SubpageNav";
+
 
 function delta(current: number, prev: number) {
   if (!prev) return null;
@@ -65,6 +67,7 @@ export async function NetworkPageHero({ title, className }: Props) {
   ];
 
   return (
+    <>
     <div
       className={`relative overflow-hidden${className ? ` ${className}` : ""}`}
       style={{ width: "100vw", height: "280px" }}
@@ -130,5 +133,7 @@ export async function NetworkPageHero({ title, className }: Props) {
         </div>
       </div>
     </div>
+    <SubpageNav />
+    </>
   );
 }

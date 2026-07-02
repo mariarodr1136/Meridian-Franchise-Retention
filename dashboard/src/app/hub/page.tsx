@@ -3,6 +3,7 @@ import Image from "next/image";
 import { db } from "@/lib/db";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import HubContent from "./HubContent";
+import { SubpageNav } from "@/components/SubpageNav";
 
 async function getNetworkData() {
   const [studios, anomalies] = await Promise.all([
@@ -142,6 +143,7 @@ export default async function HubPage() {
           </div>
         </div>
       </div>
+      <SubpageNav />
 
       {/* Body */}
       <HubContent />

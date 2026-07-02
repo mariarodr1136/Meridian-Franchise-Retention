@@ -55,7 +55,7 @@ export default async function DigestPage() {
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
       <NetworkPageHero title="Weekly Digest" className="print:hidden" />
 
-      <div className="max-w-[960px] mx-auto px-6 pt-4 pb-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 pb-8">
         {/* Print button (screen only) */}
         <div className="flex items-center justify-between mb-6 print:hidden">
           <div>
