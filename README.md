@@ -46,9 +46,12 @@ https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
   - [Churn Prediction Model](#churn-prediction-model)
   - [Network-Wide Retention Intelligence](#network-wide-retention-intelligence)
   - [Per-Studio Retention](#per-studio-retention)
+  - [Studio Benchmarking](#studio-benchmarking)
+  - [Instructor IP Roster](#instructor-ip-roster)
   - [Weekly Schedule Intelligence](#weekly-schedule-intelligence)
   - [Instructor Analytics](#instructor-analytics)
   - [Reviews System](#reviews-system)
+  - [Maintenance Tracker](#maintenance-tracker)
   - [Studio Sub-Pages](#studio-sub-pages)
   - [Franchise Pipeline](#franchise-pipeline)
   - [Weekly Network Digest](#weekly-network-digest)
@@ -69,8 +72,9 @@ https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
 
 ### Network Command Center
 - **Live studio grid** — every studio at a glance, color-coded by status (healthy, at-risk, new, pre-launch), with week-over-week trend indicators on key KPIs
-- **Network-wide KPI bar** — real-time aggregates across all open studios: total active members, network avg occupancy, total weekly revenue, at-risk studio count
+- **Network-wide KPI bar** — real-time aggregates across all open studios: total active members, network avg occupancy, total weekly revenue, at-risk studio count, open anomaly count
 - **Alert feed** — active alerts surfaced across all studios with severity tagging; inline accordion expand with one-click resolve
+- **Themed navigation bar** — pill-style nav linking to all major network pages (Weekly Digest, Franchise Pipeline, Retention AI, Benchmarking, Instructor IP Roster, Knowledge Hub) with a built-in ⌘K search trigger; collapses alongside the network map toggle
 
 ### Network Map
 - **Interactive US map** — all studio locations plotted on a zoomable, pannable SVG map of the United States, powered by `react-simple-maps`
@@ -138,8 +142,25 @@ A standalone `/churn` dashboard that aggregates churn predictions across every s
 The per-studio `/retention` page shares the same churn model but scoped to one location:
 
 - **At-risk by membership tier** — breakdown panel showing high/medium risk counts and annual revenue at risk separately for Unlimited, 12-Class Monthly, 8-Class Monthly, and 4-Class Monthly members, each with a fill-rate bar
+- **Cohort retention chart** — multi-line decay curves for up to five quarterly cohorts (seeded deterministically per studio), showing month-by-month retention from M0 to M12 with 6-month and 12-month retention summaries
 - **Redesigned stat cards** — hover lift, colored top accent strips, and uppercase tracking labels consistent with the network churn page
 - **Paginated member table** — same 15-per-page layout as the network view, with feature importance bars on row expand
+
+### Studio Benchmarking
+A `/compare` page for side-by-side performance comparison of any two open studios in the network.
+
+- **Studio selectors** — two dropdowns (Studio A in navy, Studio B in gold) filtered to open locations only, pre-populated with the top two studios on load
+- **KPI comparison table** — latest-week values for Weekly Revenue, Active Members, Class Fill Rate, Weekly Churn, Rev/Member, and Member Booking Mix; winning side highlighted in green with an up arrow
+- **Trend charts** — four dual-line Recharts LineCharts (Weekly Revenue, Active Memberships, Class Fill Rate, Weekly Churn) plotted over up to 13 weeks with both studios overlaid; tooltip formatted per-metric (currency, percent, count)
+
+### Instructor IP Roster
+A `/instructors` page with a network-wide view of every instructor's performance, certification, and evaluation status.
+
+- **Network summary cards** — total instructor count, average performance score (color-coded by threshold), cert alert count (pending + expired), and overdue eval count
+- **Filterable roster table** — filter by role (instructor / studio lead / general manager / director of operations), certification status (certified / pending / expired), and studio; free-text search by name; sortable by performance score, name, studio, and last eval date
+- **Score tiers** — Elite (≥ 92, green), Strong (85–91, navy), Developing (75–84, gold), Needs Attention (< 75, orange)
+- **Cert badges** — Certified (green), Pending (amber), Expired (red) with color-coded visual indicators
+- **Eval overdue detection** — flags instructors with no eval in the last 180 days
 
 ### Weekly Schedule Intelligence
 - **7-day calendar grid** — live class schedule per studio, color-coded by historical fill rate (green ≥ 80%, amber 55–79%, red < 55%)
@@ -157,9 +178,19 @@ The per-studio `/retention` page shares the same churn model but scoped to one l
 
 ### Reviews System
 - **Source-separated full reviews page** — Google and ClassPass sections with aggregate ratings per source
+- **Sentiment trend chart** — ComposedChart at the top of the reviews page combining a bar chart (review count per month) with a line chart (average rating); rating dots color-coded by score tier (green ≥ 4.5, navy 4.0–4.4, gold 3.5–3.9, orange < 3.5); only shown when two or more months of data exist
 - **Inline expand** — every review card expands in place (no modal) via `max-height` CSS transitions, with chevron rotation and blue border accent on expand
 - **Horizontal scroll preview** — condensed review row on studio overview and classes pages with a "View all →" end card
 - **Hover interactions** — `translateY(-2px)` lift + blue border on hover across all review surfaces
+
+### Maintenance Tracker
+A per-studio `/maintenance` page for tracking open and resolved equipment and facility issues.
+
+- **Issue cards** — each maintenance item shows category (Equipment / HVAC / Plumbing / Electrical / Structural / Cleaning / Other), priority (urgent / high / medium / low), status (open / in-progress / resolved), description, reported date, and assigned contact
+- **Filter dropdowns** — filter by status and priority simultaneously; counts update in real time
+- **Summary stats** — open issue count, urgent count, and in-progress count surfaced as stat cards
+- **Status actions** — inline resolve and status-update controls per item
+- **Sidebar integration** — Maintenance added to the persistent studio sidebar nav alongside Classes, Sales, Operations, Inventory, Settings, and Reviews
 
 ### Studio Sub-Pages
 Every live studio has a full suite of operational pages accessible via the persistent sidebar:
@@ -266,9 +297,12 @@ flush() called on every chunk AND on stream done (catches partial final line)
          │    sales              │
          │    operations         │
          │    inventory          │
+         │    maintenance        │
          │  /api/anomalies/      │
          │    generate  ← scan   │
          │    brief     ← AI SSE │
+         │  /api/compare         │ ← benchmarking
+         │  /api/instructors     │ ← IP roster
          │  /api/search          │ ← FTS5 query
          │  /api/alerts/stream   │ ← SSE live feed
          │  /api/digest/summary  │ ← AI SSE
@@ -307,7 +341,7 @@ Data fetching and business logic live in server components and API routes. Clien
 ```
 Studio
   ├── StudioMetric[]      weekly KPIs (fill rate, memberships, revenue, churn, booking mix)
-  ├── Instructor[]        staff with roles, cert status, performance scores
+  ├── Instructor[]        staff with roles, cert status, performance scores, last eval date
   ├── Anomaly[]           generated alerts with severity + category
   ├── Review[]            Google & ClassPass reviews with ratings
   ├── ClassMetric[]       per-slot historical fill data (day × time × week)
@@ -317,6 +351,8 @@ Studio
   ├── InventoryItem[]     monthly stock levels with reorder thresholds
   │                         categories: retail (apparel, accessories, drinks) + supplies
   │                         (reformer parts, cleaning, disposables)
+  ├── MaintenanceItem[]   equipment and facility issues with category, priority, status,
+  │                         description, reported date, and assigned contact
   └── StudioOperations    lease, alarm, HVAC, utilities, contacts (1:1)
 
 FranchiseLead
@@ -360,6 +396,7 @@ npm install
 # 2. Generate Prisma client and seed the database
 npx prisma generate
 npx tsx prisma/seed.ts
+npx tsx prisma/seed-pipeline.ts   # franchise pipeline leads
 
 # 3. (Optional) Enable AI features
 #    Get a free API key at https://aistudio.google.com/apikey
@@ -392,8 +429,9 @@ Or trigger it from the Scan button on the network overview page.
 ```
 dashboard/
 ├── prisma/
-│   ├── schema.prisma          data model
-│   └── seed.ts                synthetic studio + metric generation
+│   ├── schema.prisma          data model (includes MaintenanceItem)
+│   ├── seed.ts                synthetic studio + metric generation
+│   └── seed-pipeline.ts       franchise pipeline lead seed
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx           network overview (home)
@@ -402,7 +440,15 @@ dashboard/
 │   │   │   └── HubContent.tsx client component — sidebar, search, doc cards
 │   │   ├── alerts/            network-wide alert center
 │   │   ├── churn/             network-wide retention intelligence
+│   │   │   ├── page.tsx       server wrapper — NetworkPageHero + layout
+│   │   │   └── ChurnContent.tsx  client component — predictions, member table, ROI calc
+│   │   ├── compare/           studio benchmarking
+│   │   │   ├── page.tsx       server component — studio data fetch
+│   │   │   └── CompareContent.tsx  client component — selectors, KPI table, trend charts
 │   │   ├── digest/            weekly network digest (printable)
+│   │   ├── instructors/       instructor IP roster
+│   │   │   ├── page.tsx       server component — network stats + roster data
+│   │   │   └── InstructorRoster.tsx  client component — filters, sort, score tiers
 │   │   ├── pipeline/          franchise pipeline kanban
 │   │   ├── api/
 │   │   │   ├── anomalies/
@@ -411,27 +457,36 @@ dashboard/
 │   │   │   ├── alerts/
 │   │   │   │   └── stream/    SSE live alert feed
 │   │   │   ├── churn/         weighted sigmoid churn predictions
+│   │   │   ├── compare/       side-by-side studio metrics endpoint
 │   │   │   ├── digest/
 │   │   │   │   └── summary/   Gemini streaming executive summary
+│   │   │   ├── instructors/   network-wide instructor list endpoint
 │   │   │   ├── pipeline/      franchise lead CRUD
 │   │   │   └── search/        FTS5 full-text search
 │   │   └── studios/[id]/
 │   │       ├── page.tsx       studio overview
 │   │       ├── classes/       schedule + analytics
+│   │       ├── maintenance/   equipment + facility issue tracker
 │   │       ├── sales/         revenue breakdown
 │   │       ├── operations/    facilities + contacts
 │   │       ├── inventory/     stock tracking
 │   │       ├── settings/      studio config
-│   │       ├── retention/     churn model
+│   │       ├── retention/     churn model + cohort retention chart
 │   │       └── reviews/
-│   │           ├── page.tsx   full reviews page
+│   │           ├── page.tsx   full reviews page + sentiment trend chart
 │   │           └── instructors/[iid]/  per-instructor reviews
 │   ├── components/
-│   │   ├── AlertsGrid.tsx     SSE-connected alert feed with LIVE badge
-│   │   ├── DigestAISummary.tsx  streaming AI executive summary
-│   │   ├── DigestSections.tsx printable digest client component
-│   │   ├── GlobalSearch.tsx   ⌘K command palette (FTS5-backed)
-│   │   └── RetentionPageContent.tsx  paginated member table + feature bars
+│   │   ├── AlertsGrid.tsx         SSE-connected alert feed with LIVE badge
+│   │   ├── CohortRetentionChart.tsx  quarterly cohort decay curves (Recharts)
+│   │   ├── DigestAISummary.tsx    streaming AI executive summary
+│   │   ├── DigestSections.tsx     printable digest client component
+│   │   ├── GlobalSearch.tsx       ⌘K command palette (FTS5-backed)
+│   │   ├── MaintenanceFeed.tsx    maintenance issue cards with filters
+│   │   ├── MaintenancePageContent.tsx  maintenance page layout + stats
+│   │   ├── NetworkMapSection.tsx  map toggle + themed pill nav bar + ⌘K trigger
+│   │   ├── NetworkPageHero.tsx    shared async hero (video + stat bar) for all nav pages
+│   │   ├── RetentionPageContent.tsx  paginated member table + feature bars
+│   │   └── SentimentTrendChart.tsx   monthly review count + avg rating ComposedChart
 │   ├── lib/
 │   │   ├── churn.ts           weighted sigmoid churn model
 │   │   ├── fts.ts             SQLite FTS5 index + search helpers
