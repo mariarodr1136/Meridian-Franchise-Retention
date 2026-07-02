@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
+  { href: "/",            label: "Network" },
   { href: "/digest",      label: "Weekly Digest" },
   { href: "/pipeline",    label: "Franchise Pipeline" },
   { href: "/churn",       label: "Retention AI" },
@@ -27,28 +28,8 @@ export function SubpageNav() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-      {/* Left label — mirrors "Network Map" toggle on the home page */}
-      <Link
-        href="/"
-        className="flex items-center gap-2 group cursor-pointer"
-      >
-        <svg
-          className="w-4 h-4"
-          style={{ color: "#4A638D" }}
-          fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
-        >
-          <path d="m15 18-6-6 6-6" />
-        </svg>
-        <span
-          className="text-sm font-bold tracking-widest uppercase transition-opacity group-hover:opacity-70"
-          style={{ color: "#4A638D" }}
-        >
-          Network
-        </span>
-      </Link>
-
-      {/* Nav bar + search — identical to home page */}
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-end">
+      {/* Nav bar + search */}
       <nav
         className="flex items-center gap-1 rounded-xl p-1"
         style={{ background: "#fff", border: "1.5px solid #C8D8EE" }}
