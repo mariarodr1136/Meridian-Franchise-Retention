@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { StudioWithLatestMetric } from "@/types";
 
 const NetworkMap = dynamic(() => import("./NetworkMap").then((m) => m.NetworkMap), { ssr: false });
 
 const NAV_LINKS = [
+  { href: "/",            label: "Network" },
   { href: "/digest",      label: "Weekly Digest" },
   { href: "/pipeline",    label: "Franchise Pipeline" },
   { href: "/churn",       label: "Retention AI" },
@@ -20,14 +22,15 @@ const PILL = "text-[13px] font-semibold px-4 py-2 rounded-lg whitespace-nowrap t
 
 export function NetworkMapSection({ studios }: { studios: StudioWithLatestMetric[] }) {
   const [open, setOpen] = useState(true);
+  const pathname = usePathname();
 
   function onEnter(e: React.MouseEvent<HTMLElement>) {
     (e.currentTarget as HTMLElement).style.background = "#4A638D";
     (e.currentTarget as HTMLElement).style.color = "#fff";
   }
-  function onLeave(e: React.MouseEvent<HTMLElement>) {
-    (e.currentTarget as HTMLElement).style.background = "transparent";
-    (e.currentTarget as HTMLElement).style.color = "#4A638D";
+  function onLeave(e: React.MouseEvent<HTMLElement>, isActive: boolean) {
+    (e.currentTarget as HTMLElement).style.background = isActive ? "#4A638D" : "transparent";
+    (e.currentTarget as HTMLElement).style.color = isActive ? "#fff" : "#4A638D";
   }
 
   return (
@@ -56,18 +59,24 @@ export function NetworkMapSection({ studios }: { studios: StudioWithLatestMetric
           className="flex items-center gap-1 rounded-xl p-1"
           style={{ background: "#fff", border: "1.5px solid #C8D8EE" }}
         >
-          {NAV_LINKS.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={PILL}
-              style={{ color: "#4A638D" }}
-              onMouseEnter={onEnter}
-              onMouseLeave={onLeave}
-            >
-              {label}
-            </Link>
-          ))}
+          {NAV_LINKS.map(({ href, label }) => {
+            const isActive = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={PILL}
+                style={{
+                  color: isActive ? "#fff" : "#4A638D",
+                  background: isActive ? "#4A638D" : "transparent",
+                }}
+                onMouseEnter={onEnter}
+                onMouseLeave={(e) => onLeave(e, isActive)}
+              >
+                {label}
+              </Link>
+            );
+          })}
 
           {/* Divider */}
           <div style={{ width: 1, height: 20, background: "#C8D8EE", flexShrink: 0, margin: "0 4px" }} />
@@ -78,7 +87,7 @@ export function NetworkMapSection({ studios }: { studios: StudioWithLatestMetric
             className={`${PILL} flex items-center gap-2`}
             style={{ color: "#4A638D" }}
             onMouseEnter={onEnter}
-            onMouseLeave={onLeave}
+            onMouseLeave={(e) => onLeave(e, false)}
             aria-label="Search"
           >
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
