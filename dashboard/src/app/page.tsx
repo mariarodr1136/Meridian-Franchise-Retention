@@ -180,7 +180,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Main content */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 pb-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-8">
         <NetworkMapSection studios={studioList} />
         <div className="flex flex-col lg:flex-row gap-8">
           <StudioGrid studios={studioList} />
