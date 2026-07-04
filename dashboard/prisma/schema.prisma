@@ -115,7 +115,11 @@ model Instructor {
   phone               String?
   lastEvalDate        DateTime?
   performanceScore    Float?
+  personKey           String?
+  reviews             Review[]
   createdAt           DateTime  @default(now())
+
+  @@index([personKey])
 }
 
 model ClassMetric {
@@ -134,15 +138,19 @@ model ClassMetric {
 }
 
 model Review {
-  id         String   @id @default(cuid())
-  studioId   String
-  studio     Studio   @relation(fields: [studioId], references: [id])
-  source     String
-  author     String
-  rating     Int
-  body       String
-  reviewDate DateTime
-  createdAt  DateTime @default(now())
+  id           String      @id @default(cuid())
+  studioId     String
+  studio       Studio      @relation(fields: [studioId], references: [id])
+  instructorId String?
+  instructor   Instructor? @relation(fields: [instructorId], references: [id], onDelete: SetNull)
+  source       String
+  author       String
+  rating       Int
+  body         String
+  reviewDate   DateTime
+  createdAt    DateTime    @default(now())
+
+  @@index([instructorId])
 }
 
 model Anomaly {
