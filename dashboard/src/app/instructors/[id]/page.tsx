@@ -1,8 +1,8 @@
-import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { InstructorReviewsContent } from "@/components/InstructorReviewsContent";
+import { NetworkPageHero } from "@/components/NetworkPageHero";
+import { BackButton } from "@/components/BackButton";
 import type { Review } from "@/types";
 import { assignStaffPhotos } from "@/lib/staffPhotos";
 
@@ -59,26 +59,10 @@ export default async function NetworkInstructorReviewsPage({
 
   return (
     <div className="min-h-screen" style={{ background: "#F0F5FB" }}>
-      <header className="sticky top-0 z-40 w-full" style={{ background: "#4A638D" }}>
-        <div className="max-w-[1340px] mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/">
-            <Image
-              src="/jetset-logo-transparent.png"
-              alt="JetSet Modern Pilates"
-              width={150} height={80} priority
-              className="object-contain transition-opacity hover:opacity-80"
-            />
-          </Link>
-          <Link
-            href="/instructors"
-            className="text-sm font-medium transition-opacity hover:opacity-70 text-white"
-          >
-            ← Instructor IP
-          </Link>
-        </div>
-      </header>
+      <NetworkPageHero title="Instructor IP Roster" />
 
-      <div className="max-w-[1340px] mx-auto px-6 py-8">
+      <div className="max-w-[1340px] mx-auto px-6 pt-4 pb-8">
+        <BackButton fallbackHref="/instructors" label="← All Instructors" />
         <InstructorReviewsContent
           instructorName={canonical.name}
           studioName={studioLabel}
