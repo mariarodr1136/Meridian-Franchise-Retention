@@ -6,7 +6,7 @@ import type { Review } from "@/types";
 
 const SOURCE_LABEL: Record<string, string> = { google: "Google", classpass: "ClassPass" };
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({ review, studioLabel }: { review: Review; studioLabel?: string }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div
@@ -75,6 +75,11 @@ function ReviewCard({ review }: { review: Review }) {
         <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold text-white" style={{ background: "#4A638D" }}>
           {SOURCE_LABEL[review.source]}
         </span>
+        {studioLabel && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold ml-1.5" style={{ background: "#EEF3FB", color: "#4A638D" }}>
+            {studioLabel}
+          </span>
+        )}
       </div>
       {!expanded && (
         <p className="text-[10px] font-semibold mt-3" style={{ color: "#4A638D" }}>Click to read full review →</p>
@@ -88,15 +93,22 @@ interface Props {
   studioName: string;
   reviews: Review[];
   photo?: string;
+  studioNameById?: Record<string, string>;
 }
 
-export function InstructorReviewsContent({ instructorName, studioName, reviews, photo }: Props) {
+export function InstructorReviewsContent({ instructorName, studioName, reviews, photo, studioNameById }: Props) {
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const avg = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0;
   const full = Math.floor(avg);
   const initials = instructorName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  const distinctStudioNames = studioNameById
+    ? [...new Set(reviews.map((r) => studioNameById[r.studioId]).filter(Boolean))]
+    : [];
+  const isMultiLocation = distinctStudioNames.length > 1;
+  const subtitle = isMultiLocation ? distinctStudioNames.join(" · ") : studioName;
 
   return (
     <div>
@@ -119,7 +131,7 @@ export function InstructorReviewsContent({ instructorName, studioName, reviews, 
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold" style={{ color: "#111827" }}>{instructorName}</h1>
-            <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{studioName}</p>
+            <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{subtitle}</p>
             {reviews.length > 0 && (
               <div className="flex items-center gap-2 mt-2">
                 <span style={{ color: "#C9A84C", fontSize: "16px" }}>
@@ -170,7 +182,7 @@ export function InstructorReviewsContent({ instructorName, studioName, reviews, 
           </p>
           <div className="grid grid-cols-2 gap-3">
             {reviews.map((r) => (
-              <ReviewCard key={r.id} review={r} />
+              <ReviewCard key={r.id} review={r} studioLabel={isMultiLocation ? studioNameById?.[r.studioId] : undefined} />
             ))}
           </div>
         </>

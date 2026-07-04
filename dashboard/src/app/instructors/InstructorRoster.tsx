@@ -2,42 +2,41 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const NAVY  = "#4A638D";
 const BORDER = "#C8D8EE";
 
 type CertStatus = "certified" | "pending" | "expired";
-type Role = "instructor" | "studio_lead" | "general_manager" | "director_of_operations";
 
 interface InstructorItem {
   id:                  string;
   name:                string;
-  role:                Role;
   certificationStatus: CertStatus;
   lastEvalDate:        string | null;
-  performanceScore:    number | null;
-  studio: {
+  avgRating:           number | null;
+  reviewCount:         number;
+  studios: {
     id:     string;
     name:   string;
     city:   string;
     state:  string | null;
-    status: string;
-  };
+  }[];
 }
 
-function scoreColor(score: number | null): string {
-  if (score == null) return "#9CA3AF";
-  if (score >= 92) return "#16a34a";
-  if (score >= 85) return "#4A638D";
-  if (score >= 75) return "#C9A84C";
+function starColor(avg: number | null): string {
+  if (avg == null) return "#9CA3AF";
+  if (avg >= 4.6)  return "#16a34a";
+  if (avg >= 4.25) return "#4A638D";
+  if (avg >= 3.75) return "#C9A84C";
   return "#EA580C";
 }
 
-function scoreLabel(score: number | null): string {
-  if (score == null) return "—";
-  if (score >= 92) return "Elite";
-  if (score >= 85) return "Strong";
-  if (score >= 75) return "Developing";
+function starLabel(avg: number | null): string {
+  if (avg == null) return "Not Yet Rated";
+  if (avg >= 4.6)  return "Elite";
+  if (avg >= 4.25) return "Strong";
+  if (avg >= 3.75) return "Developing";
   return "Needs Attn";
 }
 
@@ -58,14 +57,6 @@ function certBadge(status: CertStatus) {
   );
 }
 
-const ROLE_LABELS: Record<Role, string> = {
-  instructor:              "Instructor",
-  studio_lead:             "Studio Lead",
-  general_manager:         "General Manager",
-  director_of_operations:  "Director of Ops",
-};
-
-type FilterRole = "all" | Role;
 type SortKey = "score" | "name" | "studio" | "eval";
 
 interface Props {
@@ -73,7 +64,7 @@ interface Props {
 }
 
 export function InstructorRoster({ instructors }: Props) {
-  const [roleFilter, setRoleFilter]     = useState<FilterRole>("instructor");
+  const router = useRouter();
   const [certFilter, setCertFilter]     = useState<"all" | "certified" | "pending" | "expired">("all");
   const [studioFilter, setStudioFilter] = useState<string>("all");
   const [sort, setSort]                 = useState<SortKey>("score");
@@ -81,27 +72,27 @@ export function InstructorRoster({ instructors }: Props) {
 
   const studios = useMemo(() => {
     const set = new Map<string, string>();
-    for (const i of instructors) set.set(i.studio.id, `${i.studio.name} · ${i.studio.city}`);
+    for (const i of instructors) {
+      for (const s of i.studios) set.set(s.id, `${s.name} · ${s.city}`);
+    }
     return [...set.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [instructors]);
 
   const filtered = useMemo(() => {
     let list = instructors;
-    if (roleFilter !== "all")   list = list.filter((i) => i.role === roleFilter);
     if (certFilter !== "all")   list = list.filter((i) => i.certificationStatus === certFilter);
-    if (studioFilter !== "all") list = list.filter((i) => i.studio.id === studioFilter);
+    if (studioFilter !== "all") list = list.filter((i) => i.studios.some((s) => s.id === studioFilter));
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter((i) =>
         i.name.toLowerCase().includes(q) ||
-        i.studio.name.toLowerCase().includes(q) ||
-        i.studio.city.toLowerCase().includes(q)
+        i.studios.some((s) => s.name.toLowerCase().includes(q) || s.city.toLowerCase().includes(q))
       );
     }
     return [...list].sort((a, b) => {
-      if (sort === "score") return (b.performanceScore ?? -1) - (a.performanceScore ?? -1);
+      if (sort === "score") return (b.avgRating ?? -1) - (a.avgRating ?? -1);
       if (sort === "name")  return a.name.localeCompare(b.name);
-      if (sort === "studio") return a.studio.name.localeCompare(b.studio.name);
+      if (sort === "studio") return a.studios[0]?.name.localeCompare(b.studios[0]?.name ?? "") ?? 0;
       if (sort === "eval") {
         const da = a.lastEvalDate ? new Date(a.lastEvalDate).getTime() : 0;
         const db = b.lastEvalDate ? new Date(b.lastEvalDate).getTime() : 0;
@@ -109,7 +100,7 @@ export function InstructorRoster({ instructors }: Props) {
       }
       return 0;
     });
-  }, [instructors, roleFilter, certFilter, studioFilter, sort, query]);
+  }, [instructors, certFilter, studioFilter, sort, query]);
 
   const btnStyle = (active: boolean): React.CSSProperties => active
     ? { background: NAVY, color: "#fff", boxShadow: "0 1px 4px rgba(74,99,141,0.25)", borderRadius: 6, padding: "4px 12px", fontSize: 12, fontWeight: 600 }
@@ -120,15 +111,6 @@ export function InstructorRoster({ instructors }: Props) {
       {/* Filter bar */}
       <div className="rounded-xl border mb-4 px-5 py-4" style={{ background: "#fff", borderColor: BORDER }}>
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Role filter */}
-          <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F0F5FB", border: "1px solid #E2EBF5" }}>
-            {(["instructor", "studio_lead", "general_manager", "all"] as FilterRole[]).map((r) => (
-              <button key={r} onClick={() => setRoleFilter(r)} style={btnStyle(roleFilter === r)}>
-                {r === "all" ? "All Roles" : ROLE_LABELS[r as Role]}
-              </button>
-            ))}
-          </div>
-
           {/* Cert filter */}
           <div className="flex gap-1 rounded-lg p-1" style={{ background: "#F0F5FB", border: "1px solid #E2EBF5" }}>
             {(["all", "certified", "pending", "expired"] as const).map((c) => (
@@ -213,7 +195,8 @@ export function InstructorRoster({ instructors }: Props) {
             return (
               <div
                 key={inst.id}
-                className="grid grid-cols-12 gap-3 px-5 py-3.5 border-b items-center transition-colors hover:bg-[#F8FAFD]"
+                onClick={() => router.push(`/instructors/${inst.id}`)}
+                className="grid grid-cols-12 gap-3 px-5 py-3.5 border-b items-center transition-colors hover:bg-[#F8FAFD] cursor-pointer"
                 style={{ borderColor: "#EEF3FB" }}
               >
                 {/* Rank + Score */}
@@ -221,40 +204,52 @@ export function InstructorRoster({ instructors }: Props) {
                   <span className="text-[10px] w-5 text-center" style={{ color: "#D1D5DB" }}>
                     {idx + 1}
                   </span>
-                  {inst.performanceScore != null ? (
+                  {inst.avgRating != null ? (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-bold" style={{ color: scoreColor(inst.performanceScore) }}>
-                        {inst.performanceScore}
+                      <span className="text-sm font-bold" style={{ color: starColor(inst.avgRating) }}>
+                        {inst.avgRating.toFixed(1)}★
                       </span>
                       <span
                         className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden sm:inline"
-                        style={{ background: scoreColor(inst.performanceScore) + "1A", color: scoreColor(inst.performanceScore) }}
+                        style={{ background: starColor(inst.avgRating) + "1A", color: starColor(inst.avgRating) }}
                       >
-                        {scoreLabel(inst.performanceScore)}
+                        {starLabel(inst.avgRating)}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-sm" style={{ color: "#9CA3AF" }}>—</span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "#F3F4F6", color: "#9CA3AF" }}>
+                      Not Yet Rated
+                    </span>
                   )}
                 </div>
 
-                {/* Name + role */}
+                {/* Name + review count */}
                 <div className="col-span-3">
                   <p className="text-sm font-semibold" style={{ color: "#1F2937" }}>{inst.name}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: "#9CA3AF" }}>{ROLE_LABELS[inst.role]}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: "#9CA3AF" }}>
+                    {inst.reviewCount > 0 ? `${inst.reviewCount} review${inst.reviewCount !== 1 ? "s" : ""}` : "No reviews yet"}
+                  </p>
                 </div>
 
-                {/* Studio */}
+                {/* Studio(s) */}
                 <div className="col-span-3">
-                  <Link
-                    href={`/studios/${inst.studio.id}`}
-                    className="text-xs font-medium transition-opacity hover:opacity-70"
-                    style={{ color: NAVY }}
-                  >
-                    {inst.studio.name}
-                  </Link>
+                  <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                    {inst.studios.map((s) => (
+                      <Link
+                        key={s.id}
+                        href={`/studios/${s.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs font-medium transition-opacity hover:opacity-70"
+                        style={{ color: NAVY }}
+                      >
+                        {s.name}
+                      </Link>
+                    ))}
+                  </div>
                   <p className="text-[10px] mt-0.5" style={{ color: "#9CA3AF" }}>
-                    {inst.studio.city}{inst.studio.state ? `, ${inst.studio.state}` : ""}
+                    {inst.studios.length > 1
+                      ? `${inst.studios.length} locations`
+                      : `${inst.studios[0]?.city}${inst.studios[0]?.state ? `, ${inst.studios[0].state}` : ""}`}
                   </p>
                 </div>
 
@@ -289,10 +284,11 @@ export function InstructorRoster({ instructors }: Props) {
       {/* Legend */}
       <div className="flex items-center gap-4 mt-4 flex-wrap">
         {[
-          { label: "Elite (92+)",      color: "#16a34a" },
-          { label: "Strong (85–91)",   color: "#4A638D" },
-          { label: "Developing (75–84)", color: "#C9A84C" },
-          { label: "Needs Attn (<75)", color: "#EA580C" },
+          { label: "Elite (4.6★+)",            color: "#16a34a" },
+          { label: "Strong (4.25–4.59★)",       color: "#4A638D" },
+          { label: "Developing (3.75–4.24★)",   color: "#C9A84C" },
+          { label: "Needs Attn (<3.75★)",       color: "#EA580C" },
+          { label: "Not Yet Rated",             color: "#9CA3AF" },
         ].map(({ label, color }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />

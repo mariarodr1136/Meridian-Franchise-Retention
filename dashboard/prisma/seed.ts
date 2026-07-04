@@ -298,7 +298,6 @@ async function main() {
         studioId: id, name, role: "instructor",
         certificationStatus: expired ? "expired" : pending ? "pending" : "certified",
         lastEvalDate: expired ? new Date("2025-10-15") : pending ? null : new Date("2026-04-20"),
-        performanceScore: expired ? Math.floor(65 + Math.random() * 12) : pending ? null : Math.floor(80 + Math.random() * 16),
       });
     }
   }
@@ -312,6 +311,59 @@ async function main() {
   }
 
   await db.instructor.createMany({ data: instrData as any });
+
+  // ── INSTRUCTOR ID LOOKUPS (for linking reviews to specific instructors) ────
+  const seededInstructors = await db.instructor.findMany({
+    where: { role: "instructor" },
+    select: { id: true, studioId: true, name: true },
+  });
+  const idByStudioAndName = new Map<string, string>();
+  const studioInstructorIds: Record<string, string[]> = {};
+  for (const r of seededInstructors) {
+    idByStudioAndName.set(`${r.studioId}::${r.name}`, r.id);
+  }
+  for (const sd of studioDefs.filter(s => s.status !== "pre-launch")) {
+    const sid = byName[sd.name];
+    studioInstructorIds[sd.name] = seededInstructors.filter(r => r.studioId === sid).map(r => r.id);
+  }
+
+  function pickInstructorId(studioName: string): string | null {
+    const ids = studioInstructorIds[studioName];
+    if (!ids?.length) return null;
+    return ids[Math.floor(Math.random() * ids.length)];
+  }
+
+  // ── MULTI-LOCATION INSTRUCTOR ────────────────────────────────────────────────
+  // One instructor teaches at both Sunset Harbour and Edgewater (Miami Beach /
+  // Miami — same metro). Both rows share a personKey so the Instructor IP
+  // roster merges their reviews/score across the two locations.
+  {
+    const a = "Sunset Harbour", b = "Edgewater";
+    const namesAtA = studioInstructorNames[a];
+    const idsAtA = studioInstructorIds[a];
+    const studioIdB = byName[b];
+    if (namesAtA?.length && idsAtA?.length && studioIdB) {
+      const sourceName = namesAtA[0];
+      const sourceId = idsAtA[0];
+      const personKey = "multi-location-0";
+
+      await db.instructor.update({ where: { id: sourceId }, data: { personKey } });
+      const created = await db.instructor.create({
+        data: {
+          studioId: studioIdB,
+          name: sourceName,
+          role: "instructor",
+          certificationStatus: "certified",
+          lastEvalDate: new Date("2026-04-20"),
+          personKey,
+        },
+      });
+
+      studioInstructorIds[b]   = [...(studioInstructorIds[b] ?? []), created.id];
+      studioInstructorNames[b] = [...(studioInstructorNames[b] ?? []), sourceName];
+      idByStudioAndName.set(`${studioIdB}::${sourceName}`, created.id);
+    }
+  }
 
   // ── ANOMALIES ─────────────────────────────────────────────────────────────
 
@@ -412,29 +464,29 @@ async function main() {
       const picks = [0, 1, 2, 3, 4, (o % 3 === 0 ? 5 : o % 3 === 1 ? 6 : 7)].slice(0, 5 + (o % 2));
       picks.forEach((pi, i) => {
         const t = NEW_STUDIO[pi % NEW_STUDIO.length];
-        reviewData.push({ studioId: id, source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(8 + i * 12 + (o % 7)) });
+        reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(8 + i * 12 + (o % 7)) });
       });
       const four = FOUR_STAR[(o + 2) % FOUR_STAR.length];
-      reviewData.push({ studioId: id, source: "classpass", author: four.author, rating: 4, body: four.body, reviewDate: daysAgo(5 + (o % 8)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: "classpass", author: four.author, rating: 4, body: four.body, reviewDate: daysAgo(5 + (o % 8)) });
       const fourB = FOUR_STAR[(o + 5) % FOUR_STAR.length];
-      reviewData.push({ studioId: id, source: "google", author: fourB.author, rating: 4, body: fourB.body, reviewDate: daysAgo(20 + (o % 10)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: "google", author: fourB.author, rating: 4, body: fourB.body, reviewDate: daysAgo(20 + (o % 10)) });
 
     } else if (isAtRisk) {
       const fivePick = FIVE_STAR[(o + 3) % FIVE_STAR.length];
-      reviewData.push({ studioId: id, source: "google", author: fivePick.author, rating: 5, body: fivePick.body, reviewDate: daysAgo(90 + (o % 30)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: "google", author: fivePick.author, rating: 5, body: fivePick.body, reviewDate: daysAgo(90 + (o % 30)) });
       const fourPick = FOUR_STAR[(o + 1) % FOUR_STAR.length];
-      reviewData.push({ studioId: id, source: "classpass", author: fourPick.author, rating: 4, body: fourPick.body, reviewDate: daysAgo(60 + (o % 20)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: "classpass", author: fourPick.author, rating: 4, body: fourPick.body, reviewDate: daysAgo(60 + (o % 20)) });
       const threeA = THREE_STAR[o % THREE_STAR.length];
-      reviewData.push({ studioId: id, source: threeA.source, author: threeA.author, rating: 3, body: threeA.body, reviewDate: daysAgo(30 + (o % 15)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: threeA.source, author: threeA.author, rating: 3, body: threeA.body, reviewDate: daysAgo(30 + (o % 15)) });
       const threeB = THREE_STAR[(o + 2) % THREE_STAR.length];
-      reviewData.push({ studioId: id, source: threeB.source, author: threeB.author, rating: 3, body: threeB.body, reviewDate: daysAgo(18 + (o % 10)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: threeB.source, author: threeB.author, rating: 3, body: threeB.body, reviewDate: daysAgo(18 + (o % 10)) });
       const threeC = THREE_STAR[(o + 4) % THREE_STAR.length];
-      reviewData.push({ studioId: id, source: threeC.source, author: threeC.author, rating: 3, body: threeC.body, reviewDate: daysAgo(10 + (o % 8)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: threeC.source, author: threeC.author, rating: 3, body: threeC.body, reviewDate: daysAgo(10 + (o % 8)) });
       const twoA = TWO_STAR[o % TWO_STAR.length];
-      reviewData.push({ studioId: id, source: twoA.source, author: twoA.author, rating: 2, body: twoA.body, reviewDate: daysAgo(7 + (o % 6)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: twoA.source, author: twoA.author, rating: 2, body: twoA.body, reviewDate: daysAgo(7 + (o % 6)) });
       if (o % 2 === 0) {
         const twoB = TWO_STAR[(o + 1) % TWO_STAR.length];
-        reviewData.push({ studioId: id, source: twoB.source, author: twoB.author, rating: 2, body: twoB.body, reviewDate: daysAgo(3 + (o % 4)) });
+        reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: twoB.source, author: twoB.author, rating: 2, body: twoB.body, reviewDate: daysAgo(3 + (o % 4)) });
       }
 
     } else {
@@ -442,16 +494,16 @@ async function main() {
       const dateBases = [60, 42, 30, 20, 10, 3];
       fivePicks.forEach((pi, i) => {
         const t = FIVE_STAR[pi];
-        reviewData.push({ studioId: id, source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(dateBases[i] + (o % 8)) });
+        reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: t.source, author: t.author, rating: 5, body: t.body, reviewDate: daysAgo(dateBases[i] + (o % 8)) });
       });
       const fourA = FOUR_STAR[(o + o) % FOUR_STAR.length];
-      reviewData.push({ studioId: id, source: "google", author: fourA.author, rating: 4, body: fourA.body, reviewDate: daysAgo(35 + (o % 12)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: "google", author: fourA.author, rating: 4, body: fourA.body, reviewDate: daysAgo(35 + (o % 12)) });
       const fourB = FOUR_STAR[(o + 3) % FOUR_STAR.length];
-      reviewData.push({ studioId: id, source: "classpass", author: fourB.author, rating: 4, body: fourB.body, reviewDate: daysAgo(10 + (o % 9)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: "classpass", author: fourB.author, rating: 4, body: fourB.body, reviewDate: daysAgo(10 + (o % 9)) });
       const fourC = FOUR_STAR[(o + 6) % FOUR_STAR.length];
-      reviewData.push({ studioId: id, source: fourC.source, author: fourC.author, rating: 4, body: fourC.body, reviewDate: daysAgo(22 + (o % 7)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: fourC.source, author: fourC.author, rating: 4, body: fourC.body, reviewDate: daysAgo(22 + (o % 7)) });
       const three = THREE_STAR[o % THREE_STAR.length];
-      reviewData.push({ studioId: id, source: three.source, author: three.author, rating: 3, body: three.body, reviewDate: daysAgo(55 + (o % 20)) });
+      reviewData.push({ studioId: id, instructorId: pickInstructorId(sd.name), source: three.source, author: three.author, rating: 3, body: three.body, reviewDate: daysAgo(55 + (o % 20)) });
     }
   });
 
@@ -478,6 +530,7 @@ async function main() {
       const tpl = NAMED_TEMPLATES[(studioIdx + i * 3) % NAMED_TEMPLATES.length];
       reviewData.push({
         studioId: id,
+        instructorId: idByStudioAndName.get(`${id}::${names[i]}`) ?? pickInstructorId(sd.name),
         source: tpl.source,
         author: tpl.author,
         rating: tpl.rating,
