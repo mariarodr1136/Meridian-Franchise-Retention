@@ -28,7 +28,7 @@ export function SubpageNav() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-end">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-3 pb-2 flex items-center justify-center">
       {/* Nav bar + search */}
       <nav
         className="flex items-center gap-1 rounded-xl p-1"

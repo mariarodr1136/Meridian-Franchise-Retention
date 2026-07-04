@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
@@ -130,16 +129,8 @@ export default async function HubPage() {
               ))}
             </div>
 
-            {/* Right: back to network */}
-            <div className="flex-none flex justify-end" style={{ width: 160 }}>
-              <Link
-                href="/"
-                className="flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all hover:brightness-95"
-                style={{ background: "#F0F5FB", color: "#4A638D", border: "1.5px solid #4A638D" }}
-              >
-                ← Network
-              </Link>
-            </div>
+            {/* Right spacer — balances logo so stats center to full width */}
+            <div className="flex-none" style={{ width: 130 }} />
           </div>
         </div>
       </div>
