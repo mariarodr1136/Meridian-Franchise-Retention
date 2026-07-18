@@ -1,9 +1,4 @@
-# JETSET Pilates — Franchise Intelligence Dashboard
-
-A full-stack analytics platform for franchise headquarters to monitor, diagnose, and act on performance across an entire studio network — real-time KPIs, predictive churn scoring, automated alerts, and AI-generated briefings in a single interface.
-
-**Live demo:** https://jetset-franchise-intelligence.onrender.com/
-*(Hosted on Render's free tier — the backend may take 1–2 minutes to wake on first visit.)*
+# JETSET Pilates — Franchise Intelligence Dashboard 📊 🏢
 
 ![Next.js](https://img.shields.io/badge/Next.js-Framework-black)
 ![React](https://img.shields.io/badge/React-UI%20Library-61DAFB)
@@ -13,14 +8,30 @@ A full-stack analytics platform for franchise headquarters to monitor, diagnose,
 ![SQLite](https://img.shields.io/badge/SQLite-Database-003B57)
 ![Recharts](https://img.shields.io/badge/Recharts-Data%20Visualization-22C55E)
 ![Gemini](https://img.shields.io/badge/Gemini-AI%20Integration-4285F4)
+![Radix%20UI](https://img.shields.io/badge/Radix%20UI-Component%20Library-purple)
+![react--simple--maps](https://img.shields.io/badge/react--simple--maps-Map%20Visualization-4A638D)
 
-https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
+A full-stack internal analytics platform for franchise headquarters to monitor, diagnose, and act on performance data across an entire studio network — in real time, from a single interface.
+
+This is a demo build of what a purpose-built franchise ops tool could look like at scale.
 
 ---
 
 ## What It Does
 
-Running a multi-location fitness franchise means managing dozens of studios, hundreds of instructors, and thousands of members — without a unified view of what's actually happening on the ground. This dashboard solves that: from the network home page, operators get an instant read on every studio (occupancy, memberships, revenue, churn, live alerts), and one click drills into any location with full historical metrics, schedules, sales, operations, and reviews.
+Running a multi-location fitness franchise means managing dozens of studios, hundreds of instructors, and thousands of members — without a unified view of what's actually happening on the ground. This dashboard solves that.
+
+From the network home page, operators get an instant read on every studio: occupancy rates, active memberships, weekly revenue, churn, and live alerts for anything that needs attention. One click drills into any studio with full historical metrics, a live class schedule, revenue breakdowns, operations contacts, inventory levels, and member reviews — organized into a clean, navigable interface designed for the way ops teams actually work.
+
+---
+
+Live Application: https://jetset-franchise-intelligence.onrender.com/
+
+*Note: The live application is hosted on Render's free tier, so the backend may take 1–2 minutes to wake up on the first visit after inactivity.*
+
+---
+
+https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
 
 ---
 
