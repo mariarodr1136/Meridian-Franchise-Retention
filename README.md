@@ -27,9 +27,7 @@ From the network home page, operators get an instant read on every studio: occup
 
 Live Application: https://jetset-franchise-intelligence.onrender.com/
 
-*Note: The live application is hosted on Render's free tier, so the backend may take 1–2 minutes to wake up on the first visit after inactivity.*
-
----
+> The live application is hosted on Render's free tier, so the backend may take 1–2 minutes to wake up on the first visit after inactivity.*
 
 https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
 
