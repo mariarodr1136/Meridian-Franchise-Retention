@@ -29,7 +29,12 @@ Live Application: https://jetset-franchise-intelligence.onrender.com/
 
 > The live application is hosted on Render's free tier, so the backend may take 1–2 minutes to wake up on the first visit after inactivity.*
 
-https://github.com/user-attachments/assets/b33ed8c9-ccf6-467a-ae27-8e3a571b0c48
+
+
+https://github.com/user-attachments/assets/2d9e678d-2401-457b-b6be-ce104c71497d
+
+
+
 
 ---
 
@@ -135,7 +140,8 @@ A `/hub` content library for operators and staff: six categories (Announcements,
 
 ---
 
-<img width="1469" height="801" alt="Network overview" src="https://github.com/user-attachments/assets/7c651ba2-fa20-411a-9473-120aae90191d" />
+
+<img width="1470" height="796" alt="Screenshot 2026-07-26 at 6 05 42 PM" src="https://github.com/user-attachments/assets/30ee403d-295b-44f9-b3aa-09e4866aceaa" />
 
 <img width="1467" height="802" alt="Studio detail" src="https://github.com/user-attachments/assets/8e9c9e38-8064-45a7-bc0e-07f27d3573d2" />
 
