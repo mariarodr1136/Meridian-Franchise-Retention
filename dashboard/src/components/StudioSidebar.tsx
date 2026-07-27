@@ -16,7 +16,9 @@ const ALL_PAGES = [
   { id: "settings",   label: "Settings"    },
 ] as const;
 
-const PRE_LAUNCH_PAGE_IDS = new Set(["overview", "sales", "operations", "settings", "members"]);
+// Pre-launch studios have no members yet, and the Members page 404s for them —
+// so the tab is left out rather than linking somewhere dead.
+const PRE_LAUNCH_PAGE_IDS = new Set(["overview", "sales", "operations", "settings"]);
 
 interface Props {
   studioId: string;
