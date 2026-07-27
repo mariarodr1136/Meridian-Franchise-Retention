@@ -358,8 +358,8 @@ FranchiseLead
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/mariarodr1136/Meridian-Franchise-Retention-Intelligence.git
-cd Meridian-Franchise-Retention-Intelligence/dashboard
+git clone https://github.com/mariarodr1136/Meridian-Franchise-Retention.git
+cd Meridian-Franchise-Retention/dashboard
 npm install
 
 # 2. Point at a local SQLite file
