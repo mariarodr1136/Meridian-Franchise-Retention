@@ -1,12 +1,9 @@
 import "dotenv/config";
-import path from "path";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { libsqlConfig } from "../src/lib/libsql-config";
 
-const raw = process.env.DATABASE_URL ?? "file:./dev.db";
-const filePath = raw.startsWith("file:") ? raw.slice(5) : raw;
-const resolved = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
-const adapter = new PrismaBetterSqlite3({ url: resolved });
+const adapter = new PrismaLibSql(libsqlConfig());
 const db = new PrismaClient({ adapter });
 
 function weeksAgo(n: number): Date {
