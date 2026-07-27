@@ -25,9 +25,10 @@ Running a multi-location fitness franchise means managing dozens of studios, hun
 
 From the network home page, operators get an instant read on every studio: occupancy rates, active memberships, weekly revenue, churn, and live alerts for anything that needs attention. One click drills into any studio with full historical metrics, a live class schedule, revenue breakdowns, operations contacts, inventory levels, and member reviews — organized into a clean, navigable interface designed for the way ops teams actually work.
 
----
-
 Live Application: https://meridian-retention-intelligence.vercel.app
+
+
+---
 
 https://github.com/user-attachments/assets/2d9e678d-2401-457b-b6be-ce104c71497d
 
