@@ -29,14 +29,7 @@ From the network home page, operators get an instant read on every studio: occup
 
 Live Application: https://meridian-retention-intelligence.vercel.app
 
-*This build shows the full multi-region network. A single-operator view is at https://meridian-demo-single-operator.vercel.app*
-
-
-
 https://github.com/user-attachments/assets/2d9e678d-2401-457b-b6be-ce104c71497d
-
-
-
 
 ---
 
