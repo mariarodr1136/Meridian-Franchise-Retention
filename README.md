@@ -6,10 +6,12 @@
 ![Tailwind%20CSS](https://img.shields.io/badge/Tailwind%20CSS-Styling-06B6D4)
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748)
 ![SQLite](https://img.shields.io/badge/SQLite-Database-003B57)
+![Turso](https://img.shields.io/badge/Turso-libSQL%20Hosting-4FF8D2)
 ![Recharts](https://img.shields.io/badge/Recharts-Data%20Visualization-22C55E)
 ![Gemini](https://img.shields.io/badge/Gemini-AI%20Integration-4285F4)
 ![Radix%20UI](https://img.shields.io/badge/Radix%20UI-Component%20Library-purple)
 ![react--simple--maps](https://img.shields.io/badge/react--simple--maps-Map%20Visualization-4A638D)
+![Vercel](https://img.shields.io/badge/Vercel-Deployment-black)
 
 A full-stack internal analytics platform for franchise headquarters to monitor, diagnose, and act on performance data across an entire studio network — in real time, from a single interface.
 
@@ -25,9 +27,9 @@ From the network home page, operators get an instant read on every studio: occup
 
 ---
 
-Live Application: https://jetset-franchise-intelligence.onrender.com/
+Live Application: https://meridian-retention-intelligence.vercel.app
 
-> The live application is hosted on Render's free tier, so the backend may take 1–2 minutes to wake up on the first visit after inactivity.*
+*This build shows the full multi-region network. A single-operator view is at https://meridian-demo-single-operator.vercel.app*
 
 
 
@@ -125,7 +127,7 @@ A `/pipeline` kanban tracking prospective locations across five stages (Discover
 A printable `/digest` report: network KPI snapshot with WoW deltas, studio health breakdown, top-5 revenue table, alert summary, at-risk studio detail, new-studio ramp progress, and one-click print with a dedicated print layout. A "Generate Summary" button streams a 3-paragraph **AI executive summary** grounded in the page's live KPI payload.
 
 ### Full-Text Search (⌘K)
-A global command palette powered by **SQLite FTS5** — a `unicode61`-tokenized virtual table over 1,600+ studios, reviews, and instructors, built lazily and held in a singleton `better-sqlite3` connection separate from Prisma. Prefix matching on every term, debounced input, relevance-ranked and type-badged results, full keyboard navigation.
+A global command palette powered by **SQLite FTS5** — a `unicode61`-tokenized virtual table over 1,600+ studios, reviews, and instructors, built lazily and held in a singleton libSQL connection separate from Prisma. The table lives in the database rather than a per-instance file, so it is shared across serverless instances. Prefix matching on every term, debounced input, relevance-ranked and type-badged results, full keyboard navigation.
 
 ### AI Intelligence Layer
 Two Gemini 2.5 Flash streaming surfaces, both using raw `fetch` against Google's SSE endpoint — no SDK required:
@@ -178,9 +180,9 @@ A `/hub` content library for operators and staff: six categories (Announcements,
                      │
          ┌───────────▼───────────┐
          │   Prisma ORM          │
-         │   SQLite (dev.db)     │
+         │   SQLite on Turso     │ ← libSQL over the network
          ├───────────────────────┤
-         │   better-sqlite3      │
+         │   @libsql/client      │
          │   FTS5 virtual table  │ ← global search index
          └───────────────────────┘
                      │
@@ -195,7 +197,9 @@ Data fetching and business logic live in server components and API routes; clien
 ### Key Design Decisions
 - **Sigmoid churn model over pure PRNG** — a seeded LCG generates deterministic behavioral features; a real weighted sigmoid then computes probability from them, so output is reproducible while the scoring logic is genuinely ML-shaped
 - **Rule-based alerts over ML** — thresholds are explicit, human-auditable, and tunable, giving ops teams full transparency into why an alert fired
-- **Separate `better-sqlite3` connection for FTS5** — Prisma can't express FTS5 `MATCH` syntax; a second raw connection with `busy_timeout` avoids lock contention
+- **Separate libSQL connection for FTS5** — Prisma can't express FTS5 `MATCH` syntax; a second raw connection handles it, with index rebuilds batched because network latency dominates per-statement cost over a remote connection
+- **Turso over Postgres** — the schema, the FTS5 search, and both seed scripts are SQLite-native. Turso is hosted libSQL, a SQLite fork, so moving off a local file changed the connection string rather than the query language; Postgres would have meant rewriting FTS5 as `tsvector`
+- **One catch-all per route family** — Next.js emits a serverless function per route file, which put the deployment over the host's per-deployment function limit. API routes dispatch from `app/api/[[...segments]]` and studio sub-pages from `studios/[id]/[section]`, taking 44 functions to 10 with URLs unchanged
 - **Raw `fetch` over Google AI SDK** — Gemini's `?alt=sse` endpoint works with the standard `fetch` + `ReadableStream` pattern, avoiding a dependency
 - **SSE over WebSocket for alerts** — alerts are server-push only; SSE's unidirectional model is simpler and needs no upgrade handshake
 
@@ -231,10 +235,11 @@ FranchiseLead
 |---|---|
 | Framework | Next.js 16 (App Router) · React 19 · TypeScript 5 |
 | UI | Tailwind CSS v4 · Recharts 3 |
-| Data | Prisma 7 · SQLite via better-sqlite3 · FTS5 full-text search |
+| Data | Prisma 7 · SQLite on Turso (libSQL) · FTS5 full-text search |
 | AI / LLM | Google Gemini 2.5 Flash (streaming via `fetch` + SSE) |
 | Real-time | Server-Sent Events (`ReadableStream` + `EventSource`) |
 | Map | react-simple-maps + us-atlas topojson |
+| Hosting | Vercel (prerendered pages on the CDN, no idle spin-down) |
 
 ---
 
@@ -246,21 +251,32 @@ git clone https://github.com/mariarodr1136/Meridian-Franchise-Retention-Intellig
 cd Meridian-Franchise-Retention-Intelligence/dashboard
 npm install
 
-# 2. Generate Prisma client and seed the database
+# 2. Point at a local SQLite file
+echo 'DATABASE_URL="file:./dev.db"' >> .env
+
+# 3. Generate the Prisma client, create the tables, and seed
 npx prisma generate
+npx prisma db push
 npx tsx prisma/seed.ts
 npx tsx prisma/seed-pipeline.ts   # franchise pipeline leads
 
-# 3. (Optional) Enable AI features — free key at https://aistudio.google.com/apikey
+# 4. (Optional) Enable AI features — free key at https://aistudio.google.com/apikey
 echo "GEMINI_API_KEY=your_key_here" >> .env.local
 
-# 4. Start the dev server
+# 5. Start the dev server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the network overview. Without a `GEMINI_API_KEY`, all non-AI features work normally — the AI buttons show a graceful instructional message instead.
 
 After seeding, generate the initial alert set from the Scan button on the network overview, or:
+
+### Deployed Environments
+Hosted builds read `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` instead of `DATABASE_URL`, which keeps a local `.env` from ever pointing a deployment at a bundled database file. `src/lib/libsql-config.ts` picks between them, and throws rather than silently falling back to a local file if the hosted URL is missing. Seed a fresh remote database by pointing `DATABASE_URL` at it for one run:
+
+```bash
+DATABASE_URL="libsql://<your-db>.turso.io" TURSO_AUTH_TOKEN="<token>" npx tsx prisma/seed.ts
+```
 
 ```bash
 curl -X POST http://localhost:3000/api/anomalies/generate
@@ -281,27 +297,25 @@ dashboard/
 │   ├── seed.ts                synthetic studio + metric generation
 │   └── seed-pipeline.ts       franchise pipeline lead seed
 ├── src/
-│   ├── app/
+│   ├── app/                   routes only — a folder here becomes a function
 │   │   ├── page.tsx           network overview (home)
-│   │   ├── alerts/            network-wide alert center (SSE live feed)
-│   │   ├── churn/             network-wide retention intelligence
-│   │   ├── compare/           studio benchmarking
-│   │   ├── digest/            weekly network digest (printable)
-│   │   ├── hub/               studio knowledge hub
-│   │   ├── instructors/       instructor IP roster
-│   │   ├── pipeline/          franchise pipeline kanban
-│   │   ├── api/               anomalies (scan + AI brief), alerts/stream (SSE),
-│   │   │                      churn, compare, digest/summary (AI), instructors,
-│   │   │                      pipeline, search (FTS5)
-│   │   └── studios/[id]/      studio overview + classes, sales, operations,
-│   │                          inventory, maintenance, retention, settings,
-│   │                          reviews (incl. per-instructor pages)
+│   │   ├── [page]/            dispatches /alerts /churn /compare /digest /hub
+│   │   │                      /pipeline, prerendered via generateStaticParams
+│   │   ├── _pages/            those page bodies — `_` keeps them unrouted
+│   │   ├── api/[[...segments]]/  one route serving every API endpoint
+│   │   ├── instructors/       instructor IP roster + per-instructor pages
+│   │   └── studios/[id]/      studio overview, plus [section]/ dispatching
+│   │                          classes, members, sales, operations, inventory,
+│   │                          maintenance, retention, settings, reviews,
+│   │                          schedule from _sections/
+│   ├── server/api/            API handler modules mirroring the URL shape
 │   ├── components/            AlertsGrid, GlobalSearch (⌘K), DigestAISummary,
 │   │                          CohortRetentionChart, SentimentTrendChart,
 │   │                          MaintenanceFeed, NetworkPageHero, RetentionPageContent
 │   ├── lib/
 │   │   ├── churn.ts           weighted sigmoid churn model
 │   │   ├── fts.ts             SQLite FTS5 index + search helpers
+│   │   ├── libsql-config.ts   resolves local dev.db vs hosted Turso
 │   │   ├── schedule.ts        schedule fetching + dedup
 │   │   └── utils.ts           formatting helpers
 │   └── types/
