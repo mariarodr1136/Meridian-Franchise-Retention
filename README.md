@@ -1,4 +1,4 @@
-# JETSET Pilates — Franchise Intelligence Dashboard 📊 🏢
+# Meridian: Franchise Retention Intelligence 📊 🏢
 
 ![Next.js](https://img.shields.io/badge/Next.js-Framework-black)
 ![React](https://img.shields.io/badge/React-UI%20Library-61DAFB)
@@ -242,8 +242,8 @@ FranchiseLead
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/mariarodr1136/JETSET-Franchise-Intelligence.git
-cd JETSET-Franchise-Intelligence/dashboard
+git clone https://github.com/mariarodr1136/Meridian-Franchise-Retention-Intelligence.git
+cd Meridian-Franchise-Retention-Intelligence/dashboard
 npm install
 
 # 2. Generate Prisma client and seed the database
@@ -314,4 +314,4 @@ dashboard/
 
 If you have any questions or feedback, feel free to reach out at [mrodr.contact@gmail.com](mailto:mrodr.contact@gmail.com).
 
-*This is an independent demo project and is not officially affiliated with, endorsed by, or implemented at JETSET Pilates. All studio data is synthetically generated.*
+*This is an independent demo project and is not officially affiliated with, endorsed by, or implemented at any fitness franchise. All studio data is synthetically generated.*
