@@ -1,0 +1,19 @@
+# Vercel uses this instead of .gitignore when present, and it does not honour the
+# nested dashboard/.gitignore — so node_modules and build output must be listed
+# explicitly here alongside the local-only files.
+node_modules
+.next
+.vercel
+
+# Local SQLite database. Shipping it made the deployment open a read-only bundled
+# file instead of Turso; every write failed with SQLITE_READONLY.
+dev.db
+dev.db-journal
+predictions.json
+
+# Env vars come from the Vercel project, never from an uploaded file.
+.env
+.env.*
+
+.DS_Store
+*.mov
